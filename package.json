@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "npx tsx --test tests/preview.test.ts tests/publish.test.ts tests/schema.test.ts"
+    "test": "npx tsx --test tests/preview.test.ts tests/publish.test.ts tests/schema.test.ts tests/mercado-schema.test.ts tests/mercado-jsonld.test.ts tests/mercado-chrome.test.ts tests/mercado-vendors-db.test.ts tests/mercado-inscription.test.ts tests/mercado-public-shell.test.ts tests/mercado-v2.test.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -19,6 +19,7 @@
     "@supabase/supabase-js": "^2.52.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.25",
+    "lucide-react": "^0.544.0",
     "next": "^15.5.9",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

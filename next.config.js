@@ -12,6 +12,12 @@ const nextConfig = {
     return [
       { source: '/webycitas', destination: '/', permanent: true },
       { source: '/demo-local', destination: '/', permanent: true },
+      { source: '/mercado', destination: '/mercadosanpablosigua', permanent: true },
+      {
+        source: '/mercado/:path((?!.*\\.).*)',
+        destination: '/mercadosanpablosigua/:path',
+        permanent: true,
+      },
     ]
   },
 }
