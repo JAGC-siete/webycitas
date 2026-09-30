@@ -2,7 +2,14 @@
 
 Lead magnet + motor de maquetas + directorio Mercado San Pablo. Repo y Supabase propios. El dueño de cada site es `leads.id` (`sites.lead_id`). No hay `company_id`, companies, planilla ni SuperAdmin de RRHH.
 
-Planilla (`saas-proyecto` / humanosisu.net) sigue sirviendo `/webycitas` y `/mercadosanpablosigua` hasta un cutover explícito. Este repo no vacía esos módulos allá. Este paso no apunta `humanosisu.net` ni 301 desde HR.
+`humanosisu.net` queda para Planilla (`/app/admin`). Este servicio no comparte esa sesión. Dos subdominios apuntan aquí, cada uno con su operador:
+
+| Host | Puerta |
+| --- | --- |
+| `webycitas.humanosisu.net` | Magnet en `/`. Operador en `/admin` |
+| `mercado.humanosisu.net` | Directorio en `/` (rewrite a `/mercadosanpablosigua`). Operador en `/app/mercado/login` |
+
+Las cookies son del host (sin `Domain=.humanosisu.net`). Tres entradas: Planilla (Supabase Auth de HR), operador Webycitas (`WEBYCITAS_ADMIN_*`, cookie `webycitas_ops`), operador Mercado (`MERCADO_ADMIN_*`, cookie `webycitas_mercado_op`).
 
 ## Contrato
 
@@ -16,7 +23,11 @@ Planilla (`saas-proyecto` / humanosisu.net) sigue sirviendo `/webycitas` y `/mer
 | `/mercadosanpablosigua/inscripcion` | Inscripción Pickup → `mercado_vendor_applications` |
 | `/mercadosanpablosigua/[slug]` | Ficha de puesto |
 | `/mercadosanpablosiguav2` | Landing institucional (visita física) |
-| `/app/mercado/login` | Login mínimo del operador municipal |
+| `/admin/login` | Login del operador de Webycitas |
+| `/admin` | Leads (`received` / `reviewed` / `rejected`) |
+| `/admin/sites` | Sites y enlace a `/p/[slug]` |
+| `/admin/inquiries` | Consultas de los sites |
+| `/app/mercado/login` | Login del operador municipal |
 | `/app/mercado/fichas` | Admin de fichas (`/nueva`, `/[id]`) |
 | `/app/mercado/solicitudes` | Bandeja de inscripciones |
 | `POST /api/mercado/inscriptions` | Alta pública de solicitud |
@@ -62,16 +73,26 @@ Las de `.env.example`. Nuevas para Mercado:
 | --- | --- |
 | `RESEND_FROM` | Remitente. Marca Mercado San Pablo / Webycitas. No “SISU Nómina”. |
 | `NOTIFY_EMAIL` / `MERCADO_INSCRIPTION_NOTIFY_EMAIL` | Destino del aviso de inscripción |
-| `MERCADO_ADMIN_EMAIL` | Correo del operador |
-| `MERCADO_ADMIN_PASSWORD` | Contraseña del operador (mín. 8) |
-| `MERCADO_ADMIN_SESSION_SECRET` | HMAC de la cookie (mín. 16). Solo dashboard. |
+| `MERCADO_ADMIN_EMAIL` | Correo del operador de Mercado |
+| `MERCADO_ADMIN_PASSWORD` | Contraseña de Mercado (mín. 8) |
+| `MERCADO_ADMIN_SESSION_SECRET` | HMAC de la cookie de Mercado (mín. 16) |
+| `WEBYCITAS_ADMIN_EMAIL` | Correo del operador de Webycitas |
+| `WEBYCITAS_ADMIN_PASSWORD` | Contraseña de Webycitas (mín. 8). Distinta de Mercado |
+| `WEBYCITAS_ADMIN_SESSION_SECRET` | HMAC de la cookie `webycitas_ops` (mín. 16). Distinto de Mercado |
 
 `NEXT_PUBLIC_*` también como build ARG en Railway. `SUPABASE_SERVICE_ROLE_KEY` y los secretos de operador solo en el dashboard, nunca en el repo.
 
 ## Railway
 
-Servicio `webycitas` en el project `handsome-forgiveness`. Un solo proceso Node: magnet + Mercado.
+Servicio `webycitas` en el project `handsome-forgiveness`. Un solo proceso Node: magnet + Mercado + los dos operadores.
+
+Custom domains en ese servicio (CNAME al host de Railway):
+
+- `webycitas.humanosisu.net`
+- `mercado.humanosisu.net`
+
+`humanosisu.net` no se mueve. Sigue en el servicio de Planilla.
 
 ## Fuera de este MVP
 
-Bandeja SuperAdmin de RRHH, reclamación de dominio, constructor autenticado, cutover de `humanosisu.net/mercadosanpablosigua`.
+Panel del cliente (`/app/sitio`, reservas, inventario), constructor autenticado.

@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "npx tsx --test tests/preview.test.ts tests/publish.test.ts tests/schema.test.ts tests/mercado-schema.test.ts tests/mercado-jsonld.test.ts tests/mercado-chrome.test.ts tests/mercado-vendors-db.test.ts tests/mercado-inscription.test.ts tests/mercado-public-shell.test.ts tests/mercado-v2.test.ts"
+    "test": "npx tsx --test tests/preview.test.ts tests/publish.test.ts tests/schema.test.ts tests/ops-admin.test.ts tests/mercado-schema.test.ts tests/mercado-jsonld.test.ts tests/mercado-chrome.test.ts tests/mercado-vendors-db.test.ts tests/mercado-inscription.test.ts tests/mercado-public-shell.test.ts tests/mercado-v2.test.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
