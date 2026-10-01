@@ -5,7 +5,8 @@ import { createAdminClient } from '../supabase/admin'
 import { createSuiteServerClient } from '../suite/supabase-server'
 import { loadProfile } from './profile'
 import { isSuperAdmin, loginPath, type UserProfileRow } from './role-access'
-import { bearerToken, clientIp, clientUserAgent } from './request'
+import { bearerToken, clientIp, clientUserAgent, hashSecret } from './request'
+import { SESSION_HEADER, touchAppSession } from './session-manager'
 
 export interface AuthActor {
   user: User
@@ -15,6 +16,7 @@ export interface AuthActor {
 
 export const INVALID_CREDENTIALS = 'Credenciales inválidas'
 export { loadProfile } from './profile'
+export { SESSION_HEADER } from './session-manager'
 
 async function userFromCookies(req: NextApiRequest | GetServerSidePropsContext['req'], res: NextApiResponse | GetServerSidePropsContext['res']): Promise<User | null> {
   const supabase = createSuiteServerClient(req, res)
@@ -30,6 +32,14 @@ async function userFromBearer(req: NextApiRequest): Promise<User | null> {
   const { data, error } = await admin.auth.getUser(token)
   if (error || !data.user) return null
   return data.user
+}
+
+export function readSessionTokenFromRequest(req: NextApiRequest): string {
+  const header = req.headers[SESSION_HEADER]
+  if (typeof header === 'string' && header.trim()) return header.trim()
+  if (Array.isArray(header) && header[0]?.trim()) return header[0].trim()
+  const bodyToken = typeof req.body?.session_token === 'string' ? req.body.session_token.trim() : ''
+  return bodyToken
 }
 
 export async function resolveAuthActor(
@@ -48,6 +58,31 @@ export async function resolveAuthActor(
   }
 }
 
+async function writeAuditLog(input: {
+  actorId: string
+  action: string
+  ip: string
+  ua: string
+}): Promise<void> {
+  try {
+    const admin = createAdminClient()
+    const { error } = await admin.from('audit_logs').insert({
+      actor_id: input.actorId,
+      action: input.action,
+      resource: 'ops',
+      ip_hash: hashSecret(input.ip),
+      ua_hash: hashSecret(input.ua),
+      metadata: {},
+    })
+    if (error) throw error
+  } catch (err: unknown) {
+    logger.warn('audit_logs insert falló', {
+      action: input.action,
+      error: err instanceof Error ? err.message : 'unknown',
+    })
+  }
+}
+
 export async function requireSuperAdmin(
   req: NextApiRequest,
   res: NextApiResponse,
@@ -62,12 +97,34 @@ export async function requireSuperAdmin(
     res.status(403).json({ error: INVALID_CREDENTIALS })
     return null
   }
+
+  const sessionToken = readSessionTokenFromRequest(req)
+  if (!sessionToken) {
+    res.status(401).json({ error: 'Sesión expirada', code: 'session_missing' })
+    return null
+  }
+
+  const touched = await touchAppSession(createAdminClient(), {
+    userId: actor.user.id,
+    sessionToken,
+  })
+  if (!touched.ok) {
+    res.status(touched.status).json({
+      error: 'Sesión expirada',
+      code: touched.code,
+    })
+    return null
+  }
+
+  const ip = clientIp(req)
+  const ua = clientUserAgent(req)
   logger.info('ops_audit', {
     action,
     userId: actor.user.id,
-    ip: clientIp(req),
-    ua: clientUserAgent(req),
+    ip,
+    ua,
   })
+  void writeAuditLog({ actorId: actor.user.id, action, ip, ua })
   return actor
 }
 

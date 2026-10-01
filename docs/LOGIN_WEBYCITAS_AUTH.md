@@ -96,11 +96,15 @@ Este login solo cubre `webycitas.humanosisu.net`.
 
 **UI.** `/admin/*` deja de usar `requireOpsAdminPage` (HMAC). Nuevo `requireSuperAdminPage` / `SuperAdminGuard`: sin sesión → `/app/login?redirect=...`; sesión con rol ≠ `super_admin` → `/app`. Eso es UX.
 
-**API.** `/api/admin/ops/*` deja `requireOpsAdminApi`. Nuevo `requireSuperAdmin` (`allowedRoles: ['super_admin']`): JWT cookies primero, Bearer fallback, perfil via admin client, `is_active`. Audit: IP, UA, acción.
+**API.** `/api/admin/ops/*` usa `requireSuperAdmin`: JWT cookies primero, Bearer fallback, perfil via admin client, `is_active`, header `x-webycitas-session` → `touchAppSession` (idle/TTL). Audit: `audit_logs` + logger (`ops_audit`).
 
 **Datos.** Owner: RLS + `current_lead_id()` (ya escrito). Superadmin: service role en APIs de ops (como hoy). Un filtro de lead no aplica si `role === 'super_admin'`.
 
-**Sesión.** Cookies primero. Perfil siempre con admin client.
+**Sesión.** Cookies JWT + token de app en `localStorage` / header `x-webycitas-session`. Perfil siempre con admin client.
+
+**Rate limit.** `consume_rate_limit` en Postgres (`rate_limit_buckets`) vía service role. Fallback in-memory si el RPC falla.
+
+**Auth hardening.** En Dashboard: Auth → Password security → Leaked password protection (HaveIBeenPwned).
 
 ## Sesión viva
 
@@ -129,7 +133,9 @@ Migración nueva. No tocar Planilla.
 - `permissions` jsonb default `{}`
 - timestamps
 
-`user_sessions` + RPCs `create_user_session` / `update_session_activity`.
+`user_sessions` + RPCs `create_user_session` / `update_session_activity` (solo `service_role`).
+
+`audit_logs` + `rate_limit_buckets` (migración `p0_ops_hardening`).
 
 RLS: el usuario lee su fila; writes solo service role.
 
@@ -183,3 +189,4 @@ Fuera de alcance:
 - [x] `pages/app/login.tsx` + forgot-password + update-password; `/admin/login` redirige
 - [x] `requireSuperAdmin` en APIs `/admin/ops`; `requireSuitePage` para `/app`; logout + heartbeat
 - [x] Script seed super_admin; home stub `/app`; README y env; retiro HMAC Webycitas
+- [x] P0: drop RPCs legacy, `audit_logs`, sesión en ops APIs, rate-limit Postgres, metrics/users UI

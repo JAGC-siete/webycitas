@@ -8,6 +8,7 @@ export const SESSION_IDLE_MS = SESSION_IDLE_MINUTES * 60 * 1000
 export const SESSION_WARN_MS = 10 * 60 * 1000
 export const LOCAL_USER_KEY = 'user'
 export const LOCAL_SESSION_TOKEN_KEY = 'webycitas_session_token'
+export const SESSION_HEADER = 'x-webycitas-session'
 
 export interface AppSessionRow {
   id: string

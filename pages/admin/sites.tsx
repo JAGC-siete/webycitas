@@ -6,6 +6,7 @@ import OpsShell from '../../components/ops/OpsShell'
 import { Badge } from '../../components/ui/badge'
 import { Card, CardContent } from '../../components/ui/card'
 import { requireSuperAdminPage } from '../../lib/auth/api-auth'
+import { opsFetch } from '../../lib/auth/client-session'
 import { OPS_ADMIN_SITES_API_PATH } from '../../lib/ops/paths'
 import { formatDateTimeForHonduras } from '../../lib/timezone'
 
@@ -33,7 +34,7 @@ export default function OpsSitesPage({ operatorEmail }: { operatorEmail: string 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(OPS_ADMIN_SITES_API_PATH, { credentials: 'include' })
+      const res = await opsFetch(OPS_ADMIN_SITES_API_PATH)
       const body = (await res.json().catch(() => ({}))) as { sites?: SiteRow[]; error?: string }
       if (!res.ok) throw new Error(body.error || 'No se pudieron cargar los sites')
       setRows(body.sites ?? [])

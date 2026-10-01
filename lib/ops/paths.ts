@@ -5,12 +5,15 @@ export const OPS_ADMIN_LOGIN_PATH = '/admin/login'
 export const APP_LOGIN_PATH = '/app/login'
 export const OPS_ADMIN_SITES_PATH = '/admin/sites'
 export const OPS_ADMIN_INQUIRIES_PATH = '/admin/inquiries'
+export const OPS_ADMIN_USERS_PATH = '/admin/users'
 export const OPS_ADMIN_LOGIN_API_PATH = '/api/admin/ops/login'
 export const OPS_ADMIN_LOGOUT_API_PATH = '/api/admin/ops/logout'
 export const OPS_ADMIN_LEADS_API_PATH = '/api/admin/ops/leads'
 export const OPS_ADMIN_SITES_API_PATH = '/api/admin/ops/sites'
 export const OPS_ADMIN_INQUIRIES_API_PATH = '/api/admin/ops/inquiries'
 export const OPS_ADMIN_INVITE_API_PATH = '/api/admin/ops/invite'
+export const OPS_ADMIN_METRICS_API_PATH = '/api/admin/ops/metrics'
+export const OPS_ADMIN_USERS_API_PATH = '/api/admin/ops/users'
 
 export function opsAdminLoginPath(next?: string): string {
   const allowed =

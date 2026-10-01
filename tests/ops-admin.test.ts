@@ -7,6 +7,7 @@ import {
   OPS_ADMIN_INQUIRIES_PATH,
   OPS_ADMIN_PREFIX,
   OPS_ADMIN_SITES_PATH,
+  OPS_ADMIN_USERS_PATH,
   isOpsAdminPath,
   opsAdminLoginPath,
 } from '../lib/ops/paths'
@@ -24,6 +25,7 @@ describe('operador de Webycitas', () => {
     assert.equal(isOpsAdminPath(OPS_ADMIN_PREFIX), true)
     assert.equal(isOpsAdminPath(OPS_ADMIN_SITES_PATH), true)
     assert.equal(isOpsAdminPath(OPS_ADMIN_INQUIRIES_PATH), true)
+    assert.equal(isOpsAdminPath(OPS_ADMIN_USERS_PATH), true)
     assert.equal(isOpsAdminPath('/app/mercado/fichas'), false)
   })
 

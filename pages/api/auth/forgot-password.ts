@@ -16,7 +16,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const email = normalizeEmail(req.body?.email)
   const ip = clientIp(req)
-  if (!consumeRateLimit(`forgot:ip:${ip}`, AUTH_FORGOT_LIMIT) || !consumeRateLimit(`forgot:email:${email}`, AUTH_FORGOT_LIMIT)) {
+  if (
+    !(await consumeRateLimit(`forgot:ip:${ip}`, AUTH_FORGOT_LIMIT)) ||
+    !(await consumeRateLimit(`forgot:email:${email}`, AUTH_FORGOT_LIMIT))
+  ) {
     return res.status(429).json({ error: 'Demasiados envíos. Intenta en unos minutos.' })
   }
 

@@ -21,7 +21,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const password = normalizePassword(req.body?.password)
   const ip = clientIp(req)
 
-  if (!consumeRateLimit(`login:ip:${ip}`, AUTH_LOGIN_IP_LIMIT) || !consumeRateLimit(`login:ip-email:${ip}:${email}`, AUTH_LOGIN_IP_EMAIL_LIMIT)) {
+  if (
+    !(await consumeRateLimit(`login:ip:${ip}`, AUTH_LOGIN_IP_LIMIT)) ||
+    !(await consumeRateLimit(`login:ip-email:${ip}:${email}`, AUTH_LOGIN_IP_EMAIL_LIMIT))
+  ) {
     return res.status(429).json({ error: 'Demasiados intentos. Intenta en unos minutos.' })
   }
 

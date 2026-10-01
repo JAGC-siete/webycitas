@@ -28,9 +28,10 @@ Las cookies son del host (sin `Domain=.humanosisu.net`). No comparte Auth con Pl
 | `/auth/update-password` | Alta/cambio de password (invite o recovery) |
 | `/app` | Home del owner |
 | `/admin/login` | 301 → `/app/login?redirect=/admin` |
-| `/admin` | Leads (`received` / `reviewed` / `rejected`). Solo `super_admin` |
+| `/admin` | Leads + métricas (`received` / `reviewed` / `rejected`). Solo `super_admin` |
 | `/admin/sites` | Sites y enlace a `/p/[slug]` |
 | `/admin/inquiries` | Consultas de los sites |
+| `/admin/users` | Operadores `super_admin` (activar/desactivar) |
 | `/app/mercado/login` | Login del operador municipal |
 | `/app/mercado/fichas` | Admin de fichas (`/nueva`, `/[id]`) |
 | `/app/mercado/solicitudes` | Bandeja de inscripciones |
@@ -65,14 +66,15 @@ RLS: `anon` lee fichas `status='active'` (GRANT por columna). `mercado_vendor_ap
 
 ## Arranque
 
-1. Las migraciones `leads_sites_inquiries`, `client_suite`, `mercado_directorio` y `user_profiles_sessions` van al proyecto Supabase `webycitas` (`cthzofskbfpcgapdauac`). No a Planilla.
+1. Las migraciones `leads_sites_inquiries`, `client_suite`, `mercado_directorio`, `user_profiles_sessions` y `p0_ops_hardening` van al proyecto Supabase `webycitas` (`cthzofskbfpcgapdauac`). No a Planilla.
 2. Copiar `.env.example` → `.env.local`. Llenar URL/keys de **ese** proyecto, no las de Planilla.
 3. Seed one-shot del primer `super_admin` (env, nunca en el repo):
    `WEBYCITAS_SUPERADMIN_EMAIL` + `WEBYCITAS_SUPERADMIN_PASSWORD` (o el trio viejo `WEBYCITAS_ADMIN_*` solo para el corte).
    `npm run seed:super-admin`
 4. En Supabase Auth → URL configuration: Site URL `https://webycitas.humanosisu.net` y Redirect `https://webycitas.humanosisu.net/auth/update-password`.
-5. `npm install && npm test && npm run dev`.
-6. Tras verificar login JWT, borrar `WEBYCITAS_ADMIN_EMAIL` / `WEBYCITAS_ADMIN_PASSWORD` / `WEBYCITAS_ADMIN_SESSION_SECRET` de Railway.
+5. En Supabase Auth → Password security: activar **Leaked password protection** (HaveIBeenPwned) en el proyecto `cthzofskbfpcgapdauac`.
+6. `npm install && npm test && npm run dev`.
+7. Tras verificar login JWT, borrar `WEBYCITAS_ADMIN_EMAIL` / `WEBYCITAS_ADMIN_PASSWORD` / `WEBYCITAS_ADMIN_SESSION_SECRET` de Railway.
 
 ## Variables
 

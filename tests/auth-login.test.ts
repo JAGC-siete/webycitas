@@ -7,7 +7,7 @@ import {
   loginPath,
   postLoginPath,
 } from '../lib/auth/role-access'
-import { consumeRateLimit } from '../lib/rate-limit'
+import { consumeRateLimitSync } from '../lib/rate-limit'
 import { APP_LOGIN_PATH, opsAdminLoginPath } from '../lib/ops/paths'
 
 describe('login unificado Webycitas', () => {
@@ -50,8 +50,8 @@ describe('login unificado Webycitas', () => {
 
   it('rate limit por clave IP y IP+email', () => {
     const key = `test:${Date.now()}`
-    assert.equal(consumeRateLimit(key, { windowMs: 60_000, max: 2 }), true)
-    assert.equal(consumeRateLimit(key, { windowMs: 60_000, max: 2 }), true)
-    assert.equal(consumeRateLimit(key, { windowMs: 60_000, max: 2 }), false)
+    assert.equal(consumeRateLimitSync(key, { windowMs: 60_000, max: 2 }), true)
+    assert.equal(consumeRateLimitSync(key, { windowMs: 60_000, max: 2 }), true)
+    assert.equal(consumeRateLimitSync(key, { windowMs: 60_000, max: 2 }), false)
   })
 })

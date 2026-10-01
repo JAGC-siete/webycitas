@@ -6,7 +6,12 @@ import OpsShell from '../../components/ops/OpsShell'
 import { Badge } from '../../components/ui/badge'
 import { Card, CardContent } from '../../components/ui/card'
 import { requireSuperAdminPage } from '../../lib/auth/api-auth'
-import { OPS_ADMIN_INVITE_API_PATH, OPS_ADMIN_LEADS_API_PATH } from '../../lib/ops/paths'
+import { opsFetch } from '../../lib/auth/client-session'
+import {
+  OPS_ADMIN_INVITE_API_PATH,
+  OPS_ADMIN_LEADS_API_PATH,
+  OPS_ADMIN_METRICS_API_PATH,
+} from '../../lib/ops/paths'
 import { formatDateTimeForHonduras } from '../../lib/timezone'
 
 type LeadStatus = 'received' | 'reviewed' | 'rejected'
@@ -25,6 +30,13 @@ interface LeadRow {
   created_at: string
 }
 
+interface MetricsPayload {
+  leads: { received: number; reviewed: number; rejected: number; total: number }
+  sites: { total: number }
+  inquiries: { last_7d: number }
+  owners_active: number
+}
+
 const STATUSES: LeadStatus[] = ['received', 'reviewed', 'rejected']
 
 const STATUS_LABEL: Record<LeadStatus, string> = {
@@ -41,18 +53,28 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
 
 export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string }) {
   const [rows, setRows] = useState<LeadRow[]>([])
+  const [metrics, setMetrics] = useState<MetricsPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [invitingId, setInvitingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(OPS_ADMIN_LEADS_API_PATH, { credentials: 'include' })
-      const body = (await res.json().catch(() => ({}))) as { leads?: LeadRow[]; error?: string }
-      if (!res.ok) throw new Error(body.error || 'No se pudieron cargar los leads')
-      setRows(body.leads ?? [])
+      const [leadsRes, metricsRes] = await Promise.all([
+        opsFetch(OPS_ADMIN_LEADS_API_PATH),
+        opsFetch(OPS_ADMIN_METRICS_API_PATH),
+      ])
+      const leadsBody = (await leadsRes.json().catch(() => ({}))) as { leads?: LeadRow[]; error?: string }
+      if (!leadsRes.ok) throw new Error(leadsBody.error || 'No se pudieron cargar los leads')
+      setRows(leadsBody.leads ?? [])
+
+      if (metricsRes.ok) {
+        const metricsBody = (await metricsRes.json().catch(() => null)) as MetricsPayload | null
+        if (metricsBody) setMetrics(metricsBody)
+      }
       setError(null)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'No se pudieron cargar los leads')
@@ -68,16 +90,16 @@ export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string 
   async function inviteOwner(id: string) {
     setInvitingId(id)
     try {
-      const res = await fetch(OPS_ADMIN_INVITE_API_PATH, {
+      const res = await opsFetch(OPS_ADMIN_INVITE_API_PATH, {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lead_id: id }),
       })
-      const body = (await res.json().catch(() => ({}))) as { error?: string }
+      const body = (await res.json().catch(() => ({}))) as { error?: string; email?: string }
       if (!res.ok) throw new Error(body.error || 'No se pudo invitar')
       setError(null)
+      setNotice(`Invitación enviada a ${body.email || 'el lead'}`)
     } catch (err: unknown) {
+      setNotice(null)
       setError(err instanceof Error ? err.message : 'No se pudo invitar')
     } finally {
       setInvitingId(null)
@@ -85,19 +107,24 @@ export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string 
   }
 
   async function patchStatus(id: string, status: LeadStatus) {
+    if (status === 'rejected') {
+      const ok = window.confirm('¿Descartar este lead? El owner no podrá entrar al panel.')
+      if (!ok) return
+    }
     setSavingId(id)
     try {
-      const res = await fetch(OPS_ADMIN_LEADS_API_PATH, {
+      const res = await opsFetch(OPS_ADMIN_LEADS_API_PATH, {
         method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status }),
       })
       const body = (await res.json().catch(() => ({}))) as { error?: string }
       if (!res.ok) throw new Error(body.error || 'No se pudo actualizar')
       setRows((prev) => prev.map((row) => (row.id === id ? { ...row, status } : row)))
       setError(null)
+      setNotice(`Estado actualizado a ${STATUS_LABEL[status]}`)
+      void load()
     } catch (err: unknown) {
+      setNotice(null)
       setError(err instanceof Error ? err.message : 'No se pudo actualizar')
     } finally {
       setSavingId(null)
@@ -112,6 +139,16 @@ export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string 
       </Head>
       <div className="space-y-4 px-4 py-6">
         <h1 className="text-xl font-semibold">Leads</h1>
+        {metrics ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <MetricCard label="Recibidos" value={metrics.leads.received} />
+            <MetricCard label="Revisados" value={metrics.leads.reviewed} />
+            <MetricCard label="Descartados" value={metrics.leads.rejected} />
+            <MetricCard label="Sites" value={metrics.sites.total} />
+            <MetricCard label="Consultas 7d" value={metrics.inquiries.last_7d} />
+          </div>
+        ) : null}
+        {notice ? <p className="text-sm text-emerald-300">{notice}</p> : null}
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
         {loading ? <p className="text-sm text-white/60">Cargando…</p> : null}
         {!loading && rows.length === 0 ? <p className="text-sm text-white/60">Sin leads.</p> : null}
@@ -170,5 +207,14 @@ export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string 
         </ul>
       </div>
     </OpsShell>
+  )
+}
+
+function MetricCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded border border-white/10 bg-slate-900/60 px-3 py-2">
+      <p className="text-xs text-white/50">{label}</p>
+      <p className="text-lg font-semibold tabular-nums">{value}</p>
+    </div>
   )
 }

@@ -6,6 +6,7 @@ import {
   OPS_ADMIN_INQUIRIES_PATH,
   OPS_ADMIN_PREFIX,
   OPS_ADMIN_SITES_PATH,
+  OPS_ADMIN_USERS_PATH,
 } from '../../lib/ops/paths'
 
 export default function OpsShell({
@@ -39,6 +40,9 @@ export default function OpsShell({
             </Link>
             <Link href={OPS_ADMIN_INQUIRIES_PATH} className="text-sky-200 hover:underline">
               Consultas
+            </Link>
+            <Link href={OPS_ADMIN_USERS_PATH} className="text-sky-200 hover:underline">
+              Operadores
             </Link>
             <Link href="/" className="text-white/60 hover:underline">
               Magnet

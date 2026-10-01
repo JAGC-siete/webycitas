@@ -1,4 +1,4 @@
-import { LOCAL_SESSION_TOKEN_KEY, LOCAL_USER_KEY } from './session-manager'
+import { LOCAL_SESSION_TOKEN_KEY, LOCAL_USER_KEY, SESSION_HEADER } from './session-manager'
 import type { AppRole } from './role-access'
 
 export interface StoredUser {
@@ -53,4 +53,19 @@ export async function signOutClient(): Promise<void> {
   } catch {
     // el redirect de login cubre el corte
   }
+}
+
+/** Fetch autenticado para APIs `/api/admin/ops/*` (JWT cookie + sesión app). */
+export async function opsFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(init.headers)
+  const sessionToken = readSessionToken()
+  if (sessionToken) headers.set(SESSION_HEADER, sessionToken)
+  if (init.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+  return fetch(input, {
+    ...init,
+    credentials: 'include',
+    headers,
+  })
 }
