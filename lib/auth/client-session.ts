@@ -69,3 +69,8 @@ export async function opsFetch(input: RequestInfo | URL, init: RequestInit = {})
     headers,
   })
 }
+
+/** Fetch autenticado para APIs `/api/suite/*`. */
+export async function suiteFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+  return opsFetch(input, init)
+}

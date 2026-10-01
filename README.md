@@ -26,7 +26,11 @@ Las cookies son del host (sin `Domain=.humanosisu.net`). No comparte Auth con Pl
 | `/app/login` | Login unificado (super_admin + owner) |
 | `/app/forgot-password` | Recuperación de contraseña |
 | `/auth/update-password` | Alta/cambio de password (invite o recovery) |
-| `/app` | Home del owner |
+| `/app` | Dashboard del owner (citas hoy, alertas, accesos rápidos) |
+| `/app/reservas` | Agenda día/semana, citas manuales, bloqueos |
+| `/app/reservas/equipo` | Staff, horarios y servicios |
+| `/app/sitio` | Mini CMS: servicios, negocio, galería, publicar |
+| `/app/clientes` | Mini CRM + export CSV |
 | `/admin/login` | 301 → `/app/login?redirect=/admin` |
 | `/admin` | Leads + métricas (`received` / `reviewed` / `rejected`). Solo `super_admin` |
 | `/admin/sites` | Sites y enlace a `/p/[slug]` |
@@ -66,7 +70,7 @@ RLS: `anon` lee fichas `status='active'` (GRANT por columna). `mercado_vendor_ap
 
 ## Arranque
 
-1. Las migraciones `leads_sites_inquiries`, `client_suite`, `mercado_directorio`, `user_profiles_sessions` y `p0_ops_hardening` van al proyecto Supabase `webycitas` (`cthzofskbfpcgapdauac`). No a Planilla.
+1. Las migraciones `leads_sites_inquiries`, `client_suite`, `mercado_directorio`, `user_profiles_sessions`, `p0_ops_hardening` y `owner_suite_booking` van al proyecto Supabase `webycitas` (`cthzofskbfpcgapdauac`). No a Planilla.
 2. Copiar `.env.example` → `.env.local`. Llenar URL/keys de **ese** proyecto, no las de Planilla.
 3. Seed one-shot del primer `super_admin` (env, nunca en el repo):
    `WEBYCITAS_SUPERADMIN_EMAIL` + `WEBYCITAS_SUPERADMIN_PASSWORD` (o el trio viejo `WEBYCITAS_ADMIN_*` solo para el corte).
