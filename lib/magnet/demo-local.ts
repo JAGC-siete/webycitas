@@ -413,39 +413,87 @@ export function rubroLabel(rubro: DemoLocalRubro): string {
   return DEMO_LOCAL_CATALOGS[rubro].label
 }
 
+export interface OwnerWelcomeMailOptions {
+  publicUrl?: string
+  /** Enlace one-shot para crear password (generateLink). */
+  accessUrl?: string
+  /** Login del panel owner. */
+  panelUrl?: string
+}
+
 export function buildDemoLocalOwnerEmail(
   lead: DemoLocalLead,
-  options?: { publicUrl?: string }
+  options?: OwnerWelcomeMailOptions
 ): { subject: string; html: string } {
   const catalog = catalogForRubro(lead.rubro)
+  const hasLanding = lead.services.includes('landing')
+  const hasBooking = lead.services.includes('booking')
   const liveUrl = options?.publicUrl
   const pageUrl = liveUrl || `${SEO_BASE_URL}${DEMO_LOCAL_PUBLIC_PATH}`
-  const bodyHtml = [
+  const panelUrl = options?.panelUrl
+
+  const productBits: string[] = []
+  if (hasLanding) productBits.push('página web')
+  if (hasBooking) productBits.push('sistema de citas / reservas')
+  const productsLabel = productBits.length > 0 ? productBits.join(' y ') : formatDemoLocalServices(lead.services)
+
+  const parts: string[] = [
     liquidParagraph(`Hola ${escapeHtml(lead.ownerName)},`),
     liquidParagraph(
-      `Recibimos la solicitud para <strong>${escapeHtml(lead.businessName)}</strong> (${escapeHtml(catalog.label)} en ${escapeHtml(lead.city)}).`
+      `Listo: activamos <strong>${escapeHtml(productsLabel)}</strong> para <strong>${escapeHtml(lead.businessName)}</strong> (${escapeHtml(catalog.label)} · ${escapeHtml(lead.city)}).`
     ),
-    liveUrl
-      ? liquidParagraph(
-          `Tu página ya está en Internet. Ábrela, revísala y respóndenos para reclamarla y dejarla permanente. Armamos: <strong>${escapeHtml(formatDemoLocalServices(lead.services))}</strong>. Al contratar, el Perfil de Empresa en Google Maps y un dominio tuyo.`
-        )
-      : liquidParagraph(
-          `Armamos: <strong>${escapeHtml(formatDemoLocalServices(lead.services))}</strong>. El siguiente paso es un boceto. Si contratas, te publicamos el Perfil de Empresa en Google Maps y un dominio tuyo. El modelo de ejemplo vive en SISU hasta esa compra.`
-        ),
+  ]
+
+  if (hasLanding || liveUrl) {
+    parts.push(
+      liquidParagraph(
+        liveUrl
+          ? 'Tu landing ya está publicada. Podés abrirla y compartirla:'
+          : 'Tu landing se está preparando. Mientras tanto, este es el enlace de referencia:'
+      )
+    )
+    parts.push(liquidCta(pageUrl, 'Ver mi landing'))
+  }
+
+  if (hasBooking) {
+    parts.push(
+      liquidParagraph(
+        panelUrl
+          ? 'El sistema de citas se administra desde tu panel (calendario, equipo y solicitudes).'
+          : 'El sistema de citas se administra desde tu panel cuando creés la contraseña.'
+      )
+    )
+    if (panelUrl) {
+      parts.push(liquidCta(panelUrl, 'Ir al panel de reservas'))
+    }
+  }
+
+  if (options?.accessUrl) {
+    parts.push(
+      liquidParagraph(
+        'Creá tu contraseña con este enlace (un solo uso). Después entrá cuando quieras a administrar tu sitio y tus citas:'
+      )
+    )
+    parts.push(liquidCta(options.accessUrl, 'Crear contraseña y entrar al panel'))
+  } else if (panelUrl) {
+    parts.push(liquidParagraph('Si ya tenés contraseña, entrá directo al panel:'))
+    parts.push(liquidCta(panelUrl, 'Iniciar sesión'))
+  }
+
+  parts.push(
     liquidParagraph(
-      'Te escribimos por este correo o por WhatsApp con el precio y para confirmar zona y el número que quieres publicar. Si no te gusta, no pagas nada.'
-    ),
-    liquidCta(pageUrl, liveUrl ? 'Ver mi página' : 'Volver a la página del servicio'),
-  ].join('')
+      'Si el enlace de contraseña expiró, usá “Olvidé mi contraseña” en el login o pedí otra invitación.'
+    )
+  )
 
   return {
-    subject: `Tu página local — ${lead.businessName}`,
+    subject: `Tu Webycitas — ${lead.businessName}`,
     html: wrapLiquidEmail({
-      title: 'Datos recibidos',
-      subtitle: 'Boceto de tu web, reservas y Google Maps para tu negocio de barrio',
-      badge: 'Demo local',
-      bodyHtml,
-      footerNote: 'Humano SISU · presencia digital para negocios locales. Puedes responder este correo.',
+      title: 'Tu espacio está listo',
+      subtitle: productsLabel,
+      badge: 'Webycitas',
+      bodyHtml: parts.join(''),
+      footerNote: 'Webycitas · panel del dueño. Podés responder este correo.',
     }),
   }
 }

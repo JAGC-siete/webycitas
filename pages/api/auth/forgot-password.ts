@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { isUsableEmail, normalizeEmail } from '../../../lib/auth/credentials'
 import { AUTH_FORGOT_LIMIT, consumeRateLimit } from '../../../lib/rate-limit'
 import { clientIp } from '../../../lib/auth/request'
-import { siteAbsoluteUrl } from '../../../lib/site'
+import { authAbsoluteUrl } from '../../../lib/site'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { logger } from '../../../lib/logger'
 
@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const admin = createAdminClient()
     const { error } = await admin.auth.resetPasswordForEmail(email, {
-      redirectTo: siteAbsoluteUrl('/auth/update-password?next=/app/login'),
+      redirectTo: authAbsoluteUrl('/auth/update-password'),
     })
     if (error) {
       logger.warn('forgot-password no envió correo', { error: error.message })

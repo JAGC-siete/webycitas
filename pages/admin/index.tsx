@@ -94,10 +94,24 @@ export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string 
         method: 'POST',
         body: JSON.stringify({ lead_id: id }),
       })
-      const body = (await res.json().catch(() => ({}))) as { error?: string; email?: string }
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string
+        email?: string
+        message?: string
+        action_link?: string | null
+      }
       if (!res.ok) throw new Error(body.error || 'No se pudo invitar')
       setError(null)
-      setNotice(`Invitación enviada a ${body.email || 'el lead'}`)
+      if (body.action_link) {
+        try {
+          await navigator.clipboard.writeText(body.action_link)
+          setNotice(`${body.message || 'Enlace listo'} (copiado al portapapeles)`)
+        } catch {
+          setNotice(`${body.message || 'Enlace listo'}: ${body.action_link}`)
+        }
+      } else {
+        setNotice(body.message || `Invitación enviada a ${body.email || 'el lead'}`)
+      }
     } catch (err: unknown) {
       setNotice(null)
       setError(err instanceof Error ? err.message : 'No se pudo invitar')

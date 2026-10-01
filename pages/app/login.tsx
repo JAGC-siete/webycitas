@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
@@ -39,6 +39,12 @@ export default function AppLoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (router.query.error === 'link_expired') {
+      setError('El enlace de acceso expiró o ya se usó. Pedí otra invitación desde el panel ops.')
+    }
+  }, [router.query.error])
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()

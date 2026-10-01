@@ -20,13 +20,29 @@ export default function UpdatePasswordPage() {
 
   useEffect(() => {
     const supabase = createBrowserSupabase()
-    void supabase.auth.getSession().then((result) => {
-      setReady(Boolean(result.data.session))
-    })
+    let cancelled = false
+
+    async function hydrateFromUrl() {
+      // Invite/recovery: tokens en #access_token=... (detectSessionInUrl)
+      const { data } = await supabase.auth.getSession()
+      if (!cancelled && data.session) {
+        setReady(true)
+        return
+      }
+      // Reintento corto: el parse del hash a veces llega un tick después
+      await new Promise((resolve) => window.setTimeout(resolve, 250))
+      const again = await supabase.auth.getSession()
+      if (!cancelled) setReady(Boolean(again.data.session))
+    }
+
+    void hydrateFromUrl()
     const { data: sub } = supabase.auth.onAuthStateChange((event: string) => {
-      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') setReady(true)
+      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        setReady(true)
+      }
     })
     return () => {
+      cancelled = true
       sub.subscription.unsubscribe()
     }
   }, [])

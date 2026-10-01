@@ -1,10 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { provisionOwnerAccess } from '../../lib/auth/invite-owner'
 import { logger } from '../../lib/logger'
 import { maskEmail, normalizeSoftPhone } from '../../lib/privacy'
 import { getNotifyEmail, getResendFrom } from '../../lib/resend-from'
 import { createAdminClient } from '../../lib/supabase/admin'
 import { PUBLIC_LEAD_LIMIT, withRateLimit } from '../../lib/rate-limit'
-import { SEO_BASE_URL } from '../../lib/site'
+import { authAbsoluteUrl, SEO_BASE_URL } from '../../lib/site'
 import { formatDateTimeForHonduras } from '../../lib/timezone'
 import {
   buildDemoLocalInternalEmail,
@@ -155,8 +156,35 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   const publicUrl = publicPath ? `${SEO_BASE_URL}${publicPath}` : undefined
-  const ownerMail = buildDemoLocalOwnerEmail(lead, publicUrl ? { publicUrl } : undefined)
+  const panelUrl = authAbsoluteUrl('/app/login')
   const notify = getNotifyEmail()
+
+  let accessUrl: string | undefined
+  try {
+    const provisioned = await provisionOwnerAccess(supabase, {
+      email: lead.email,
+      leadId,
+      businessName: lead.businessName,
+    })
+    accessUrl = provisioned.actionLink
+    logger.info('Owner provisionado desde magnet', {
+      leadId,
+      userId: provisioned.userId,
+      created: provisioned.created,
+    })
+  } catch (err: unknown) {
+    logger.error('No se pudo provisionar owner desde magnet', {
+      leadId,
+      email: maskEmail(lead.email),
+      error: err instanceof Error ? err.message : 'Unknown',
+    })
+  }
+
+  const ownerMail = buildDemoLocalOwnerEmail(lead, {
+    publicUrl,
+    accessUrl,
+    panelUrl,
+  })
 
   try {
     const sent = await sendResendEmail({
@@ -170,6 +198,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         leadId,
         email: maskEmail(lead.email),
         error: sent.error,
+        hasAccessUrl: Boolean(accessUrl),
       })
     }
   } catch (error: unknown) {
