@@ -96,12 +96,15 @@ export function opsAdminSetCookie(res: NextApiResponse, operator: OpsOperator) {
   res.setHeader('Set-Cookie', `${OPS_ADMIN_COOKIE}=${value}; ${cookieFlags()}`)
 }
 
+function appendCookie(res: NextApiResponse, value: string) {
+  const existing = res.getHeader('Set-Cookie')
+  const previous = Array.isArray(existing) ? existing : typeof existing === 'string' ? [existing] : []
+  res.setHeader('Set-Cookie', [...previous, value])
+}
+
 export function opsAdminClearCookie(res: NextApiResponse) {
   const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
-  res.setHeader(
-    'Set-Cookie',
-    `${OPS_ADMIN_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`
-  )
+  appendCookie(res, `${OPS_ADMIN_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`)
 }
 
 export function requireOpsAdminApi(req: NextApiRequest, res: NextApiResponse): OpsOperator | null {

@@ -9,6 +9,7 @@
 import { createServerClient, serializeCookieHeader, type CookieOptions } from '@supabase/ssr'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from 'next'
+import { authCookieOptions } from '../supabase/cookies'
 
 type ReqLike = NextApiRequest | GetServerSidePropsContext['req']
 type ResLike = NextApiResponse | GetServerSidePropsContext['res']
@@ -21,6 +22,7 @@ export function createSuiteServerClient(req: ReqLike, res: ResLike): SupabaseCli
   }
 
   return createServerClient(url, anonKey, {
+    cookieOptions: authCookieOptions(),
     cookies: {
       getAll() {
         const jar = req.cookies as Record<string, string | undefined>

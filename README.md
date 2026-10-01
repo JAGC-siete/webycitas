@@ -9,7 +9,7 @@ Lead magnet + motor de maquetas + directorio Mercado San Pablo. Repo y Supabase 
 | `webycitas.humanosisu.net` | Magnet en `/`. Operador en `/admin` |
 | `mercado.humanosisu.net` | Directorio en `/` (rewrite a `/mercadosanpablosigua`). Operador en `/app/mercado/login` |
 
-Las cookies son del host (sin `Domain=.humanosisu.net`). Tres entradas: Planilla (Supabase Auth de HR), operador Webycitas (`WEBYCITAS_ADMIN_*`, cookie `webycitas_ops`), operador Mercado (`MERCADO_ADMIN_*`, cookie `webycitas_mercado_op`).
+Las cookies son del host (sin `Domain=.humanosisu.net`). No comparte Auth con Planilla. Webycitas: un form en `/app/login` (`user_profiles.role` + `leads.auth_user_id`). Mercado sigue con cookie HMAC (`MERCADO_ADMIN_*`).
 
 ## Contrato
 
@@ -23,8 +23,12 @@ Las cookies son del host (sin `Domain=.humanosisu.net`). Tres entradas: Planilla
 | `/mercadosanpablosigua/inscripcion` | Inscripción Pickup → `mercado_vendor_applications` |
 | `/mercadosanpablosigua/[slug]` | Ficha de puesto |
 | `/mercadosanpablosiguav2` | Landing institucional (visita física) |
-| `/admin/login` | Login del operador de Webycitas |
-| `/admin` | Leads (`received` / `reviewed` / `rejected`) |
+| `/app/login` | Login unificado (super_admin + owner) |
+| `/app/forgot-password` | Recuperación de contraseña |
+| `/auth/update-password` | Alta/cambio de password (invite o recovery) |
+| `/app` | Home del owner |
+| `/admin/login` | 301 → `/app/login?redirect=/admin` |
+| `/admin` | Leads (`received` / `reviewed` / `rejected`). Solo `super_admin` |
 | `/admin/sites` | Sites y enlace a `/p/[slug]` |
 | `/admin/inquiries` | Consultas de los sites |
 | `/app/mercado/login` | Login del operador municipal |
@@ -61,9 +65,14 @@ RLS: `anon` lee fichas `status='active'` (GRANT por columna). `mercado_vendor_ap
 
 ## Arranque
 
-1. Las migraciones `leads_sites_inquiries`, `client_suite` y `mercado_directorio` ya están aplicadas en el proyecto Supabase `webycitas`.
+1. Las migraciones `leads_sites_inquiries`, `client_suite`, `mercado_directorio` y `user_profiles_sessions` van al proyecto Supabase `webycitas` (`cthzofskbfpcgapdauac`). No a Planilla.
 2. Copiar `.env.example` → `.env.local`. Llenar URL/keys de **ese** proyecto, no las de Planilla.
-3. `npm install && npm test && npm run dev`.
+3. Seed one-shot del primer `super_admin` (env, nunca en el repo):
+   `WEBYCITAS_SUPERADMIN_EMAIL` + `WEBYCITAS_SUPERADMIN_PASSWORD` (o el trio viejo `WEBYCITAS_ADMIN_*` solo para el corte).
+   `npm run seed:super-admin`
+4. En Supabase Auth → URL configuration: Site URL `https://webycitas.humanosisu.net` y Redirect `https://webycitas.humanosisu.net/auth/update-password`.
+5. `npm install && npm test && npm run dev`.
+6. Tras verificar login JWT, borrar `WEBYCITAS_ADMIN_EMAIL` / `WEBYCITAS_ADMIN_PASSWORD` / `WEBYCITAS_ADMIN_SESSION_SECRET` de Railway.
 
 ## Variables
 
@@ -76,9 +85,7 @@ Las de `.env.example`. Nuevas para Mercado:
 | `MERCADO_ADMIN_EMAIL` | Correo del operador de Mercado |
 | `MERCADO_ADMIN_PASSWORD` | Contraseña de Mercado (mín. 8) |
 | `MERCADO_ADMIN_SESSION_SECRET` | HMAC de la cookie de Mercado (mín. 16) |
-| `WEBYCITAS_ADMIN_EMAIL` | Correo del operador de Webycitas |
-| `WEBYCITAS_ADMIN_PASSWORD` | Contraseña de Webycitas (mín. 8). Distinta de Mercado |
-| `WEBYCITAS_ADMIN_SESSION_SECRET` | HMAC de la cookie `webycitas_ops` (mín. 16). Distinto de Mercado |
+| `WEBYCITAS_SUPERADMIN_EMAIL` / `WEBYCITAS_SUPERADMIN_PASSWORD` | Solo seed. No quedan en `.env.example` |
 
 `NEXT_PUBLIC_*` también como build ARG en Railway. `SUPABASE_SERVICE_ROLE_KEY` y los secretos de operador solo en el dashboard, nunca en el repo.
 
@@ -95,4 +102,4 @@ Custom domains en ese servicio (CNAME al host de Railway):
 
 ## Fuera de este MVP
 
-Panel del cliente (`/app/sitio`, reservas, inventario), constructor autenticado.
+Constructor `/app/sitio`, reservas e inventario. `/app` es stub del owner. Mercado no usa este login.

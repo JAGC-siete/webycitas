@@ -4,7 +4,7 @@ import Link from 'next/link'
 import type { GetServerSideProps } from 'next'
 import OpsShell from '../../components/ops/OpsShell'
 import { Card, CardContent } from '../../components/ui/card'
-import { requireOpsAdminPage } from '../../lib/ops/admin-auth'
+import { requireSuperAdminPage } from '../../lib/auth/api-auth'
 import { OPS_ADMIN_INQUIRIES_API_PATH } from '../../lib/ops/paths'
 import { formatDateTimeForHonduras } from '../../lib/timezone'
 
@@ -20,9 +20,9 @@ interface InquiryRow {
 }
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
-  const auth = await requireOpsAdminPage(ctx)
+  const auth = await requireSuperAdminPage(ctx)
   if (!auth.ok) return { redirect: auth.redirect }
-  return { props: { operatorEmail: auth.operator.email } }
+  return { props: { operatorEmail: auth.actor.email } }
 }
 
 export default function OpsInquiriesPage({ operatorEmail }: { operatorEmail: string }) {

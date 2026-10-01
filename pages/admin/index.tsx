@@ -5,8 +5,8 @@ import type { GetServerSideProps } from 'next'
 import OpsShell from '../../components/ops/OpsShell'
 import { Badge } from '../../components/ui/badge'
 import { Card, CardContent } from '../../components/ui/card'
-import { requireOpsAdminPage } from '../../lib/ops/admin-auth'
-import { OPS_ADMIN_LEADS_API_PATH } from '../../lib/ops/paths'
+import { requireSuperAdminPage } from '../../lib/auth/api-auth'
+import { OPS_ADMIN_INVITE_API_PATH, OPS_ADMIN_LEADS_API_PATH } from '../../lib/ops/paths'
 import { formatDateTimeForHonduras } from '../../lib/timezone'
 
 type LeadStatus = 'received' | 'reviewed' | 'rejected'
@@ -34,9 +34,9 @@ const STATUS_LABEL: Record<LeadStatus, string> = {
 }
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
-  const auth = await requireOpsAdminPage(ctx)
+  const auth = await requireSuperAdminPage(ctx)
   if (!auth.ok) return { redirect: auth.redirect }
-  return { props: { operatorEmail: auth.operator.email } }
+  return { props: { operatorEmail: auth.actor.email } }
 }
 
 export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string }) {
@@ -44,6 +44,7 @@ export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [invitingId, setInvitingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -63,6 +64,25 @@ export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string 
   useEffect(() => {
     void load()
   }, [load])
+
+  async function inviteOwner(id: string) {
+    setInvitingId(id)
+    try {
+      const res = await fetch(OPS_ADMIN_INVITE_API_PATH, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lead_id: id }),
+      })
+      const body = (await res.json().catch(() => ({}))) as { error?: string }
+      if (!res.ok) throw new Error(body.error || 'No se pudo invitar')
+      setError(null)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo invitar')
+    } finally {
+      setInvitingId(null)
+    }
+  }
 
   async function patchStatus(id: string, status: LeadStatus) {
     setSavingId(id)
@@ -133,6 +153,16 @@ export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string 
                       ))}
                     </select>
                   </label>
+                  {row.status !== 'rejected' ? (
+                    <button
+                      type="button"
+                      className="text-sm text-sky-200 hover:underline disabled:text-white/40"
+                      disabled={invitingId === row.id}
+                      onClick={() => void inviteOwner(row.id)}
+                    >
+                      {invitingId === row.id ? 'Invitando…' : 'Invitar al panel'}
+                    </button>
+                  ) : null}
                 </CardContent>
               </Card>
             </li>

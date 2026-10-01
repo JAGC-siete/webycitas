@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { requireOpsAdminApi } from '../../../../lib/ops/admin-auth'
+import { requireSuperAdmin } from '../../../../lib/auth/api-auth'
 import { createAdminClient } from '../../../../lib/supabase/admin'
 
 type SiteJoin = { slug: string; title: string } | { slug: string; title: string }[] | null
@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Allow', 'GET')
     return res.status(405).json({ error: 'Método no permitido' })
   }
-  const operator = requireOpsAdminApi(req, res)
+  const operator = await requireSuperAdmin(req, res, 'inquiries_list')
   if (!operator) return
 
   try {

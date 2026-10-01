@@ -11,6 +11,8 @@ import type { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { LEADS_TABLE, SITES_TABLE } from '../landings/db'
 import { logger } from '../logger'
+import { loadProfile } from '../auth/profile'
+import { isSuperAdmin, loginPath } from '../auth/role-access'
 import { createSuiteServerClient } from './supabase-server'
 import { modulesForServices, suiteModule, type SuiteModuleKey } from './modules'
 
@@ -79,6 +81,9 @@ export async function resolveSuiteContext(req: ReqLike, res: ResLike): Promise<S
 
   const { data: auth, error: authError } = await supabase.auth.getUser()
   if (authError || !auth?.user) return null
+
+  const profile = await loadProfile(auth.user.id)
+  if (isSuperAdmin(profile)) return null
 
   const { data: leadData, error: leadError } = await supabase
     .from(LEADS_TABLE)
@@ -154,10 +159,16 @@ export async function requireSuitePage(
   const context = await resolveSuiteContext(ctx.req, ctx.res)
 
   if (!context) {
-    const target = ctx.resolvedUrl && ctx.resolvedUrl !== SUITE_HOME_PATH
-      ? `${SUITE_LOGIN_PATH}?next=${encodeURIComponent(ctx.resolvedUrl)}`
-      : SUITE_LOGIN_PATH
-    return { ok: false, redirect: { destination: target, permanent: false } }
+    const supabase = createSuiteServerClient(ctx.req, ctx.res)
+    const { data: auth } = await supabase.auth.getUser()
+    if (auth?.user) {
+      const profile = await loadProfile(auth.user.id)
+      if (isSuperAdmin(profile)) {
+        return { ok: false, redirect: { destination: '/admin', permanent: false } }
+      }
+    }
+    const current = ctx.resolvedUrl && ctx.resolvedUrl !== SUITE_HOME_PATH ? ctx.resolvedUrl.split('?')[0] : undefined
+    return { ok: false, redirect: { destination: loginPath(current), permanent: false } }
   }
 
   if (options.module && !context.tenant.modules.includes(options.module)) {

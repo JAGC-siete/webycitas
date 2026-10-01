@@ -18,9 +18,9 @@ describe('operador de Webycitas', () => {
   })
 
   it('el login solo acepta volver al panel de Webycitas', () => {
-    assert.equal(opsAdminLoginPath('/admin/sites'), '/admin/login?next=%2Fadmin%2Fsites')
-    assert.equal(opsAdminLoginPath('/app/mercado/fichas'), '/admin/login')
-    assert.equal(opsAdminLoginPath('/admin/login'), '/admin/login')
+    assert.equal(opsAdminLoginPath('/admin/sites'), '/app/login?redirect=%2Fadmin%2Fsites')
+    assert.equal(opsAdminLoginPath('/app/mercado/fichas'), '/app/login?redirect=%2Fadmin')
+    assert.equal(opsAdminLoginPath('/admin/login'), '/app/login?redirect=%2Fadmin')
     assert.equal(isOpsAdminPath(OPS_ADMIN_PREFIX), true)
     assert.equal(isOpsAdminPath(OPS_ADMIN_SITES_PATH), true)
     assert.equal(isOpsAdminPath(OPS_ADMIN_INQUIRIES_PATH), true)

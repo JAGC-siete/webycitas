@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { signOutClient } from '../../lib/auth/client-session'
 import {
   OPS_ADMIN_INQUIRIES_PATH,
-  OPS_ADMIN_LOGOUT_API_PATH,
   OPS_ADMIN_PREFIX,
   OPS_ADMIN_SITES_PATH,
 } from '../../lib/ops/paths'
@@ -18,8 +18,8 @@ export default function OpsShell({
   const router = useRouter()
 
   async function logout() {
-    await fetch(OPS_ADMIN_LOGOUT_API_PATH, { method: 'POST', credentials: 'include' })
-    void router.push('/admin/login')
+    await signOutClient()
+    void router.push('/app/login?redirect=/admin')
   }
 
   return (

@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { z } from 'zod'
-import { requireOpsAdminApi } from '../../../../lib/ops/admin-auth'
+import { requireSuperAdmin } from '../../../../lib/auth/api-auth'
 import { createAdminClient } from '../../../../lib/supabase/admin'
 
 const LEAD_COLUMNS =
@@ -12,7 +12,7 @@ const patchSchema = z.object({
 })
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const operator = requireOpsAdminApi(req, res)
+  const operator = await requireSuperAdmin(req, res, req.method === 'PATCH' ? 'leads_patch' : 'leads_list')
   if (!operator) return
 
   try {

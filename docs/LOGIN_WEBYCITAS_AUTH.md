@@ -178,8 +178,8 @@ Fuera de alcance:
 
 ## Todos de implementación
 
-- [ ] Migración `user_profiles` + `user_sessions` + RPCs
-- [ ] `POST /api/auth/login` (rate limit, signInWithPassword, gate por role, claim de lead, user_sessions)
-- [ ] `pages/app/login.tsx` + forgot-password + update-password; `/admin/login` redirige
-- [ ] `requireSuperAdmin` en APIs `/admin/ops`; `requireSuitePage` para `/app`; logout + heartbeat
-- [ ] Script seed super_admin; home stub `/app`; README y env; retiro HMAC Webycitas
+- [x] Migración `user_profiles` + `user_sessions` + RPCs
+- [x] `POST /api/auth/login` (rate limit, signInWithPassword, gate por role, claim de lead, user_sessions)
+- [x] `pages/app/login.tsx` + forgot-password + update-password; `/admin/login` redirige
+- [x] `requireSuperAdmin` en APIs `/admin/ops`; `requireSuitePage` para `/app`; logout + heartbeat
+- [x] Script seed super_admin; home stub `/app`; README y env; retiro HMAC Webycitas

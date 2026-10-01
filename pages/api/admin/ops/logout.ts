@@ -7,5 +7,5 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(405).json({ error: 'Método no permitido' })
   }
   opsAdminClearCookie(res)
-  return res.status(200).json({ ok: true })
+  return res.status(200).json({ ok: true, next: '/api/auth/logout' })
 }
