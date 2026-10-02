@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { Button } from '../ui/button'
+import { trackCTAClick } from '../../lib/analytics/googleAds'
+import { APP_LOGIN_PATH } from '../../lib/ops/paths'
 import { siteAbsoluteUrl } from '../../lib/site'
 
 export default function MagnetChrome({
@@ -24,6 +26,7 @@ export default function MagnetChrome({
   const canonical = siteAbsoluteUrl(canonicalPath)
 
   function scrollToForm() {
+    trackCTAClick(ctaLabel, 'header')
     document.getElementById('solicitud')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
@@ -49,14 +52,24 @@ export default function MagnetChrome({
           <Link href="/" className="text-sm font-semibold tracking-wide text-white">
             Webycitas
           </Link>
-          <Button
-            type="button"
-            size="sm"
-            className="btn-shiny min-h-[40px] bg-green-600 px-4 font-semibold hover:bg-green-700"
-            onClick={scrollToForm}
-          >
-            {ctaLabel}
-          </Button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button asChild variant="outline" size="sm" className="min-h-[40px] px-3 sm:px-4">
+              <Link
+                href={APP_LOGIN_PATH}
+                onClick={() => trackCTAClick('iniciar_sesion', 'header')}
+              >
+                Iniciar sesión
+              </Link>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="btn-shiny min-h-[40px] bg-green-600 px-4 font-semibold hover:bg-green-700"
+              onClick={scrollToForm}
+            >
+              {ctaLabel}
+            </Button>
+          </div>
         </div>
       </header>
       <main className="flex flex-col">{children}</main>

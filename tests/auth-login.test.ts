@@ -1,5 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { normalizeEmail, normalizePassword } from '../lib/auth/credentials'
 import {
   canLoginToApp,
@@ -46,6 +48,12 @@ describe('login unificado Webycitas', () => {
     assert.equal(opsAdminLoginPath('/admin/sites'), '/app/login?redirect=%2Fadmin%2Fsites')
     assert.equal(opsAdminLoginPath('/app/mercado/fichas'), '/app/login?redirect=%2Fadmin')
     assert.equal(opsAdminLoginPath('/admin/login'), '/app/login?redirect=%2Fadmin')
+  })
+
+  it('la landing magnet enlaza al login unificado (paridad CISU MainHeader)', () => {
+    const chrome = readFileSync(join(process.cwd(), 'components/magnet/MagnetChrome.tsx'), 'utf8')
+    assert.ok(chrome.includes('APP_LOGIN_PATH'))
+    assert.ok(chrome.includes('Iniciar sesión'))
   })
 
   it('rate limit por clave IP y IP+email', () => {
