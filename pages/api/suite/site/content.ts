@@ -3,6 +3,9 @@ import { z } from 'zod'
 import { requireSuiteApi } from '../../../../lib/suite/tenant'
 import { landingPageContentSchema } from '../../../../lib/landings/page-schema'
 
+const SITE_EDITOR_COLUMNS =
+  'id, slug, title, status, template_type, content_json, lead_notify_email, published_at'
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const ctx = await requireSuiteApi(req, res, { module: 'sitio' })
   if (!ctx) return
@@ -13,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'GET') {
       const { data, error } = await ctx.supabase
         .from('sites')
-        .select('id, slug, title, status, content_json, lead_notify_email, published_at')
+        .select(SITE_EDITOR_COLUMNS)
         .eq('id', siteId)
         .maybeSingle()
       if (error) throw error
@@ -45,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .from('sites')
         .update(patch)
         .eq('id', siteId)
-        .select('id, slug, title, status, content_json, lead_notify_email, published_at')
+        .select(SITE_EDITOR_COLUMNS)
         .maybeSingle()
       if (error) throw error
       return res.status(200).json({ site: data })

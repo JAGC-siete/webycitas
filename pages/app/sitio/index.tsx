@@ -1,20 +1,24 @@
 import { useCallback, useEffect, useState } from 'react'
 import Head from 'next/head'
-import Link from 'next/link'
 import { useRouter } from 'next/router'
 import type { GetServerSideProps } from 'next'
+import { Loader2 } from 'lucide-react'
+import LandingSplitEditor from '../../../components/landings/editor/LandingSplitEditor'
 import SuiteShell from '../../../components/suite/SuiteShell'
+import { Button } from '../../../components/ui/button'
 import { suiteFetch } from '../../../lib/auth/client-session'
-import { requireSuitePage, tenantProps, type SuiteTenant } from '../../../lib/suite/tenant'
-import {
-  SUITE_SERVICES_API,
-  SUITE_SITE_CONTENT_API,
-  SUITE_SITE_PUBLISH_API,
-  SUITE_STAFF_API,
-} from '../../../lib/suite/paths'
+import { suiteEditorFormSchema } from '../../../lib/landings/editor-form'
+import type { LandingEditRecord, SaveLandingDraftInput } from '../../../lib/landings/editor-types'
+import { SUITE_SERVICES_API } from '../../../lib/suite/paths'
 import { formatLempirasFromCents } from '../../../lib/suite/schemas'
+import {
+  fetchSuiteSite,
+  publishSuiteSite,
+  saveSuiteSite,
+} from '../../../lib/suite/site-editor-api'
+import { requireSuitePage, tenantProps, type SuiteTenant } from '../../../lib/suite/tenant'
 
-type Tab = 'servicios' | 'negocio' | 'galeria' | 'equipo'
+type Tab = 'pagina' | 'servicios'
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const auth = await requireSuitePage(ctx, { module: 'sitio' })
@@ -22,65 +26,88 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   return { props: tenantProps(auth.context.tenant) }
 }
 
-export default function SitioPage({ tenant }: { tenant: SuiteTenant }) {
-  const router = useRouter()
-  const [tab, setTab] = useState<Tab>('servicios')
-  const [title, setTitle] = useState('')
-  const [notifyEmail, setNotifyEmail] = useState('')
-  const [whatsapp, setWhatsapp] = useState('')
-  const [phone, setPhone] = useState('')
-  const [address, setAddress] = useState('')
-  const [content, setContent] = useState<Record<string, unknown> | null>(null)
-  const [slug, setSlug] = useState('')
+function SuitePageEditor() {
+  const [initial, setInitial] = useState<LandingEditRecord | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      try {
+        const { landing } = await fetchSuiteSite()
+        if (active) setInitial(landing)
+      } catch (err: unknown) {
+        if (active) {
+          setError(err instanceof Error ? err.message : 'No se pudo cargar el sitio')
+        }
+      } finally {
+        if (active) setLoading(false)
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const onSave = useCallback(async (input: SaveLandingDraftInput) => {
+    const { landing } = await saveSuiteSite(input)
+    setInitial(landing)
+    return landing
+  }, [])
+
+  const onPublish = useCallback(
+    async (action: 'publish' | 'unpublish') => publishSuiteSite(action),
+    []
+  )
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center gap-3 text-gray-300">
+        <Loader2 className="h-5 w-5 animate-spin text-emerald-400" />
+        <span className="text-sm font-medium">Cargando el editor…</span>
+      </div>
+    )
+  }
+
+  if (!initial) {
+    return <p className="px-4 py-8 text-sm text-red-400">{error ?? 'Sitio no encontrado'}</p>
+  }
+
+  return (
+    <LandingSplitEditor
+      landingId={initial.id}
+      initial={initial}
+      formSchema={suiteEditorFormSchema}
+      slugEditable={false}
+      canUnpublish
+      onSave={onSave}
+      onPublish={onPublish}
+    />
+  )
+}
+
+function ServicesPanel() {
   const [services, setServices] = useState<
     { id: string; name: string; price_cents: number; duration_min: number; is_active: boolean }[]
   >([])
-  const [staff, setStaff] = useState<{ id: string; name: string; bio: string | null }[]>([])
   const [svcForm, setSvcForm] = useState({ name: '', price: '150', duration: '30' })
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-
-  useEffect(() => {
-    const raw = router.query.tab
-    if (raw === 'negocio' || raw === 'galeria' || raw === 'equipo' || raw === 'servicios') setTab(raw)
-  }, [router.query.tab])
+  const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
-    const [siteRes, svcRes, staffRes] = await Promise.all([
-      suiteFetch(SUITE_SITE_CONTENT_API),
-      suiteFetch(SUITE_SERVICES_API),
-      suiteFetch(SUITE_STAFF_API).catch(() => null),
-    ])
-    const siteBody = (await siteRes.json()) as {
-      site?: {
-        title: string
-        slug: string
-        lead_notify_email: string | null
-        content_json: Record<string, unknown>
-      }
-      error?: string
-    }
-    if (!siteRes.ok) {
-      setError(siteBody.error || 'No se pudo cargar el sitio')
-      return
-    }
-    if (siteBody.site) {
-      setTitle(siteBody.site.title)
-      setSlug(siteBody.site.slug)
-      setNotifyEmail(siteBody.site.lead_notify_email || '')
-      setContent(siteBody.site.content_json)
-      const business = (siteBody.site.content_json as { business?: Record<string, string> }).business
-      if (business) {
-        setWhatsapp(business.whatsapp || '')
-        setPhone(business.phone || '')
-        setAddress(business.address || '')
-      }
-    }
-    const svcBody = (await svcRes.json()) as { services?: typeof services }
-    setServices(svcBody.services ?? [])
-    if (staffRes && staffRes.ok) {
-      const staffBody = (await staffRes.json()) as { staff?: typeof staff }
-      setStaff(staffBody.staff ?? [])
+    setLoading(true)
+    try {
+      const res = await suiteFetch(SUITE_SERVICES_API)
+      const body = (await res.json()) as { services?: typeof services; error?: string }
+      if (!res.ok) throw new Error(body.error || 'No se pudieron cargar los servicios')
+      setServices(body.services ?? [])
+      setError(null)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudieron cargar los servicios')
+    } finally {
+      setLoading(false)
     }
   }, [])
 
@@ -88,37 +115,8 @@ export default function SitioPage({ tenant }: { tenant: SuiteTenant }) {
     void load()
   }, [load])
 
-  async function saveBusiness() {
-    if (!content) return
-    const next = structuredClone(content) as {
-      business?: Record<string, string>
-      blocks?: { kind: string; rows?: { label: string; value: string }[] }[]
-    }
-    next.business = {
-      ...(next.business || {}),
-      name: tenant.businessName,
-      whatsapp: whatsapp,
-      phone: phone,
-      address: address,
-    }
-    const res = await suiteFetch(SUITE_SITE_CONTENT_API, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        title,
-        lead_notify_email: notifyEmail || null,
-        content_json: next,
-      }),
-    })
-    const body = (await res.json()) as { error?: string }
-    if (!res.ok) {
-      setError(body.error || 'No se pudo guardar')
-      return
-    }
-    setNotice('Negocio actualizado')
-    setContent(next as Record<string, unknown>)
-  }
-
   async function addService() {
+    setNotice(null)
     const price_cents = Math.round(Number(svcForm.price) * 100)
     const res = await suiteFetch(SUITE_SERVICES_API, {
       method: 'POST',
@@ -134,11 +132,12 @@ export default function SitioPage({ tenant }: { tenant: SuiteTenant }) {
       return
     }
     setSvcForm({ name: '', price: '150', duration: '30' })
-    setNotice('Servicio agregado')
+    setNotice('Servicio agregado. Al publicar se sincroniza en el menú de la página.')
     void load()
   }
 
   async function removeService(id: string) {
+    setNotice(null)
     const res = await suiteFetch(`${SUITE_SERVICES_API}?id=${id}`, { method: 'DELETE' })
     if (!res.ok) {
       const body = (await res.json()) as { error?: string }
@@ -148,20 +147,81 @@ export default function SitioPage({ tenant }: { tenant: SuiteTenant }) {
     void load()
   }
 
-  async function publish() {
-    const res = await suiteFetch(SUITE_SITE_PUBLISH_API, { method: 'POST', body: '{}' })
-    const body = (await res.json()) as { error?: string; preview?: string }
-    if (!res.ok) {
-      setError(body.error || 'No se pudo publicar')
-      return
-    }
-    setNotice(`Publicado. Vista: ${body.preview || `/p/${slug}`}`)
-  }
+  return (
+    <section className="mx-auto max-w-3xl space-y-4 px-4 py-6">
+      <div>
+        <h2 className="text-lg font-semibold">Servicios reservables</h2>
+        <p className="text-sm text-white/60">
+          Estos precios se inyectan en el bloque de ítems al publicar la página.
+        </p>
+      </div>
+      {notice ? <p className="text-sm text-emerald-300">{notice}</p> : null}
+      {error ? <p className="text-sm text-red-400">{error}</p> : null}
+      {loading ? <p className="text-sm text-white/60">Cargando…</p> : null}
+      <div className="flex flex-wrap gap-2">
+        <input
+          className="rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm"
+          placeholder="Nombre"
+          value={svcForm.name}
+          onChange={(e) => setSvcForm((f) => ({ ...f, name: e.target.value }))}
+        />
+        <input
+          className="w-24 rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm"
+          placeholder="Precio"
+          value={svcForm.price}
+          onChange={(e) => setSvcForm((f) => ({ ...f, price: e.target.value }))}
+        />
+        <input
+          className="w-24 rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm"
+          placeholder="Min"
+          value={svcForm.duration}
+          onChange={(e) => setSvcForm((f) => ({ ...f, duration: e.target.value }))}
+        />
+        <Button size="sm" type="button" onClick={() => void addService()}>
+          Agregar
+        </Button>
+      </div>
+      <ul className="space-y-2">
+        {services.map((s) => (
+          <li
+            key={s.id}
+            className="flex items-center justify-between rounded border border-white/10 px-3 py-2 text-sm"
+          >
+            <span>
+              {s.name} · {formatLempirasFromCents(s.price_cents)} · {s.duration_min} min
+            </span>
+            <button type="button" className="text-red-300 underline" onClick={() => void removeService(s.id)}>
+              Eliminar
+            </button>
+          </li>
+        ))}
+        {!loading && services.length === 0 ? (
+          <li className="text-sm text-white/50">Sin servicios todavía.</li>
+        ) : null}
+      </ul>
+    </section>
+  )
+}
 
-  const gallery =
-    ((content as { blocks?: { kind: string; images?: { url: string; alt?: string }[] }[] } | null)?.blocks || []).find(
-      (b) => b.kind === 'gallery'
-    )?.images || []
+export default function SitioPage({ tenant }: { tenant: SuiteTenant }) {
+  const router = useRouter()
+  const hasBooking = tenant.modules.includes('reservas')
+  const [tab, setTab] = useState<Tab>('pagina')
+
+  useEffect(() => {
+    const raw = router.query.tab
+    if (raw === 'servicios' && hasBooking) setTab('servicios')
+    if (raw === 'pagina') setTab('pagina')
+  }, [router.query.tab, hasBooking])
+
+  function selectTab(next: Tab) {
+    setTab(next)
+    void router.replace(
+      { pathname: router.pathname, query: next === 'pagina' ? {} : { tab: next } },
+      undefined,
+      { shallow: true }
+    )
+  }
 
   return (
     <SuiteShell tenant={tenant}>
@@ -169,144 +229,25 @@ export default function SitioPage({ tenant }: { tenant: SuiteTenant }) {
         <title>Mi sitio · {tenant.businessName}</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
-      <div className="space-y-4 px-4 py-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-xl font-semibold">Mi sitio</h1>
-          <div className="flex gap-3 text-sm">
-            {slug ? (
-              <Link href={`/p/${slug}`} className="text-sky-200 hover:underline" target="_blank">
-                Vista previa
-              </Link>
-            ) : null}
-            <button type="button" className="rounded bg-emerald-500/30 px-3 py-1" onClick={() => void publish()}>
-              Publicar
-            </button>
-          </div>
+      {hasBooking ? (
+        <div className="flex flex-wrap gap-2 border-b border-white/10 px-4 pt-4 text-sm">
+          <button
+            type="button"
+            className={`rounded px-3 py-1 ${tab === 'pagina' ? 'bg-sky-500/30' : 'bg-white/5'}`}
+            onClick={() => selectTab('pagina')}
+          >
+            Página
+          </button>
+          <button
+            type="button"
+            className={`rounded px-3 py-1 ${tab === 'servicios' ? 'bg-sky-500/30' : 'bg-white/5'}`}
+            onClick={() => selectTab('servicios')}
+          >
+            Servicios
+          </button>
         </div>
-
-        <div className="flex flex-wrap gap-2 text-sm">
-          {(['servicios', 'negocio', 'galeria', 'equipo'] as Tab[]).map((key) => (
-            <button
-              key={key}
-              type="button"
-              className={`rounded px-3 py-1 ${tab === key ? 'bg-sky-500/30' : 'bg-white/5'}`}
-              onClick={() => setTab(key)}
-            >
-              {key}
-            </button>
-          ))}
-        </div>
-
-        {notice ? <p className="text-sm text-emerald-300">{notice}</p> : null}
-        {error ? <p className="text-sm text-red-400">{error}</p> : null}
-
-        {tab === 'servicios' ? (
-          <section className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              <input
-                className="rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm"
-                placeholder="Nombre"
-                value={svcForm.name}
-                onChange={(e) => setSvcForm((f) => ({ ...f, name: e.target.value }))}
-              />
-              <input
-                className="w-24 rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm"
-                placeholder="Precio"
-                value={svcForm.price}
-                onChange={(e) => setSvcForm((f) => ({ ...f, price: e.target.value }))}
-              />
-              <input
-                className="w-24 rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm"
-                placeholder="Min"
-                value={svcForm.duration}
-                onChange={(e) => setSvcForm((f) => ({ ...f, duration: e.target.value }))}
-              />
-              <button type="button" className="rounded bg-sky-500/30 px-3 py-1 text-sm" onClick={() => void addService()}>
-                Agregar
-              </button>
-            </div>
-            <ul className="space-y-2">
-              {services.map((s) => (
-                <li key={s.id} className="flex items-center justify-between rounded border border-white/10 px-3 py-2 text-sm">
-                  <span>
-                    {s.name} · {formatLempirasFromCents(s.price_cents)} · {s.duration_min} min
-                  </span>
-                  <button type="button" className="text-red-300 underline" onClick={() => void removeService(s.id)}>
-                    Eliminar
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
-        {tab === 'negocio' ? (
-          <section className="space-y-3 max-w-md">
-            <Field label="Título del sitio" value={title} onChange={setTitle} />
-            <Field label="WhatsApp receptor" value={whatsapp} onChange={setWhatsapp} />
-            <Field label="Teléfono" value={phone} onChange={setPhone} />
-            <Field label="Dirección" value={address} onChange={setAddress} />
-            <Field label="Email de avisos" value={notifyEmail} onChange={setNotifyEmail} />
-            <button type="button" className="rounded bg-sky-500/30 px-3 py-2 text-sm" onClick={() => void saveBusiness()}>
-              Guardar
-            </button>
-          </section>
-        ) : null}
-
-        {tab === 'galeria' ? (
-          <section className="space-y-2">
-            <p className="text-sm text-white/60">
-              Las imágenes vienen del borrador del site. Subí URLs https en el bloque gallery del contenido (upload
-              Storage en una siguiente iteración).
-            </p>
-            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {gallery.map((img, idx) => (
-                <li key={`${img.url}-${idx}`} className="overflow-hidden rounded border border-white/10">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img.url} alt={img.alt || ''} className="h-28 w-full object-cover" />
-                </li>
-              ))}
-              {gallery.length === 0 ? <li className="text-sm text-white/50">Sin fotos todavía.</li> : null}
-            </ul>
-          </section>
-        ) : null}
-
-        {tab === 'equipo' ? (
-          <section className="space-y-2">
-            <p className="text-sm text-white/60">Bios del equipo (vinculadas a Agenda → Equipo).</p>
-            <ul className="space-y-2">
-              {staff.map((member) => (
-                <li key={member.id} className="rounded border border-white/10 px-3 py-2 text-sm">
-                  <p className="font-medium">{member.name}</p>
-                  <p className="text-white/50">{member.bio || 'Sin bio'}</p>
-                </li>
-              ))}
-              {staff.length === 0 ? <li className="text-sm text-white/50">Agregá miembros en Agenda → Equipo.</li> : null}
-            </ul>
-          </section>
-        ) : null}
-      </div>
+      ) : null}
+      {tab === 'pagina' || !hasBooking ? <SuitePageEditor /> : <ServicesPanel />}
     </SuiteShell>
-  )
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-}) {
-  return (
-    <label className="block text-xs text-white/60">
-      {label}
-      <input
-        className="mt-1 w-full rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm text-white"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </label>
   )
 }

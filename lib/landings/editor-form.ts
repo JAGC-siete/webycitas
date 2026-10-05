@@ -44,15 +44,31 @@ export function prepareEditorFormValues(value: unknown): unknown {
   return scrubEmptySecondaryCtas(cleaned as LandingPageContentInput)
 }
 
+const notifyEmailField = z
+  .union([z.string().trim().email(), z.literal('')])
+  .optional()
+  .transform((v) => (v === '' || v === undefined ? undefined : v))
+
+const editorMetaFields = {
+  _title: z.string().trim().min(2).max(120),
+  _notifyEmail: notifyEmailField,
+} as const
+
+/** Ops: puede renombrar slug. */
 export const editorFormSchema = z.preprocess(
   prepareEditorFormValues,
   landingPageContentSchema.extend({
-    _title: z.string().trim().min(2).max(120),
+    ...editorMetaFields,
     _slug: landingSlugSchema,
-    _notifyEmail: z
-      .union([z.string().trim().email(), z.literal('')])
-      .optional()
-      .transform((v) => (v === '' || v === undefined ? undefined : v)),
+  })
+)
+
+/** Suite: slug solo lectura (no se valida como renombre). */
+export const suiteEditorFormSchema = z.preprocess(
+  prepareEditorFormValues,
+  landingPageContentSchema.extend({
+    ...editorMetaFields,
+    _slug: z.string().optional(),
   })
 )
 

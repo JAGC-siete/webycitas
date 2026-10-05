@@ -7,28 +7,13 @@ import {
   landingAdminApiPath,
   landingAdminPublishApiPath,
 } from './paths'
-import type { LandingPageContent, LandingPageStatus, LandingTemplateKey } from '../../types/landing'
+import type {
+  LandingEditRecord,
+  PublishLandingResult,
+  SaveLandingDraftInput,
+} from './editor-types'
 
-export interface LandingEditRecord {
-  id: string
-  lead_id: string
-  title: string
-  slug: string
-  template_type: LandingTemplateKey
-  status: LandingPageStatus
-  content_json: unknown
-  lead_notify_email: string | null
-  published_at: string | null
-  created_at: string
-  updated_at: string
-}
-
-export interface SaveLandingInput {
-  title: string
-  slug: string
-  leadNotifyEmail: string | null
-  content: LandingPageContent
-}
+export type { LandingEditRecord, SaveLandingDraftInput }
 
 async function readError(res: Response, fallback: string): Promise<string> {
   const body = (await res.json().catch(() => ({}))) as { error?: string }
@@ -41,7 +26,10 @@ export async function fetchLanding(id: string): Promise<{ landing: LandingEditRe
   return (await res.json()) as { landing: LandingEditRecord }
 }
 
-export async function saveLanding(id: string, input: SaveLandingInput): Promise<{ landing: LandingEditRecord }> {
+export async function saveLanding(
+  id: string,
+  input: SaveLandingDraftInput
+): Promise<{ landing: LandingEditRecord }> {
   const res = await opsFetch(landingAdminApiPath(id), {
     method: 'PATCH',
     body: JSON.stringify({
@@ -58,14 +46,14 @@ export async function saveLanding(id: string, input: SaveLandingInput): Promise<
 export async function publishLanding(
   id: string,
   action: 'publish' | 'unpublish'
-): Promise<{ status: LandingPageStatus; published_at: string | null }> {
+): Promise<PublishLandingResult> {
   const res = await opsFetch(landingAdminPublishApiPath(id), {
     method: 'POST',
     body: JSON.stringify({ action }),
   })
   if (!res.ok) throw new Error(await readError(res, 'No se pudo cambiar la publicación'))
   const body = (await res.json()) as {
-    site?: { status: LandingPageStatus; published_at: string | null }
+    site?: PublishLandingResult
   }
   if (!body.site) throw new Error('Respuesta inválida al publicar')
   return { status: body.site.status, published_at: body.site.published_at }

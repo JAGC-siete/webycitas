@@ -5,6 +5,7 @@ import {
   editorFormSchema,
   emptyStringsToUndefined,
   prepareEditorFormValues,
+  suiteEditorFormSchema,
 } from '../lib/landings/editor-form'
 import {
   LANDINGS_ADMIN_API_PREFIX,
@@ -75,5 +76,17 @@ describe('landing editor ops', () => {
       _notifyEmail: '',
     })
     assert.equal(parsed.success, false)
+  })
+
+  it('suiteEditorFormSchema no exige slug editable', () => {
+    const base = RETAIL_VISIT_TEMPLATE_CONTENT.papeleria
+    const parsed = suiteEditorFormSchema.safeParse({
+      ...base,
+      _title: 'Mi negocio',
+      _notifyEmail: '',
+    })
+    assert.equal(parsed.success, true)
+    if (!parsed.success) return
+    assert.equal(parsed.data._title, 'Mi negocio')
   })
 })
