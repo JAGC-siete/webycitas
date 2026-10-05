@@ -84,9 +84,11 @@ describe('inventario de site', () => {
       precio: '250.50',
       stock_actual: 1,
       stock_minimo: 1,
+      image_url: 'https://cdn.example.com/col.png',
     })
     assert.equal(view.low, true)
     assert.equal(view.precio, 250.5)
+    assert.equal(view.imageUrl, 'https://cdn.example.com/col.png')
     assert.match(formatInventoryPrice(250.5), /^L\. 250[.,]50$/)
   })
 })

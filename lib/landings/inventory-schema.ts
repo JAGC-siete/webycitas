@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod'
+import { landingUrlSchema } from './page-schema'
 
 const nombre = z
   .string()
@@ -24,6 +25,10 @@ const sku = z
 const precio = z.number().finite().min(0, 'El precio no puede ser negativo.').max(99_999_999)
 const stockMinimo = z.number().int().min(0, 'El mínimo no puede ser negativo.')
 const stockInicial = z.number().int().min(0).optional()
+const imageUrl = z.preprocess(
+  (value) => (typeof value === 'string' && value.trim() === '' ? null : value),
+  landingUrlSchema.nullable().optional()
+)
 
 export const createInventoryProductSchema = z.object({
   nombre,
@@ -31,6 +36,7 @@ export const createInventoryProductSchema = z.object({
   precio,
   stockMinimo,
   stockInicial,
+  imageUrl,
 })
 
 export const updateInventoryProductSchema = z
@@ -39,6 +45,7 @@ export const updateInventoryProductSchema = z
     sku: sku.optional(),
     precio: precio.optional(),
     stockMinimo: stockMinimo.optional(),
+    imageUrl,
   })
   .refine((value) => Object.keys(value).length > 0, { message: 'No hay cambios.' })
 

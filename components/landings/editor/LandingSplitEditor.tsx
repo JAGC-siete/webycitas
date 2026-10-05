@@ -428,6 +428,7 @@ export default function LandingSplitEditor({
             control={controls.control}
             register={controls.register}
             errors={errors}
+            siteId={landingId}
           />
         </div>
 

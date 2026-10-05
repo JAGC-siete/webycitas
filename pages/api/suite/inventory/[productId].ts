@@ -44,13 +44,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (parsed.data.sku !== undefined) patch.sku = parsed.data.sku
       if (parsed.data.precio !== undefined) patch.precio = parsed.data.precio
       if (parsed.data.stockMinimo !== undefined) patch.stock_minimo = parsed.data.stockMinimo
+      if (parsed.data.imageUrl !== undefined) patch.image_url = parsed.data.imageUrl
 
       const { data, error } = await ctx.supabase
         .from(PRODUCTS_TABLE)
         .update(patch)
         .eq('id', productId)
         .eq('site_id', siteId)
-        .select('id, nombre, sku, precio, stock_actual, stock_minimo')
+        .select('id, nombre, sku, precio, stock_actual, stock_minimo, image_url')
         .maybeSingle()
 
       if (error) {

@@ -8,7 +8,7 @@ import { toInventoryProductView, type InventoryProductRow, type InventoryProduct
 
 export const PRODUCTS_TABLE = 'products'
 
-const PRODUCT_COLUMNS = 'id, nombre, sku, precio, stock_actual, stock_minimo'
+const PRODUCT_COLUMNS = 'id, nombre, sku, precio, stock_actual, stock_minimo, image_url'
 
 export async function listInventoryProducts(
   supabase: SupabaseClient,

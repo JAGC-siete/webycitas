@@ -60,3 +60,5 @@ export const PUBLIC_LEAD_LIMIT = { windowMs: 10 * 60 * 1000, max: 6 }
 export const AUTH_LOGIN_IP_LIMIT = { windowMs: 15 * 60 * 1000, max: 40 }
 export const AUTH_LOGIN_IP_EMAIL_LIMIT = { windowMs: 15 * 60 * 1000, max: 8 }
 export const AUTH_FORGOT_LIMIT = { windowMs: 15 * 60 * 1000, max: 5 }
+/** Uploads autenticados de site-media (landing + inventario). */
+export const SUITE_MEDIA_UPLOAD_LIMIT = { windowMs: 15 * 60 * 1000, max: 30 }

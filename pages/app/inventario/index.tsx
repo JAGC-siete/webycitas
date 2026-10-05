@@ -117,6 +117,7 @@ export default function SuiteInventarioPage({ tenant }: { tenant: SuiteTenant })
           sku: draft.sku.trim(),
           precio,
           stockMinimo,
+          imageUrl: draft.imageUrl.trim() || null,
         })
         setProducts((current) => current.map((item) => (item.id === result.product.id ? result.product : item)))
       } else {
@@ -132,6 +133,7 @@ export default function SuiteInventarioPage({ tenant }: { tenant: SuiteTenant })
           precio,
           stockMinimo,
           stockInicial,
+          imageUrl: draft.imageUrl.trim() || null,
         })
         if (result.product) {
           setProducts((current) =>
@@ -221,11 +223,12 @@ export default function SuiteInventarioPage({ tenant }: { tenant: SuiteTenant })
           </CardContent>
         </Card>
 
-        {dialog ? (
+        {dialog && tenant.site ? (
           <InventoryProductDialog
             key={dialog.product?.id ?? 'new'}
             mode={dialog.mode}
             product={dialog.product}
+            siteId={tenant.site.id}
             saving={saving}
             error={dialogError}
             onClose={() => setDialog(null)}

@@ -11,6 +11,7 @@ export interface InventoryProductView {
   precio: number
   stockActual: number
   stockMinimo: number
+  imageUrl: string | null
   low: boolean
 }
 
@@ -26,6 +27,7 @@ export interface InventoryProductRow {
   precio: number | string
   stock_actual: number
   stock_minimo: number
+  image_url?: string | null
 }
 
 export function toInventoryProductView(row: InventoryProductRow): InventoryProductView {
@@ -37,6 +39,7 @@ export function toInventoryProductView(row: InventoryProductRow): InventoryProdu
     precio,
     stockActual: row.stock_actual,
     stockMinimo: row.stock_minimo,
+    imageUrl: row.image_url?.trim() ? row.image_url.trim() : null,
     low: row.stock_actual <= row.stock_minimo,
   }
 }

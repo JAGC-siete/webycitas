@@ -5,6 +5,7 @@
 
 import { useEffect, useState, type DragEvent, type ReactNode } from 'react'
 import {
+  useController,
   useFieldArray,
   useWatch,
   type Control,
@@ -16,9 +17,11 @@ import {
 } from 'react-hook-form'
 import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react'
 import { cn } from '../../../lib/utils'
+import type { SiteMediaKind } from '../../../lib/suite/media'
 import { Card, CardContent, CardHeader } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
+import ImageUploadField from '../../suite/ImageUploadField'
 import type { LandingBlock, LandingPageContentInput } from '../../../types/landing'
 
 export function fieldErrorMessage(errors: FieldErrors | undefined, path: string): string | undefined {
@@ -152,6 +155,32 @@ function CheckboxField({
   )
 }
 
+function FormImageField({
+  control,
+  name,
+  siteId,
+  kind,
+  label = 'Imagen',
+}: {
+  control: Control<EditorFormValues>
+  name: FieldPath<EditorFormValues>
+  siteId: string
+  kind: SiteMediaKind
+  label?: string
+}) {
+  const { field } = useController({ control, name })
+  return (
+    <ImageUploadField
+      value={typeof field.value === 'string' ? field.value : ''}
+      onChange={field.onChange}
+      siteId={siteId}
+      kind={kind}
+      label={label}
+      inputClassName={fieldClass}
+    />
+  )
+}
+
 function AccordionSection({
   title,
   open,
@@ -274,11 +303,13 @@ function BlockFields({
   kind,
   register,
   control,
+  siteId,
 }: {
   index: number
   kind: LandingBlock['kind']
   register: UseFormRegister<EditorFormValues>
   control: Control<EditorFormValues>
+  siteId: string
 }) {
   const base = (
     <>
@@ -313,8 +344,14 @@ function BlockFields({
           <Field label="Subheadline">
             <TextArea register={register} name={`blocks.${index}.subheadline`} />
           </Field>
-          <Field label="Image URL">
-            <Input {...register(`blocks.${index}.imageUrl`)} className={fieldClass} />
+          <Field label="Imagen">
+            <FormImageField
+              control={control}
+              name={`blocks.${index}.imageUrl`}
+              siteId={siteId}
+              kind="hero"
+              label="hero"
+            />
           </Field>
           <Field label="Placeholder búsqueda">
             <Input {...register(`blocks.${index}.searchPlaceholder`)} className={fieldClass} />
@@ -367,8 +404,14 @@ function BlockFields({
                 <Field label="Precio">
                   <Input {...register(`blocks.${index}.items.${i}.priceLabel`)} className={fieldClass} />
                 </Field>
-                <Field label="Image URL">
-                  <Input {...register(`blocks.${index}.items.${i}.imageUrl`)} className={fieldClass} />
+                <Field label="Imagen">
+                  <FormImageField
+                    control={control}
+                    name={`blocks.${index}.items.${i}.imageUrl`}
+                    siteId={siteId}
+                    kind="item"
+                    label="ítem"
+                  />
                 </Field>
                 <Field label="ID inventario (opcional)">
                   <Input
@@ -396,8 +439,14 @@ function BlockFields({
             label="Imágenes"
             renderItem={(i) => (
               <>
-                <Field label="URL">
-                  <Input {...register(`blocks.${index}.images.${i}.url`)} className={fieldClass} />
+                <Field label="Imagen">
+                  <FormImageField
+                    control={control}
+                    name={`blocks.${index}.images.${i}.url`}
+                    siteId={siteId}
+                    kind="gallery"
+                    label="galería"
+                  />
                 </Field>
                 <Field label="Alt">
                   <Input {...register(`blocks.${index}.images.${i}.alt`)} className={fieldClass} />
@@ -642,8 +691,14 @@ function BlockFields({
                 <Field label="Bio">
                   <TextArea register={register} name={`blocks.${index}.items.${i}.bio`} />
                 </Field>
-                <Field label="Image URL">
-                  <Input {...register(`blocks.${index}.items.${i}.imageUrl`)} className={fieldClass} />
+                <Field label="Imagen">
+                  <FormImageField
+                    control={control}
+                    name={`blocks.${index}.items.${i}.imageUrl`}
+                    siteId={siteId}
+                    kind="team"
+                    label="equipo"
+                  />
                 </Field>
               </>
             )}
@@ -688,8 +743,14 @@ function BlockFields({
                 <Field label="Hint">
                   <Input {...register(`blocks.${index}.items.${i}.hintLabel`)} className={fieldClass} />
                 </Field>
-                <Field label="Image URL">
-                  <Input {...register(`blocks.${index}.items.${i}.imageUrl`)} className={fieldClass} />
+                <Field label="Imagen">
+                  <FormImageField
+                    control={control}
+                    name={`blocks.${index}.items.${i}.imageUrl`}
+                    siteId={siteId}
+                    kind="item"
+                    label="área"
+                  />
                 </Field>
                 <Field label="Image alt">
                   <Input {...register(`blocks.${index}.items.${i}.imageAlt`)} className={fieldClass} />
@@ -871,10 +932,12 @@ export function BlockAccordion({
   control,
   register,
   errors,
+  siteId,
 }: {
   control: Control<EditorFormValues>
   register: UseFormRegister<EditorFormValues>
   errors?: FieldErrors<EditorFormValues>
+  siteId: string
 }) {
   const { fields, move } = useFieldArray({
     control,
@@ -1056,6 +1119,7 @@ export function BlockAccordion({
                   kind={(block?.kind ?? kind) as LandingBlock['kind']}
                   register={register}
                   control={control}
+                  siteId={siteId}
                 />
               </CardContent>
             ) : null}

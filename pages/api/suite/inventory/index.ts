@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' })
       }
 
-      const { nombre, sku, precio, stockMinimo, stockInicial } = parsed.data
+      const { nombre, sku, precio, stockMinimo, stockInicial, imageUrl } = parsed.data
       const { data, error } = await ctx.supabase
         .from(PRODUCTS_TABLE)
         .insert({
@@ -46,6 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           sku,
           precio,
           stock_minimo: stockMinimo,
+          image_url: imageUrl ?? null,
         })
         .select('id')
         .single()

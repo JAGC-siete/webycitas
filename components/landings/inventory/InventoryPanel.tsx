@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
+import ImageUploadField from '../../suite/ImageUploadField'
 import { formatInventoryPrice, type InventoryProductView } from '../../../lib/landings/inventory'
 
 export function StockStepper({
@@ -64,6 +65,7 @@ export function InventoryTable({
       <table className="w-full text-left text-sm text-gray-200">
         <thead>
           <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-gray-400">
+            <th className="px-3 py-2 font-medium">Foto</th>
             <th className="px-3 py-2 font-medium">SKU</th>
             <th className="px-3 py-2 font-medium">Nombre</th>
             <th className="px-3 py-2 font-medium">Precio</th>
@@ -75,6 +77,18 @@ export function InventoryTable({
         <tbody>
           {products.map((product) => (
             <tr key={product.id} className="border-b border-white/5">
+              <td className="px-3 py-3">
+                {product.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={product.imageUrl}
+                    alt=""
+                    className="h-10 w-10 rounded-md border border-white/10 object-cover"
+                  />
+                ) : (
+                  <span className="inline-block h-10 w-10 rounded-md border border-dashed border-white/15" />
+                )}
+              </td>
               <td className="px-3 py-3 font-mono text-xs">{product.sku}</td>
               <td className="px-3 py-3">{product.nombre}</td>
               <td className="px-3 py-3 whitespace-nowrap">{formatInventoryPrice(product.precio)}</td>
@@ -113,6 +127,7 @@ export interface InventoryDraft {
   precio: string
   stockMinimo: string
   stockInicial: string
+  imageUrl: string
 }
 
 const EMPTY_DRAFT: InventoryDraft = {
@@ -121,11 +136,13 @@ const EMPTY_DRAFT: InventoryDraft = {
   precio: '',
   stockMinimo: '0',
   stockInicial: '',
+  imageUrl: '',
 }
 
 export function InventoryProductDialog({
   mode,
   product,
+  siteId,
   saving,
   error,
   onClose,
@@ -134,6 +151,7 @@ export function InventoryProductDialog({
 }: {
   mode: 'create' | 'edit'
   product: InventoryProductView | null
+  siteId: string
   saving: boolean
   error: string | null
   onClose: () => void
@@ -148,6 +166,7 @@ export function InventoryProductDialog({
           precio: String(product.precio),
           stockMinimo: String(product.stockMinimo),
           stockInicial: '',
+          imageUrl: product.imageUrl ?? '',
         }
       : EMPTY_DRAFT
   )
@@ -186,6 +205,17 @@ export function InventoryProductDialog({
             required
           />
         </label>
+        <div className="block text-sm text-white/80">
+          <span className="mb-1 block">Foto</span>
+          <ImageUploadField
+            value={draft.imageUrl}
+            onChange={(next) => setField('imageUrl', next)}
+            siteId={siteId}
+            kind="product"
+            label="producto"
+            inputClassName="input-glass h-auto shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm text-white/80">
             Precio
