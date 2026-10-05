@@ -1,14 +1,15 @@
 import type { AppProps } from 'next/app'
-import { Montserrat } from 'next/font/google'
+import localFont from 'next/font/local'
 import AuthHashRedirect from '../components/auth/AuthHashRedirect'
 import IdleSessionWarning from '../components/auth/IdleSessionWarning'
 import { cn } from '../lib/utils'
 import '../styles/globals.css'
 import '../styles/landing-liquid.css'
 
-const montserrat = Montserrat({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+/** Self-hosted: next/font/google falla en builds Docker sin acceso a fonts.googleapis.com. */
+const montserrat = localFont({
+  src: '../public/fonts/montserrat/montserrat-latin-wght-normal.woff2',
+  weight: '100 900',
   display: 'swap',
   variable: '--font-montserrat',
 })
