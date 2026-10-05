@@ -34,12 +34,12 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-mesh px-4">
       <Head>
         <title>Recuperar contraseña · Webycitas</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
-      <Card variant="glass" className="w-full max-w-md">
+      <Card variant="liquid" className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-lg text-white">Recuperar contraseña</CardTitle>
         </CardHeader>
@@ -50,18 +50,18 @@ export default function ForgotPasswordPage() {
             </p>
           ) : (
             <form onSubmit={(event) => void onSubmit(event)} className="space-y-4">
-              <label className="block text-sm text-gray-200">
+              <label className="block text-sm text-white/80">
                 Correo
                 <Input
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  className="mt-1 bg-white/10 text-white"
+                  className="input-glass mt-1 h-auto shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   autoComplete="username"
                 />
               </label>
-              {error ? <p className="text-sm text-red-400">{error}</p> : null}
-              <Button type="submit" disabled={busy}>
+              {error ? <p className="text-sm text-red-300">{error}</p> : null}
+              <Button type="submit" className="btn-shiny w-full" disabled={busy}>
                 {busy ? 'Enviando…' : 'Enviar enlace'}
               </Button>
             </form>

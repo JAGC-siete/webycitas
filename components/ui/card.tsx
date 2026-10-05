@@ -10,7 +10,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     const variants = {
       default: "bg-card text-card-foreground rounded-lg border shadow-sm",
       solid: "bg-white text-slate-900 rounded-lg border shadow-sm",
-      glass: "glass text-white",
+      glass: "glass text-white rounded-xl",
       liquid: "glass-modern text-white rounded-2xl",
     } as const
     return (

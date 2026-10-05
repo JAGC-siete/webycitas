@@ -73,7 +73,7 @@ export default function LandingsAdminIndexPage({ operatorEmail }: { operatorEmai
           <ul className="space-y-3">
             {rows.map((row) => (
               <li key={row.id}>
-                <Card variant="glass">
+                <Card variant="liquid">
                   <CardContent className="space-y-2 py-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-medium">{row.title}</p>

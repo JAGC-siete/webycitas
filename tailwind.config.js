@@ -39,6 +39,17 @@ module.exports = {
         lg: '16px',
         md: '12px',
       },
+      boxShadow: {
+        glass: '0 8px 30px rgba(0,0,0,0.20)',
+      },
+      backdropBlur: {
+        xs: '2px',
+        sm: '4px',
+        md: '8px',
+        lg: '12px',
+        xl: '16px',
+        '2xl': '24px',
+      },
     },
   },
   plugins: [],

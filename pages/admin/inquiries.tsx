@@ -64,7 +64,7 @@ export default function OpsInquiriesPage({ operatorEmail }: { operatorEmail: str
         <ul className="space-y-3">
           {rows.map((row) => (
             <li key={row.id}>
-              <Card variant="glass">
+              <Card variant="liquid">
                 <CardContent className="space-y-2 py-4">
                   <p className="font-medium">{row.full_name}</p>
                   <p className="text-sm text-white/70">

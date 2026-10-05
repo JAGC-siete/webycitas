@@ -169,7 +169,7 @@ export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string 
         <ul className="space-y-3">
           {rows.map((row) => (
             <li key={row.id}>
-              <Card variant="glass">
+              <Card variant="liquid">
                 <CardContent className="space-y-2 py-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-medium">{row.business_name}</p>
@@ -192,7 +192,7 @@ export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string 
                   <label className="block text-xs text-white/50">
                     Estado
                     <select
-                      className="mt-1 block rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm text-white"
+                      className="input-glass mt-1 block max-w-xs py-2 text-sm"
                       value={row.status}
                       disabled={savingId === row.id}
                       onChange={(event) => void patchStatus(row.id, event.target.value as LeadStatus)}
@@ -226,9 +226,9 @@ export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string 
 
 function MetricCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded border border-white/10 bg-slate-900/60 px-3 py-2">
+    <div className="glass-modern rounded-xl px-3 py-2.5">
       <p className="text-xs text-white/50">{label}</p>
-      <p className="text-lg font-semibold tabular-nums">{value}</p>
+      <p className="text-lg font-semibold tabular-nums text-cyan-300">{value}</p>
     </div>
   )
 }

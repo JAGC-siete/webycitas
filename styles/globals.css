@@ -23,6 +23,12 @@
   --landing-hero-to: #60a5fa;
   --lp-accent: #2563eb;
   --lp-primary: #0f172a;
+
+  /* Glass tokens (aligned with saas-proyecto) */
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --glass-blur: 14px;
+  --glass-radius: 16px;
 }
 
 * {
@@ -48,6 +54,24 @@ body {
 
 .landing-muted {
   color: var(--landing-ink-soft);
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--glass-radius);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
 }
 
 .input-glass {
@@ -77,7 +101,16 @@ body {
 }
 
 @supports not ((backdrop-filter: blur(1px))) {
+  .glass,
+  .glass-strong,
   .input-glass {
+    background: rgba(255, 255, 255, 0.18);
+  }
+}
+
+@media (max-width: 768px) {
+  .glass,
+  .glass-strong {
     background: rgba(255, 255, 255, 0.18);
   }
 }

@@ -100,7 +100,7 @@ export default function OpsUsersPage({
         <ul className="space-y-3">
           {rows.map((row) => (
             <li key={row.id}>
-              <Card variant="glass">
+              <Card variant="liquid">
                 <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
                   <div>
                     <p className="font-medium">{row.email || row.id}</p>
