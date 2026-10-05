@@ -39,9 +39,17 @@ describe('webycitas preview bridge', () => {
     assert.equal(content.meta.noindex, true)
   })
 
-  it('retail no admite booking', () => {
+  it('retail no admite booking; sí inventory/accounting', () => {
     assert.deepEqual(coerceServicesForRubro('mercadito', ['landing', 'booking']), ['landing'])
+    assert.deepEqual(coerceServicesForRubro('mercadito', ['landing', 'booking', 'inventory']), [
+      'landing',
+      'inventory',
+    ])
     assert.deepEqual(coerceServicesForRubro('barberia', ['booking']), ['booking'])
+    assert.deepEqual(
+      coerceServicesForRubro('barberia', ['landing', 'accounting', 'inventory']),
+      ['landing', 'accounting', 'inventory']
+    )
   })
 
   it('inyecta nombre y WhatsApp y marca noindex', () => {

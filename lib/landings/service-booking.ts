@@ -355,7 +355,7 @@ export const SERVICE_BOOKING_TEMPLATE_CONTENT: Record<
       subtitle: 'Tres pasos: servicio, horario que te queda y tu número. Te confirmamos por WhatsApp.',
       submitLabel: 'Pedir turno',
       successTitle: 'Turno solicitado',
-      successBody: 'Te confirmamos por WhatsApp la hora disponible más cercana con el barbero que elegiste.',
+      successBody: 'Tu solicitud quedó pendiente. Te confirmamos el horario por WhatsApp o correo.',
     },
     hours: {
       title: 'Horario de silla',
@@ -558,7 +558,7 @@ export const SERVICE_BOOKING_TEMPLATE_CONTENT: Record<
       subtitle: 'Servicio, día que prefieres y tu número. Te confirmamos hora y duración por WhatsApp.',
       submitLabel: 'Solicitar cita',
       successTitle: 'Cita solicitada',
-      successBody: 'Te confirmamos hora, duración y estilista por WhatsApp. Revisa también tu correo.',
+      successBody: 'Tu solicitud quedó pendiente. Te confirmamos hora y estilista por WhatsApp o correo.',
     },
     hours: {
       title: 'Horario de citas',
@@ -750,7 +750,7 @@ export const SERVICE_BOOKING_TEMPLATE_CONTENT: Record<
       subtitle: 'Servicio, terapeuta si tienes preferencia, y el día que te queda. Te confirmamos por WhatsApp.',
       submitLabel: 'Reservar ritual',
       successTitle: 'Ritual solicitado',
-      successBody: 'Te confirmamos hora y terapeuta por WhatsApp. Llega 10 minutos antes.',
+      successBody: 'Tu solicitud quedó pendiente. Te confirmamos hora por WhatsApp o correo. Llega 10 minutos antes.',
     },
     hours: {
       title: 'Horario de citas',
@@ -958,7 +958,7 @@ export const SERVICE_BOOKING_TEMPLATE_CONTENT: Record<
       subtitle: 'Motivo, día que prefieres y tu número. Te confirmamos hora por WhatsApp. Llega a tu hora, no a hacer fila.',
       submitLabel: 'Solicitar cita',
       successTitle: 'Cita solicitada',
-      successBody: 'Te confirmamos hora por WhatsApp. Primera vez: llega 15 minutos antes con tu identidad.',
+      successBody: 'Tu solicitud quedó pendiente. Te confirmamos por WhatsApp o correo. Primera vez: llega 15 minutos antes con tu identidad.',
     },
     hours: {
       title: 'Horario de citas',

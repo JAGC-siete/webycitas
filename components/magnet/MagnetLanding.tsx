@@ -265,7 +265,13 @@ function DemoLocalLeadForm({
   function changeRubro(next: WebycitasFormRubro) {
     onRubroChange(next)
     if (isRetailRubro(next)) {
-      setForm((prev) => ({ ...prev, services: ['landing'] }))
+      setForm((prev) => ({
+        ...prev,
+        services: [
+          'landing',
+          ...prev.services.filter((s) => s === 'inventory' || s === 'accounting'),
+        ],
+      }))
     }
   }
 
@@ -278,7 +284,12 @@ function DemoLocalLeadForm({
       phone: draft.phone,
       city: draft.city,
       rubro: selectedRubro,
-      services: retail ? (['landing'] as DemoLocalService[]) : form.services,
+      services: retail
+        ? ([
+            'landing',
+            ...form.services.filter((s) => s === 'inventory' || s === 'accounting'),
+          ] as DemoLocalService[])
+        : form.services,
       note: form.note.trim() || undefined,
     }),
     [form, draft, selectedRubro, retail]
@@ -474,7 +485,7 @@ function DemoLocalLeadForm({
           <p className="text-sm text-slate-400">
             {retail ? copy.form.services.hintRetail : copy.form.services.hint}
           </p>
-          <div className={`grid gap-3 ${retail ? '' : 'sm:grid-cols-2'}`}>
+          <div className="grid gap-3 sm:grid-cols-2">
             {(
               [
                 {
@@ -491,6 +502,16 @@ function DemoLocalLeadForm({
                         body: copy.form.services.bookingBody,
                       },
                     ]),
+                {
+                  id: 'inventory' as const,
+                  title: copy.form.services.inventoryTitle,
+                  body: copy.form.services.inventoryBody,
+                },
+                {
+                  id: 'accounting' as const,
+                  title: copy.form.services.accountingTitle,
+                  body: copy.form.services.accountingBody,
+                },
               ] as const
             ).map((option) => {
                   const checked =

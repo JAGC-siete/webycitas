@@ -7,6 +7,10 @@ export const INQUIRIES_API_PATH = '/api/inquiries'
 /** Alias for the published-page form. */
 export const LANDING_LEAD_API_PATH = INQUIRIES_API_PATH
 
+export const PUBLIC_SERVICES_API_PATH = '/api/public/services'
+export const PUBLIC_AVAILABILITY_API_PATH = '/api/public/availability'
+export const PUBLIC_BOOK_API_PATH = '/api/public/book'
+
 export const PRIVACY_PUBLIC_PATH = '/privacidad'
 export const TERMS_PUBLIC_PATH = '/terminos'
 

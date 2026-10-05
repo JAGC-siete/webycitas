@@ -3,6 +3,7 @@ import { LEADS_TABLE, SITES_TABLE } from '../landings/db'
 import { logger } from '../logger'
 import { landingSlugSchema, RESERVED_LANDING_SLUGS, slugifyBusinessName } from '../landings/page-schema'
 import { landingPublicPath } from '../landings/paths'
+import { seedBookingCatalogForSite } from '../suite/booking-seed'
 import { type DemoLocalLead } from './demo-local'
 import { buildWebycitasPreviewContent, templateKeyForRubro } from './preview'
 
@@ -78,6 +79,19 @@ export async function publishLeadSite(params: {
       .from(LEADS_TABLE)
       .update({ preview_slug: row.slug, site_id: row.id })
       .eq('id', params.leadId)
+
+    try {
+      await seedBookingCatalogForSite({
+        adminClient: params.adminClient,
+        siteId: row.id,
+        lead: params.lead,
+      })
+    } catch (err: unknown) {
+      logger.warn('Seed booking falló tras publicar', {
+        siteId: row.id,
+        error: err instanceof Error ? err.message : 'Unknown',
+      })
+    }
 
     return { slug: row.slug, publicPath: landingPublicPath(row.slug) }
   }

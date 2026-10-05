@@ -31,6 +31,7 @@ type Appointment = {
   starts_at: string
   ends_at: string
   status: string
+  source: string | null
   notes: string | null
   staff_id: string | null
   customers: { name: string; phone: string | null } | { name: string; phone: string | null }[] | null
@@ -279,7 +280,14 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-medium">{customer?.name || 'Sin nombre'}</p>
-                  <p className="text-xs uppercase tracking-wide">{row.status}</p>
+                  <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide">
+                    {row.source === 'web' ? (
+                      <span className="rounded border border-violet-300/40 bg-violet-500/20 px-1.5 py-0.5 normal-case tracking-normal text-violet-100">
+                        Web
+                      </span>
+                    ) : null}
+                    <span>{row.status}</span>
+                  </div>
                 </div>
                 <p className="text-white/70">
                   {formatDateTimeForHonduras(row.starts_at)} → {formatDateTimeForHonduras(row.ends_at)}
@@ -288,6 +296,15 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
                   {[member?.name, service?.name, customer?.phone].filter(Boolean).join(' · ')}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                  {row.status === 'pending' ? (
+                    <button
+                      type="button"
+                      className="rounded border border-emerald-400/40 bg-emerald-500/20 px-2 py-0.5 font-medium text-emerald-100 hover:bg-emerald-500/30"
+                      onClick={() => void patchStatus(row.id, 'confirmed')}
+                    >
+                      Confirmar
+                    </button>
+                  ) : null}
                   {['confirmed', 'completed', 'cancelled', 'no_show'].map((status) => (
                     <button
                       key={status}

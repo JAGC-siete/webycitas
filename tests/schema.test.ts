@@ -29,7 +29,7 @@ describe('contratos públicos', () => {
     }
   })
 
-  it('retail fuerza landing', () => {
+  it('retail fuerza landing y quita booking; conserva inventory/accounting', () => {
     const parsed = parseDemoLocalLead({
       ownerName: 'Chepe',
       businessName: 'Mercadito Don Chepe',
@@ -37,12 +37,29 @@ describe('contratos públicos', () => {
       phone: '32226773',
       rubro: 'mercadito',
       city: 'Comayagüela',
-      services: ['landing', 'booking'],
+      services: ['landing', 'booking', 'inventory', 'accounting'],
       consent: true,
     })
     assert.equal(parsed.success, true)
     if (parsed.success) {
-      assert.deepEqual(parsed.data.services, ['landing'])
+      assert.deepEqual(parsed.data.services, ['landing', 'inventory', 'accounting'])
+    }
+  })
+
+  it('acepta inventory y accounting en rubro de servicio', () => {
+    const parsed = parseDemoLocalLead({
+      ownerName: 'Ana Pérez',
+      businessName: 'Barbería El Corte',
+      email: 'ana@example.com',
+      phone: '3222-6773',
+      rubro: 'barberia',
+      city: 'Tegucigalpa',
+      services: ['landing', 'booking', 'accounting'],
+      consent: true,
+    })
+    assert.equal(parsed.success, true)
+    if (parsed.success) {
+      assert.deepEqual(parsed.data.services, ['landing', 'booking', 'accounting'])
     }
   })
 

@@ -50,18 +50,36 @@ export function isWebycitasFormRubro(value: string): value is WebycitasFormRubro
   return (WEBYCITAS_FORM_RUBROS as readonly string[]).includes(value)
 }
 
-export const DEMO_LOCAL_SERVICES = ['landing', 'booking'] as const
+export const DEMO_LOCAL_SERVICES = ['landing', 'booking', 'inventory', 'accounting'] as const
 export type DemoLocalService = (typeof DEMO_LOCAL_SERVICES)[number]
 
 const SERVICE_LABEL: Record<DemoLocalService, string> = {
   landing: 'Página web',
   booking: 'Reservas / citas',
+  inventory: 'Inventario',
+  accounting: 'Contabilidad',
 }
 
 export function formatDemoLocalServices(services: readonly DemoLocalService[]): string {
   const unique = DEMO_LOCAL_SERVICES.filter((id) => services.includes(id))
   const chosen = unique.map((id) => SERVICE_LABEL[id]).join(' + ')
   return `${chosen} · Google Maps incluido`
+}
+
+/** Retail: landing fijo, sin booking; inventory/accounting opcionales. */
+export function normalizeServicesForRubro(
+  rubro: string,
+  services: readonly DemoLocalService[]
+): DemoLocalService[] {
+  const allowed = new Set(DEMO_LOCAL_SERVICES)
+  const unique = Array.from(new Set(services)).filter((item): item is DemoLocalService =>
+    allowed.has(item)
+  )
+  if (isRetailRubro(rubro)) {
+    const extras = unique.filter((item) => item === 'inventory' || item === 'accounting')
+    return ['landing', ...extras]
+  }
+  return unique.length > 0 ? unique : ['landing']
 }
 
 export interface DemoLocalCatalogItem {
@@ -305,15 +323,20 @@ export const DEMO_LOCAL_COPY = {
     notePlaceholder: 'Cortes, menú… ¿Algo que debamos saber del local?',
     services: {
       legend: 'Qué armamos',
-      hint: 'Elige uno o los dos. El perfil de Google Maps se incluye al contratar cualquiera.',
-      hintRetail: 'En este rubro armamos la página. El perfil de Google Maps se incluye al contratar.',
-      error: 'Elige página web, reservas, o las dos.',
+      hint: 'Elige lo que necesitas. El perfil de Google Maps se incluye al contratar cualquiera.',
+      hintRetail:
+        'En este rubro armamos la página. Podés sumar inventario y contabilidad. Maps incluido.',
+      error: 'Elige al menos un servicio.',
       landingTitle: 'Página web',
       landingBody: 'Tu local en internet: servicios, precios y WhatsApp.',
       bookingTitle: 'Reservas / citas',
       bookingBody: 'Que agenden solos, sin hilos de chat.',
+      inventoryTitle: 'Inventario',
+      inventoryBody: 'Productos, precios y saldo en tu panel.',
+      accountingTitle: 'Contabilidad',
+      accountingBody: 'Plan de cuentas, asientos y reportes básicos.',
       mapsTitle: 'Perfil de Google Maps',
-      mapsBody: 'Incluido al contratar la página o las reservas. No se cotiza aparte.',
+      mapsBody: 'Incluido al contratar cualquier módulo. No se cotiza aparte.',
       mapsBadge: 'Incluido',
     },
     successTitle: 'Propuesta en camino',
@@ -375,7 +398,7 @@ export const demoLocalLeadSchema = z.object({
     z
       .array(z.enum(DEMO_LOCAL_SERVICES))
       .min(1, DEMO_LOCAL_COPY.form.services.error)
-      .max(2)
+      .max(4)
       .refine((value) => new Set(value).size === value.length, {
         message: DEMO_LOCAL_COPY.form.services.error,
       })
@@ -386,7 +409,7 @@ export const demoLocalLeadSchema = z.object({
   website: z.string().max(200).optional(),
 }).transform((lead) => ({
   ...lead,
-  services: isRetailRubro(lead.rubro) ? (['landing'] as DemoLocalService[]) : lead.services,
+  services: normalizeServicesForRubro(lead.rubro, lead.services),
 }))
 
 export type DemoLocalLeadInput = z.input<typeof demoLocalLeadSchema>
@@ -435,6 +458,8 @@ export function buildDemoLocalOwnerEmail(
   const productBits: string[] = []
   if (hasLanding) productBits.push('página web')
   if (hasBooking) productBits.push('sistema de citas / reservas')
+  if (lead.services.includes('inventory')) productBits.push('inventario')
+  if (lead.services.includes('accounting')) productBits.push('contabilidad')
   const productsLabel = productBits.length > 0 ? productBits.join(' y ') : formatDemoLocalServices(lead.services)
 
   const parts: string[] = [

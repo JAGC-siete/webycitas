@@ -10,8 +10,8 @@ import { applyBusinessToTemplate, templateContentFor } from '../landings/templat
 import type { LandingTemplateKey, PublicLandingPage } from '../../types/landing'
 import {
   catalogForRubro,
-  isRetailRubro,
   isWebycitasFormRubro,
+  normalizeServicesForRubro,
   type DemoLocalRubro,
   type DemoLocalService,
   type WebycitasFormRubro,
@@ -37,11 +37,7 @@ export function coerceServicesForRubro(
   rubro: string,
   services: readonly DemoLocalService[]
 ): DemoLocalService[] {
-  if (isRetailRubro(rubro)) return ['landing']
-  const unique = Array.from(new Set(services)).filter(
-    (item): item is DemoLocalService => item === 'landing' || item === 'booking'
-  )
-  return unique.length > 0 ? unique : ['landing']
+  return normalizeServicesForRubro(rubro, services)
 }
 
 export function buildWebycitasPreviewContent(input: {

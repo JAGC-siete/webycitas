@@ -1,6 +1,6 @@
 /**
  * Disponibilidad interna del suite.
- * listOpenSlots se usará luego para booking público; hoy alimenta validaciones owner.
+ * listOpenSlots alimenta booking público y validaciones owner.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
