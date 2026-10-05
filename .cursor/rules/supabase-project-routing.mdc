@@ -1,0 +1,39 @@
+---
+description: Enruta tareas Supabase MCP al proyecto correcto (Webycitas vs Planilla)
+alwaysApply: true
+---
+
+# Supabase MCP — enrutamiento obligatorio
+
+Antes de cualquier `execute_sql`, `apply_migration`, `list_tables`, edge function, advisor o cambio Auth/Storage: **elige el MCP/proyecto** y decláralo en una línea. No asumas el default.
+
+## Proyectos
+
+| Alias MCP | Nombre dashboard | project_ref | Repo / host | Uso |
+| --- | --- | --- | --- | --- |
+| `supabase-webycitas` | sandbox | `cthzofskbfpcgapdauac` | `webycitas`, `webycitas.humanosisu.net`, `mercado.humanosisu.net` | Magnet, sites, suite owner, Mercado San Pablo |
+| `supabase-planilla` | JAGC-siete's Project | `fwyxmovfrzauebiqxchz` | `saas-proyecto`, `humanosisu.net` | Planilla / RRHH / nómina / asistencia |
+| `supabase-planilla-staging` | staging (branch) | `huxwtrlxsjrwplaldnld` | Railway `web-staging` | Solo ensayos Planilla; **read-only** en MCP |
+
+## Routing por señales
+
+Usar **webycitas** (`cthzofskbfpcgapdauac`) si aparece cualquiera de:
+- Workspace `webycitas`, tablas `leads` / `sites` / `site_inquiries` / `mercado_*` / suite booking
+- Migraciones bajo `webycitas/supabase/migrations`
+- Hosts `webycitas.humanosisu.net` o `mercado.humanosisu.net`
+- Auth owner/super_admin Webycitas (no Planilla)
+
+Usar **planilla** (`fwyxmovfrzauebiqxchz`) si aparece cualquiera de:
+- Workspace `saas-proyecto` (u homólogos HR)
+- `company_id`, companies, planilla, nómina, asistencia, Hikvision, SuperAdmin RRHH
+- Host `humanosisu.net` (sin subdominio webycitas/mercado)
+
+Usar **planilla-staging** (`huxwtrlxsjrwplaldnld`) solo si el user pide staging / branch / `web-staging` explícitamente.
+
+## Hard rules
+
+1. **Nunca** aplicar migraciones de Webycitas a Planilla (ni al revés).
+2. En este repo (`webycitas`) el target por defecto es `cthzofskbfpcgapdauac` vía MCP `supabase-webycitas`.
+3. Si hay duda entre proyectos: **parar y preguntar**; no ejecutar DDL.
+4. Staging Planilla está en MCP con `read_only=true`; no intentar writes ahí salvo que el user quite ese modo a propósito.
+5. El nombre dashboard `sandbox` = Webycitas producción de este producto (no es un playground desechable).

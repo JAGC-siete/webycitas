@@ -5,6 +5,7 @@ import { signOutClient } from '../../lib/auth/client-session'
 import type { SuiteTenant } from '../../lib/suite/tenant'
 import {
   SUITE_CLIENTES_PATH,
+  SUITE_CONTABILIDAD_PATH,
   SUITE_HOME_PATH,
   SUITE_INVENTARIO_PATH,
   SUITE_RESERVAS_PATH,
@@ -22,6 +23,7 @@ export default function SuiteShell({
   const hasBooking = tenant.modules.includes('reservas')
   const hasSitio = tenant.modules.includes('sitio')
   const hasInventario = tenant.modules.includes('inventario')
+  const hasContabilidad = tenant.modules.includes('contabilidad')
 
   async function logout() {
     await signOutClient()
@@ -63,6 +65,11 @@ export default function SuiteShell({
             {hasInventario ? (
               <Link href={SUITE_INVENTARIO_PATH} className={navClass(SUITE_INVENTARIO_PATH)}>
                 Inventario
+              </Link>
+            ) : null}
+            {hasContabilidad ? (
+              <Link href={SUITE_CONTABILIDAD_PATH} className={navClass(SUITE_CONTABILIDAD_PATH)}>
+                Contabilidad
               </Link>
             ) : null}
             {hasBooking ? (

@@ -1,15 +1,14 @@
 /**
  * Módulos del panel del cliente.
  *
- * Qué ve cada negocio sale de leads.services, que es lo que contrató en el
- * magnet. El sidebar, el guard del servidor y el gate de UI leen de aquí, así
- * que agregar un módulo es agregar una entrada y nada más.
+ * Qué ve cada negocio sale de leads.services (landing, booking, inventory,
+ * accounting). El sidebar, el guard del servidor y el gate de UI leen de aquí.
  */
 
-export const SUITE_SERVICES = ['landing', 'booking', 'inventory'] as const
+export const SUITE_SERVICES = ['landing', 'booking', 'inventory', 'accounting'] as const
 export type SuiteService = (typeof SUITE_SERVICES)[number]
 
-export const SUITE_MODULE_KEYS = ['sitio', 'reservas', 'inventario'] as const
+export const SUITE_MODULE_KEYS = ['sitio', 'reservas', 'inventario', 'contabilidad'] as const
 export type SuiteModuleKey = (typeof SUITE_MODULE_KEYS)[number]
 
 export interface SuiteModule {
@@ -42,6 +41,13 @@ export const SUITE_MODULES: readonly SuiteModule[] = [
     description: 'Productos, precios y saldo.',
     service: 'inventory',
     path: '/app/inventario',
+  },
+  {
+    key: 'contabilidad',
+    label: 'Contabilidad',
+    description: 'Plan de cuentas, asientos y reportes.',
+    service: 'accounting',
+    path: '/app/contabilidad',
   },
 ]
 

@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "npx tsx --test tests/preview.test.ts tests/publish.test.ts tests/schema.test.ts tests/ops-admin.test.ts tests/auth-login.test.ts tests/auth-hash.test.ts tests/invite-owner.test.ts tests/owner-welcome-email.test.ts tests/suite-booking.test.ts tests/mercado-schema.test.ts tests/mercado-jsonld.test.ts tests/mercado-chrome.test.ts tests/mercado-vendors-db.test.ts tests/mercado-inscription.test.ts tests/mercado-public-shell.test.ts tests/mercado-v2.test.ts tests/landing-editor.test.ts tests/landings-inventory.test.ts",
+    "test": "npx tsx --test tests/preview.test.ts tests/publish.test.ts tests/schema.test.ts tests/ops-admin.test.ts tests/auth-login.test.ts tests/auth-hash.test.ts tests/invite-owner.test.ts tests/owner-welcome-email.test.ts tests/suite-booking.test.ts tests/suite-accounting.test.ts tests/mercado-schema.test.ts tests/mercado-jsonld.test.ts tests/mercado-chrome.test.ts tests/mercado-vendors-db.test.ts tests/mercado-inscription.test.ts tests/mercado-public-shell.test.ts tests/mercado-v2.test.ts tests/landing-editor.test.ts tests/landings-inventory.test.ts",
     "seed:super-admin": "node --env-file=.env.local --import tsx scripts/seed-super-admin.ts"
   },
   "dependencies": {
