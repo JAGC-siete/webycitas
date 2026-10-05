@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const admin = createAdminClient()
     const { error } = await admin.auth.resetPasswordForEmail(email, {
-      redirectTo: authAbsoluteUrl('/auth/update-password'),
+      redirectTo: authAbsoluteUrl('/auth/update-password?next=/app/login'),
     })
     if (error) {
       logger.warn('forgot-password no envió correo', { error: error.message })

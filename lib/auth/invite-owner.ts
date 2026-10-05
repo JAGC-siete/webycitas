@@ -3,6 +3,7 @@ import { emailCta, emailParagraph, wrapEmail } from '../emails'
 import { logger } from '../logger'
 import { getResendFrom } from '../resend-from'
 import { authRedirectOrigin } from '../site'
+import { ownerUpdatePasswordRedirectPath } from './auth-hash'
 import { OWNER_ROLE } from './role-access'
 
 export type InviteOwnerChannel = 'invite' | 'access_email' | 'access_link'
@@ -24,7 +25,7 @@ export interface InviteOwnerResult {
 }
 
 function ownerRedirectTo(): string {
-  return `${authRedirectOrigin()}/auth/update-password`
+  return `${authRedirectOrigin()}${ownerUpdatePasswordRedirectPath()}`
 }
 
 async function sendOwnerAccessEmail(input: {
