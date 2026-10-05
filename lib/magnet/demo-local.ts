@@ -53,6 +53,48 @@ export function isWebycitasFormRubro(value: string): value is WebycitasFormRubro
 export const DEMO_LOCAL_SERVICES = ['landing', 'booking', 'inventory', 'accounting'] as const
 export type DemoLocalService = (typeof DEMO_LOCAL_SERVICES)[number]
 
+/**
+ * Precios públicos Webycitas (HNL). Ancla comercial sales-led — no billing self-serve.
+ * Maps incluido en cualquier plan con página o reservas.
+ */
+export const WEBYCITAS_MODULE_PRICES: Record<DemoLocalService, string> = {
+  landing: 'Desde L. 990/mes',
+  booking: '+ L. 500/mes',
+  inventory: '+ L. 500/mes',
+  accounting: '+ L. 690/mes',
+}
+
+export const WEBYCITAS_PRICING_PACKS = [
+  {
+    id: 'presencia',
+    name: 'Presencia',
+    priceLabel: 'L. 990',
+    period: '/mes',
+    blurb: 'Página web + Google Maps',
+    services: ['landing'] as const satisfies readonly DemoLocalService[],
+  },
+  {
+    id: 'reservas',
+    name: 'Reservas',
+    priceLabel: 'L. 1,490',
+    period: '/mes',
+    blurb: 'Página + citas online + Maps',
+    badge: 'Más pedido',
+    services: ['landing', 'booking'] as const satisfies readonly DemoLocalService[],
+  },
+  {
+    id: 'negocio',
+    name: 'Negocio',
+    priceLabel: 'L. 1,990',
+    period: '/mes',
+    blurb: 'Reservas + inventario',
+    services: ['landing', 'booking', 'inventory'] as const satisfies readonly DemoLocalService[],
+  },
+] as const
+
+export const WEBYCITAS_PRICING_NOTE =
+  'Precios en Lempiras. Maps incluido. Sin comisión por cita. Boceto gratis; activación confirmada por WhatsApp.'
+
 const SERVICE_LABEL: Record<DemoLocalService, string> = {
   landing: 'Página web',
   booking: 'Reservas / citas',
@@ -264,18 +306,19 @@ export function catalogForRubro(rubro: string | undefined): DemoLocalCatalog {
 
 export const DEMO_LOCAL_COPY = {
   seo: {
-    title: 'Más clientes locales: web, reservas y Google Maps | Humano SISU',
+    title: 'Más clientes locales: web, reservas y Google Maps | Webycitas',
     description:
-      'Deja de perder ventas en tu zona. Te armamos página, reservas y Perfil de Empresa en Google Maps para que tus vecinos te encuentren y agenden sin llenarte el WhatsApp. Boceto y cotización, sin compromiso.',
+      'Página, reservas y Google Maps para negocios de barrio en Honduras. Desde L. 990/mes. Boceto gratis; precios claros en Lempiras.',
     keywords:
       'más clientes negocio local Honduras, Google Maps barbería, reservas citas negocio, ferretería cerca de mí, perfil de empresa Google, landing negocio de barrio',
   },
   hero: {
-    kicker: 'Captación de clientes para negocios locales',
-    headline: 'Consigue más clientes en tu ciudad y automatiza tus reservas',
-    subheadlineLead: 'Crea hoy',
-    subheadlineFeatures: 'Página Web, Sistema de Reservas, y Perfil en Google Maps',
-    subheadlineTail: 'para que nuevos clientes te encuentren en la zona.',
+    kicker: 'Presencia local para negocios de barrio',
+    headline: 'Tu negocio visible en la zona: página web y Google Maps',
+    subheadlineLead: 'Te armamos',
+    subheadlineFeatures: 'página clara y perfil en Maps',
+    subheadlineTail:
+      'para que tus vecinos te encuentren. Sumá reservas online cuando quieras dejar de pelear con el WhatsApp.',
     mapsBenefit:
       'Tus vecinos te buscan. Si no apareces, le compran al de al lado. El perfil en Maps va incluido.',
     ctaPrimary: 'Probar gratis',
@@ -306,15 +349,20 @@ export const DEMO_LOCAL_COPY = {
         body: 'Un sitio claro y rápido que muestra tus servicios, precios y genera confianza inmediata en quien te visita.',
       },
       {
-        title: 'Sitio de Reservas',
-        body: 'Tus clientes agendan según tu disponibilidad. Cero hilos infinitos. La agenda queda organizada.',
-      },
-      {
         title: 'Perfil de Empresa en Google Maps',
         body: 'Configuramos tu perfil para que aparezcas cuando tus vecinos te busquen en el mapa. Incluido al contratar la página web o las reservas: no se cotiza aparte.',
         badge: 'Incluido · gratis con tu página o tus reservas',
       },
+      {
+        title: 'Reservas online',
+        body: 'Tus clientes piden turno según disponibilidad. La agenda queda en tu panel; vos confirmás.',
+      },
     ],
+  },
+  pricing: {
+    title: 'Precios en Lempiras',
+    note: WEBYCITAS_PRICING_NOTE,
+    cta: 'Elegir plan',
   },
   form: {
     title: 'Solicitud de servicio',
@@ -341,9 +389,9 @@ export const DEMO_LOCAL_COPY = {
     },
     successTitle: 'Propuesta en camino',
     successBody:
-      'Revisa tu correo (y spam). Te escribimos con el boceto, la cotización y para confirmar Maps y dominio.',
+      'Revisa tu correo (y spam). Te escribimos con el boceto y para confirmar el plan (desde L. 990/mes), Maps y dominio.',
     consent:
-      'Acepto que Humano SISU me contacte sobre este servicio de página, reservas y Google Maps, y reciba información comercial. Puedo darme de baja cuando quiera.',
+      'Acepto que Webycitas me contacte sobre este servicio de página, reservas y Google Maps, y reciba información comercial. Puedo darme de baja cuando quiera.',
     privacy: 'Política de privacidad',
     terms: 'Términos',
     errorConsent: 'Marca el consentimiento para enviar.',

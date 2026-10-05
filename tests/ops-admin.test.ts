@@ -11,6 +11,7 @@ import {
   isOpsAdminPath,
   opsAdminLoginPath,
 } from '../lib/ops/paths'
+import { PRODUCT_SURFACES, isMercadoPublicPath } from '../lib/product-surfaces'
 
 describe('operador de Webycitas', () => {
   it('usa cookie distinta a la del operador de Mercado', () => {
@@ -34,5 +35,12 @@ describe('operador de Webycitas', () => {
     assert.equal(rewritePathForHost('mercado.humanosisu.net:443', '/admin'), null)
     assert.equal(rewritePathForHost('webycitas.humanosisu.net', '/'), null)
     assert.equal(rewritePathForHost('humanosisu.net', '/'), null)
+  })
+
+  it('aísla superficies de producto Webycitas vs Mercado', () => {
+    assert.equal(PRODUCT_SURFACES.webycitas.brand, 'Webycitas')
+    assert.equal(PRODUCT_SURFACES.mercado.brand, 'Mercado San Pablo')
+    assert.equal(isMercadoPublicPath('/mercadosanpablosigua'), true)
+    assert.equal(isMercadoPublicPath('/'), false)
   })
 })

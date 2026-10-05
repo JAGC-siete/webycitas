@@ -9,6 +9,15 @@ Lead magnet + motor de maquetas + directorio Mercado San Pablo. Repo y Supabase 
 | `webycitas.humanosisu.net` | Magnet en `/`. Operador en `/admin` |
 | `mercado.humanosisu.net` | Directorio en `/` (rewrite a `/mercadosanpablosigua`). Operador en `/app/mercado/login` |
 
+### GTM: dos productos, cero funnel cruzado
+
+| Producto | Host | Funnel | Precio |
+| --- | --- | --- | --- |
+| **Webycitas** | `webycitas.humanosisu.net` | Magnet → lead → site `/p/[slug]` → suite owner | Packs desde L. 990/mes (copy en `DEMO_LOCAL_COPY` / `WEBYCITAS_PRICING_PACKS`) |
+| **Mercado San Pablo** | `mercado.humanosisu.net` | Directorio + inscripción locatarios | Basic gratis · VIP L. 1,500/año |
+
+No mezclar CTAs, leads ni ads entre ambos. Fichas `mercado_*` no son `sites`/`leads`. Cookies por host. Ads/pixel del magnet no apuntan a Mercado.
+
 Las cookies son del host (sin `Domain=.humanosisu.net`). No comparte Auth con Planilla. Webycitas: un form en `/app/login` (`user_profiles.role` + `leads.auth_user_id`). Mercado sigue con cookie HMAC (`MERCADO_ADMIN_*`).
 
 ## Contrato

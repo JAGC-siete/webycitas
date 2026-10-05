@@ -1,6 +1,11 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseDemoLocalLead } from '../lib/magnet/demo-local'
+import {
+  DEMO_LOCAL_COPY,
+  WEBYCITAS_MODULE_PRICES,
+  WEBYCITAS_PRICING_PACKS,
+  parseDemoLocalLead,
+} from '../lib/magnet/demo-local'
 import { parseLandingLead } from '../lib/landings/lead-schema'
 import { INQUIRIES_API_PATH, LEADS_API_PATH, MAGNET_PATH } from '../lib/landings/paths'
 
@@ -71,5 +76,21 @@ describe('contratos públicos', () => {
       consent: true,
     })
     assert.equal(parsed.success, true)
+  })
+
+  it('publica precios en Lempiras para packs y módulos', () => {
+    assert.match(WEBYCITAS_MODULE_PRICES.landing, /L\.\s*990/)
+    assert.match(WEBYCITAS_PRICING_PACKS[1].priceLabel, /L\.\s*1,490/)
+    assert.equal(DEMO_LOCAL_COPY.pricing.title.includes('Lempiras'), true)
+    assert.match(DEMO_LOCAL_COPY.seo.description, /L\.\s*990/)
+  })
+
+  it('hero lidera web+Maps y la marca es Webycitas', () => {
+    assert.match(DEMO_LOCAL_COPY.hero.headline, /página web y Google Maps/i)
+    assert.match(DEMO_LOCAL_COPY.seo.title, /Webycitas/)
+    assert.match(DEMO_LOCAL_COPY.form.consent, /Webycitas/)
+    assert.equal(DEMO_LOCAL_COPY.offer.steps[0].title, 'Página web')
+    assert.equal(DEMO_LOCAL_COPY.offer.steps[1].title, 'Perfil de Empresa en Google Maps')
+    assert.equal(DEMO_LOCAL_COPY.offer.steps[2].title, 'Reservas online')
   })
 })

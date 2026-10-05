@@ -18,7 +18,9 @@ export function mercadoHostnames(): Set<string> {
   return hostSet('MERCADO_HOSTS', MERCADO_DEFAULT_HOSTS)
 }
 
-/** En el subdominio de Mercado, / abre el directorio. El resto de rutas se queda igual. */
+/** En el subdominio de Mercado, / abre el directorio. El resto de rutas se queda igual.
+ * GTM aislado: el magnet de Webycitas no vive en este host (ver lib/product-surfaces.ts).
+ */
 export function rewritePathForHost(hostHeader: string, pathname: string): string | null {
   if (!mercadoHostnames().has(hostnameOf(hostHeader))) return null
   if (pathname === '/') return '/mercadosanpablosigua'

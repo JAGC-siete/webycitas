@@ -16,6 +16,8 @@ import {
   DEMO_LOCAL_COPY,
   DEMO_LOCAL_MARKETING_SOURCE,
   DEMO_LOCAL_PUBLIC_PATH,
+  WEBYCITAS_MODULE_PRICES,
+  WEBYCITAS_PRICING_PACKS,
   WEBYCITAS_RETAIL_RUBROS,
   WEBYCITAS_SERVICE_RUBROS,
   catalogForRubro,
@@ -194,11 +196,61 @@ export default function DemoLocalLanding({
               type="button"
               size="lg"
               className="btn-shiny min-h-[48px] bg-green-600 px-6 text-base font-semibold shadow-[0_0_24px_rgba(34,197,94,0.28)] hover:bg-green-700"
-              onClick={() => scrollToId('solicitud', 'demo_local_propuesta', 'demo_local_offer')}
+              onClick={() => scrollToId('precios', 'demo_local_propuesta', 'demo_local_offer')}
             >
               {copy.offer.cta}
             </Button>
           </div>
+        </div>
+      </section>
+
+      <section id="precios" className="scroll-mt-28 px-4 sm:px-6 pb-12 sm:pb-16">
+        <div className="mx-auto max-w-7xl">
+          <ScrollReveal>
+            <div className="mb-3 text-center">
+              <h2 className="text-2xl font-bold text-white sm:text-3xl">{copy.pricing.title}</h2>
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
+                {copy.pricing.note}
+              </p>
+            </div>
+          </ScrollReveal>
+          <ul className="mt-8 grid gap-4 md:grid-cols-3">
+            {WEBYCITAS_PRICING_PACKS.map((pack, index) => {
+              const badge = 'badge' in pack ? pack.badge : undefined
+              return (
+                <ScrollReveal key={pack.id} delay={index * 0.06}>
+                  <li className="glass-modern relative flex h-full flex-col rounded-2xl p-5 sm:p-6">
+                    <div className="mb-4 flex flex-wrap items-center gap-2">
+                      <h3 className="text-lg font-semibold text-white">{pack.name}</h3>
+                      {badge ? (
+                        <span className="rounded-full border border-amber-400/30 bg-amber-400/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-200">
+                          {badge}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="text-3xl font-bold tracking-tight text-white">
+                      {pack.priceLabel}
+                      <span className="ml-1 text-base font-medium text-slate-400">{pack.period}</span>
+                    </p>
+                    <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-300">{pack.blurb}</p>
+                    <Button
+                      type="button"
+                      size="lg"
+                      className="btn-shiny mt-5 min-h-[44px] w-full bg-green-600 text-sm font-semibold hover:bg-green-700"
+                      onClick={() =>
+                        scrollToId('solicitud', 'demo_local_precio', `demo_local_pack_${pack.id}`)
+                      }
+                    >
+                      {copy.pricing.cta}
+                    </Button>
+                  </li>
+                </ScrollReveal>
+              )
+            })}
+          </ul>
+          <p className="mt-4 text-center text-xs text-slate-500">
+            Contabilidad aparte: {WEBYCITAS_MODULE_PRICES.accounting}
+          </p>
         </div>
       </section>
 
@@ -535,7 +587,12 @@ function DemoLocalLeadForm({
                         onChange={() => toggleService(option.id)}
                       />
                   <span>
-                    <span className="block text-sm font-semibold text-white">{option.title}</span>
+                    <span className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+                      <span className="text-sm font-semibold text-white">{option.title}</span>
+                      <span className="text-xs font-medium text-cyan-200/90">
+                        {WEBYCITAS_MODULE_PRICES[option.id]}
+                      </span>
+                    </span>
                     <span className="mt-1 block text-xs leading-relaxed text-slate-400">{option.body}</span>
                   </span>
                 </label>
