@@ -261,7 +261,7 @@ export default function ContabilidadAsientoEditorPage({ tenant }: { tenant: Suit
             Fecha
             <input
               type="date"
-              className="mt-1 w-full rounded-md border border-white/10 bg-slate-950 px-3 py-2 text-sm"
+              className="mt-1 w-full input-glass px-3 py-2 text-sm"
               value={entryDate}
               disabled={readOnly}
               onChange={(e) => setEntryDate(e.target.value)}
@@ -270,7 +270,7 @@ export default function ContabilidadAsientoEditorPage({ tenant }: { tenant: Suit
           <label className="text-xs text-white/60 sm:col-span-2">
             Glosa
             <input
-              className="mt-1 w-full rounded-md border border-white/10 bg-slate-950 px-3 py-2 text-sm"
+              className="mt-1 w-full input-glass px-3 py-2 text-sm"
               value={description}
               disabled={readOnly}
               onChange={(e) => setDescription(e.target.value)}
@@ -294,7 +294,7 @@ export default function ContabilidadAsientoEditorPage({ tenant }: { tenant: Suit
                 <tr key={index} className="border-t border-white/5">
                   <td className="px-3 py-2">
                     <select
-                      className="w-full rounded-md border border-white/10 bg-slate-950 px-2 py-1.5 text-sm"
+                      className="w-full input-glass px-2 py-1.5 text-sm"
                       value={line.account_id}
                       disabled={readOnly}
                       onChange={(e) =>
@@ -317,7 +317,7 @@ export default function ContabilidadAsientoEditorPage({ tenant }: { tenant: Suit
                     <input
                       inputMode="decimal"
                       placeholder="0.00"
-                      className="w-full rounded-md border border-white/10 bg-slate-950 px-2 py-1.5 text-right font-mono text-sm"
+                      className="w-full input-glass px-2 py-1.5 text-right font-mono text-sm"
                       value={line.debit}
                       disabled={readOnly}
                       onChange={(e) =>
@@ -333,7 +333,7 @@ export default function ContabilidadAsientoEditorPage({ tenant }: { tenant: Suit
                     <input
                       inputMode="decimal"
                       placeholder="0.00"
-                      className="w-full rounded-md border border-white/10 bg-slate-950 px-2 py-1.5 text-right font-mono text-sm"
+                      className="w-full input-glass px-2 py-1.5 text-right font-mono text-sm"
                       value={line.credit}
                       disabled={readOnly}
                       onChange={(e) =>
@@ -347,7 +347,7 @@ export default function ContabilidadAsientoEditorPage({ tenant }: { tenant: Suit
                   </td>
                   <td className="px-3 py-2">
                     <input
-                      className="w-full rounded-md border border-white/10 bg-slate-950 px-2 py-1.5 text-sm"
+                      className="w-full input-glass px-2 py-1.5 text-sm"
                       value={line.memo}
                       disabled={readOnly}
                       onChange={(e) =>

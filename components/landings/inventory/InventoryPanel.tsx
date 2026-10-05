@@ -157,9 +157,9 @@ export function InventoryProductDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <form
-        className="w-full max-w-md space-y-4 rounded-xl border border-white/10 bg-slate-950 p-5"
+        className="glass-modern w-full max-w-md space-y-4 rounded-2xl p-5"
         onSubmit={(event) => {
           event.preventDefault()
           onSubmit(draft)
@@ -168,61 +168,61 @@ export function InventoryProductDialog({
         <h2 className="text-lg font-semibold text-white">
           {mode === 'create' ? 'Nuevo producto' : 'Editar producto'}
         </h2>
-        <label className="block text-sm text-gray-300">
+        <label className="block text-sm text-white/80">
           Nombre
           <Input
             value={draft.nombre}
             onChange={(event) => setField('nombre', event.target.value)}
-            className="mt-1 bg-white/10 text-white"
+            className="input-glass mt-1 h-auto shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
             required
           />
         </label>
-        <label className="block text-sm text-gray-300">
+        <label className="block text-sm text-white/80">
           SKU
           <Input
             value={draft.sku}
             onChange={(event) => setField('sku', event.target.value)}
-            className="mt-1 bg-white/10 text-white"
+            className="input-glass mt-1 h-auto shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
             required
           />
         </label>
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm text-gray-300">
+          <label className="block text-sm text-white/80">
             Precio
             <Input
               value={draft.precio}
               onChange={(event) => setField('precio', event.target.value)}
               inputMode="decimal"
-              className="mt-1 bg-white/10 text-white"
+              className="input-glass mt-1 h-auto shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               required
             />
           </label>
-          <label className="block text-sm text-gray-300">
+          <label className="block text-sm text-white/80">
             Mínimo
             <Input
               value={draft.stockMinimo}
               onChange={(event) => setField('stockMinimo', event.target.value)}
               inputMode="numeric"
-              className="mt-1 bg-white/10 text-white"
+              className="input-glass mt-1 h-auto shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               required
             />
           </label>
         </div>
         {mode === 'create' ? (
-          <label className="block text-sm text-gray-300">
+          <label className="block text-sm text-white/80">
             Stock inicial
             <Input
               value={draft.stockInicial}
               onChange={(event) => setField('stockInicial', event.target.value)}
               inputMode="numeric"
               placeholder="0"
-              className="mt-1 bg-white/10 text-white"
+              className="input-glass mt-1 h-auto shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </label>
         ) : (
-          <p className="text-xs text-gray-500">El saldo se mueve con los botones + y − de la tabla.</p>
+          <p className="text-xs text-white/45">El saldo se mueve con los botones + y − de la tabla.</p>
         )}
-        {error ? <p className="text-sm text-red-400">{error}</p> : null}
+        {error ? <p className="text-sm text-red-300">{error}</p> : null}
         <div className="flex items-center justify-between gap-2">
           {mode === 'edit' ? (
             <Button type="button" variant="ghost" onClick={onDelete} disabled={saving}>

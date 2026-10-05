@@ -105,7 +105,7 @@ export default function LandingEditorPage() {
         <title>Editor de página | Webycitas</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
-      <div className="min-h-screen bg-slate-950 text-white">
+      <div className="min-h-screen bg-mesh text-white">
         {landingId ? (
           <OpsEditorLoader landingId={landingId} />
         ) : (

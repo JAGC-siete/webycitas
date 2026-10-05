@@ -220,7 +220,7 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
         <div className="flex flex-wrap gap-2">
           <input
             type="date"
-            className="rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm"
+            className="input-glass px-2 py-1 text-sm"
             value={day}
             onChange={(e) => setDay(e.target.value)}
           />
@@ -326,7 +326,7 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
             <label className="block text-xs">
               Cliente
               <input
-                className="mt-1 w-full rounded border border-white/20 bg-slate-950 px-2 py-1"
+                className="mt-1 w-full input-glass px-2 py-1"
                 value={form.customer_name}
                 onChange={(e) => setForm((f) => ({ ...f, customer_name: e.target.value }))}
               />
@@ -334,7 +334,7 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
             <label className="block text-xs">
               WhatsApp
               <input
-                className="mt-1 w-full rounded border border-white/20 bg-slate-950 px-2 py-1"
+                className="mt-1 w-full input-glass px-2 py-1"
                 value={form.customer_phone}
                 onChange={(e) => setForm((f) => ({ ...f, customer_phone: e.target.value }))}
               />
@@ -343,7 +343,7 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
               Inicio
               <input
                 type="datetime-local"
-                className="mt-1 w-full rounded border border-white/20 bg-slate-950 px-2 py-1"
+                className="mt-1 w-full input-glass px-2 py-1"
                 value={form.starts_at}
                 onChange={(e) => setForm((f) => ({ ...f, starts_at: e.target.value }))}
               />
@@ -351,7 +351,7 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
             <label className="block text-xs">
               Staff
               <select
-                className="mt-1 w-full rounded border border-white/20 bg-slate-950 px-2 py-1"
+                className="mt-1 w-full input-glass px-2 py-1"
                 value={form.staff_id}
                 onChange={(e) => setForm((f) => ({ ...f, staff_id: e.target.value }))}
               >
@@ -366,7 +366,7 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
             <label className="block text-xs">
               Servicio
               <select
-                className="mt-1 w-full rounded border border-white/20 bg-slate-950 px-2 py-1"
+                className="mt-1 w-full input-glass px-2 py-1"
                 value={form.service_id}
                 onChange={(e) => setForm((f) => ({ ...f, service_id: e.target.value }))}
               >
@@ -394,7 +394,7 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
               Desde
               <input
                 type="datetime-local"
-                className="mt-1 w-full rounded border border-white/20 bg-slate-950 px-2 py-1"
+                className="mt-1 w-full input-glass px-2 py-1"
                 value={blockForm.starts_at}
                 onChange={(e) => setBlockForm((f) => ({ ...f, starts_at: e.target.value }))}
               />
@@ -403,7 +403,7 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
               Hasta
               <input
                 type="datetime-local"
-                className="mt-1 w-full rounded border border-white/20 bg-slate-950 px-2 py-1"
+                className="mt-1 w-full input-glass px-2 py-1"
                 value={blockForm.ends_at}
                 onChange={(e) => setBlockForm((f) => ({ ...f, ends_at: e.target.value }))}
               />
@@ -411,7 +411,7 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
             <label className="block text-xs">
               Motivo
               <input
-                className="mt-1 w-full rounded border border-white/20 bg-slate-950 px-2 py-1"
+                className="mt-1 w-full input-glass px-2 py-1"
                 value={blockForm.reason}
                 onChange={(e) => setBlockForm((f) => ({ ...f, reason: e.target.value }))}
               />
@@ -436,8 +436,8 @@ function Modal({
   children: React.ReactNode
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-md space-y-3 rounded border border-white/20 bg-slate-900 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <div className="glass-modern w-full max-w-md space-y-3 rounded-2xl p-4">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">{title}</h2>
           <button type="button" onClick={onClose} className="text-white/50">

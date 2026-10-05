@@ -118,7 +118,7 @@ export default function MercadoFichaNuevaPage({ operatorEmail }: { operatorEmail
         <Link href={mercadoAdminListPath()} className="text-sm text-amber-200 underline">
           Volver al listado
         </Link>
-        <Card variant="glass">
+        <Card variant="liquid">
           <CardHeader>
             <CardTitle className="text-lg text-white">
               {applicationId ? 'Crear ficha desde solicitud' : 'Alta de ficha'}

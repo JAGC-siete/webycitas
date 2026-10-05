@@ -118,7 +118,7 @@ export default function MercadoFichasAdminPage({ operatorEmail }: { operatorEmai
         </header>
 
         {error ? (
-          <Card variant="glass">
+          <Card variant="liquid">
             <CardContent className="p-5">
               <p className="text-sm text-red-400">{error}</p>
               <Button variant="outline" className="mt-3" onClick={() => void load()}>
@@ -128,7 +128,7 @@ export default function MercadoFichasAdminPage({ operatorEmail }: { operatorEmai
           </Card>
         ) : null}
 
-        <Card variant="glass">
+        <Card variant="liquid">
           <CardHeader className="flex flex-row items-center justify-between gap-4">
             <CardTitle className="text-lg text-white">Listado</CardTitle>
             <select

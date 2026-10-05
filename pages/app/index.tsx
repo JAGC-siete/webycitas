@@ -207,7 +207,7 @@ export default function SuiteHomePage({ tenant }: { tenant: SuiteTenant }) {
                   ).map((alert) => (
                     <li
                       key={`${alert.type}-${alert.id}`}
-                      className="rounded border border-white/10 bg-slate-900/50 px-3 py-2 text-sm"
+                      className="glass-modern rounded-xl px-3 py-2 text-sm"
                     >
                       <p>{alert.title}</p>
                       <p className="text-xs text-white/40">
@@ -233,7 +233,7 @@ function BookingUpsell({
   businessName: string
 }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-cyan-400/25 bg-slate-900/70">
+    <section className="glass-modern overflow-hidden rounded-2xl border border-cyan-400/25">
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <div className="space-y-3 p-4 sm:p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-cyan-200/80">
@@ -247,7 +247,7 @@ function BookingUpsell({
             clientes piden cita desde la página — sin depender solo del WhatsApp.
           </p>
           {upgradeHref ? (
-            <Button asChild>
+            <Button asChild className="btn-shiny">
               <a href={upgradeHref} target="_blank" rel="noopener noreferrer">
                 Activar reservas
               </a>
@@ -269,7 +269,7 @@ function BookingUpsell({
 function BookingPreviewSkeleton() {
   return (
     <div
-      className="relative border-t border-white/10 bg-slate-950/50 p-4 lg:border-l lg:border-t-0"
+      className="relative border-t border-white/10 bg-black/20 p-4 lg:border-l lg:border-t-0"
       aria-hidden
     >
       <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-white/35">
@@ -279,7 +279,7 @@ function BookingPreviewSkeleton() {
         {['10:00 · Corte', '11:30 · Barba', '15:00 · Color'].map((label) => (
           <div
             key={label}
-            className="flex items-center justify-between rounded border border-dashed border-white/15 bg-slate-900/80 px-3 py-2 text-xs text-white/50"
+            className="flex items-center justify-between rounded-lg border border-dashed border-white/15 bg-white/5 px-3 py-2 text-xs text-white/50"
           >
             <span>{label}</span>
             <span className="h-2 w-10 rounded bg-white/10" />
@@ -292,9 +292,9 @@ function BookingPreviewSkeleton() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded border border-white/10 bg-slate-900/60 px-3 py-3">
+    <div className="glass-modern rounded-xl px-3 py-3">
       <p className="text-xs text-white/50">{label}</p>
-      <p className="mt-1 text-lg font-semibold tabular-nums">{value}</p>
+      <p className="mt-1 text-lg font-semibold tabular-nums text-cyan-300">{value}</p>
     </div>
   )
 }
@@ -313,8 +313,8 @@ function QuickLink({
       href={href}
       className={
         primary
-          ? 'rounded border border-sky-400/50 bg-sky-500/20 px-4 py-3 text-sm font-semibold text-sky-50 hover:bg-sky-500/30'
-          : 'rounded border border-sky-400/40 bg-sky-500/10 px-4 py-3 text-sm font-medium text-sky-100 hover:bg-sky-500/20'
+          ? 'rounded-xl border border-brand-400/40 bg-brand-600/25 px-4 py-3 text-sm font-semibold text-white hover:bg-brand-600/35'
+          : 'glass rounded-xl px-4 py-3 text-sm font-medium text-white/90 hover:border-white/35'
       }
     >
       {label}

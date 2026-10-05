@@ -97,7 +97,7 @@ export default function ClientesPage({ tenant }: { tenant: SuiteTenant }) {
         </div>
 
         <input
-          className="w-full max-w-md rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm"
+          className="input-glass w-full max-w-md px-2 py-1 text-sm"
           placeholder="Buscar nombre, teléfono o email"
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -112,7 +112,7 @@ export default function ClientesPage({ tenant }: { tenant: SuiteTenant }) {
               <li key={row.id}>
                 <button
                   type="button"
-                  className="w-full rounded border border-white/10 bg-slate-900/50 px-3 py-2 text-left text-sm hover:border-sky-400/40"
+                  className="glass-modern w-full rounded-xl px-3 py-2 text-left text-sm transition hover:border-brand-400/40"
                   onClick={() => void openDetail(row.id)}
                 >
                   <p className="font-medium">{row.name}</p>
@@ -124,7 +124,7 @@ export default function ClientesPage({ tenant }: { tenant: SuiteTenant }) {
           </ul>
 
           {detail ? (
-            <section className="space-y-3 rounded border border-white/10 bg-slate-900/40 p-4">
+            <section className="glass-modern space-y-3 rounded-2xl p-4">
               <h2 className="font-semibold">{detail.customer.name}</h2>
               <p className="text-sm text-white/60">
                 {[detail.customer.phone, detail.customer.email].filter(Boolean).join(' · ') || 'Sin contacto'}
@@ -132,7 +132,7 @@ export default function ClientesPage({ tenant }: { tenant: SuiteTenant }) {
               <label className="block text-xs text-white/50">
                 Notas
                 <textarea
-                  className="mt-1 w-full rounded border border-white/20 bg-slate-950 px-2 py-1 text-sm text-white"
+                  className="mt-1 w-full input-glass px-2 py-1 text-sm text-white"
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}

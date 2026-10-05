@@ -111,19 +111,23 @@ export default function EquipoPage({ tenant }: { tenant: SuiteTenant }) {
 
         <div className="flex flex-wrap gap-2">
           <input
-            className="rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm"
+            className="input-glass px-2 py-1 text-sm"
             placeholder="Nombre (ej. Carlos)"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-          <button type="button" className="rounded bg-sky-500/30 px-3 py-1 text-sm" onClick={() => void addMember()}>
+          <button
+            type="button"
+            className="rounded-lg border border-brand-400/30 bg-brand-600/25 px-3 py-1 text-sm"
+            onClick={() => void addMember()}
+          >
             Agregar
           </button>
         </div>
 
         <ul className="space-y-3">
           {rows.map((row) => (
-            <li key={row.id} className="rounded border border-white/10 bg-slate-900/50 px-3 py-3">
+            <li key={row.id} className="glass-modern rounded-xl px-3 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded-full" style={{ background: row.color }} />

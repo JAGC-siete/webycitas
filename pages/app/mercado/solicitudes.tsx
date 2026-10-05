@@ -127,7 +127,7 @@ export default function MercadoSolicitudesPage({ operatorEmail }: { operatorEmai
         </header>
 
         {error ? (
-          <Card variant="glass">
+          <Card variant="liquid">
             <CardContent className="p-5">
               <p className="text-sm text-red-400">{error}</p>
               <Button variant="outline" className="mt-3" onClick={() => void load()}>
@@ -140,13 +140,13 @@ export default function MercadoSolicitudesPage({ operatorEmail }: { operatorEmai
         {loading ? (
           <p className="text-sm text-white/70">Cargando solicitudes…</p>
         ) : rows.length === 0 ? (
-          <Card variant="glass">
+          <Card variant="liquid">
             <CardContent className="p-6 text-sm text-white/60">Aún no hay solicitudes.</CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
             {rows.map((row) => (
-              <Card key={row.id} variant="glass">
+              <Card key={row.id} variant="liquid">
                 <CardContent className="space-y-3 p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>

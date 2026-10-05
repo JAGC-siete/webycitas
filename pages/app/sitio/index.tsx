@@ -160,19 +160,19 @@ function ServicesPanel() {
       {loading ? <p className="text-sm text-white/60">Cargando…</p> : null}
       <div className="flex flex-wrap gap-2">
         <input
-          className="rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm"
+          className="input-glass px-2 py-1 text-sm"
           placeholder="Nombre"
           value={svcForm.name}
           onChange={(e) => setSvcForm((f) => ({ ...f, name: e.target.value }))}
         />
         <input
-          className="w-24 rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm"
+          className="w-24 input-glass px-2 py-1 text-sm"
           placeholder="Precio"
           value={svcForm.price}
           onChange={(e) => setSvcForm((f) => ({ ...f, price: e.target.value }))}
         />
         <input
-          className="w-24 rounded border border-white/20 bg-slate-900 px-2 py-1 text-sm"
+          className="w-24 input-glass px-2 py-1 text-sm"
           placeholder="Min"
           value={svcForm.duration}
           onChange={(e) => setSvcForm((f) => ({ ...f, duration: e.target.value }))}

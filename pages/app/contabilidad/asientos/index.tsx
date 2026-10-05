@@ -68,7 +68,7 @@ export default function ContabilidadAsientosPage({ tenant }: { tenant: SuiteTena
           </div>
           <div className="flex items-center gap-2">
             <select
-              className="rounded-md border border-white/10 bg-slate-950 px-3 py-2 text-sm"
+              className="input-glass px-3 py-2 text-sm"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >

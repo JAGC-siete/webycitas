@@ -102,7 +102,7 @@ export default function ContabilidadReportesPage({ tenant }: { tenant: SuiteTena
                 Desde
                 <input
                   type="date"
-                  className="mt-1 block rounded-md border border-white/10 bg-slate-950 px-3 py-2 text-sm"
+                  className="mt-1 block input-glass px-3 py-2 text-sm"
                   value={from}
                   onChange={(e) => setFrom(e.target.value)}
                 />
@@ -111,7 +111,7 @@ export default function ContabilidadReportesPage({ tenant }: { tenant: SuiteTena
                 Hasta
                 <input
                   type="date"
-                  className="mt-1 block rounded-md border border-white/10 bg-slate-950 px-3 py-2 text-sm"
+                  className="mt-1 block input-glass px-3 py-2 text-sm"
                   value={to}
                   onChange={(e) => setTo(e.target.value)}
                 />
@@ -122,7 +122,7 @@ export default function ContabilidadReportesPage({ tenant }: { tenant: SuiteTena
               Al
               <input
                 type="date"
-                className="mt-1 block rounded-md border border-white/10 bg-slate-950 px-3 py-2 text-sm"
+                className="mt-1 block input-glass px-3 py-2 text-sm"
                 value={asOf}
                 onChange={(e) => setAsOf(e.target.value)}
               />

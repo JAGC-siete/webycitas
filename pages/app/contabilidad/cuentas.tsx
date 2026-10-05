@@ -138,7 +138,7 @@ export default function ContabilidadCuentasPage({ tenant }: { tenant: SuiteTenan
           <label className="text-xs text-white/60">
             Código
             <input
-              className="mt-1 w-full rounded-md border border-white/10 bg-slate-950 px-3 py-2 text-sm"
+              className="mt-1 w-full input-glass px-3 py-2 text-sm"
               value={form.code}
               onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
               required
@@ -147,7 +147,7 @@ export default function ContabilidadCuentasPage({ tenant }: { tenant: SuiteTenan
           <label className="text-xs text-white/60">
             Nombre
             <input
-              className="mt-1 w-full rounded-md border border-white/10 bg-slate-950 px-3 py-2 text-sm"
+              className="mt-1 w-full input-glass px-3 py-2 text-sm"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               required
@@ -156,7 +156,7 @@ export default function ContabilidadCuentasPage({ tenant }: { tenant: SuiteTenan
           <label className="text-xs text-white/60">
             Tipo
             <select
-              className="mt-1 w-full rounded-md border border-white/10 bg-slate-950 px-3 py-2 text-sm"
+              className="mt-1 w-full input-glass px-3 py-2 text-sm"
               value={form.account_type}
               onChange={(e) =>
                 setForm((f) => ({ ...f, account_type: e.target.value as AccountingAccountType }))
@@ -172,7 +172,7 @@ export default function ContabilidadCuentasPage({ tenant }: { tenant: SuiteTenan
           <label className="text-xs text-white/60">
             Padre (opcional)
             <select
-              className="mt-1 w-full rounded-md border border-white/10 bg-slate-950 px-3 py-2 text-sm"
+              className="mt-1 w-full input-glass px-3 py-2 text-sm"
               value={form.parent_id}
               onChange={(e) => setForm((f) => ({ ...f, parent_id: e.target.value }))}
             >

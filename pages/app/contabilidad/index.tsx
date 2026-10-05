@@ -55,7 +55,7 @@ export default function ContabilidadHubPage({ tenant }: { tenant: SuiteTenant })
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-lg border border-white/10 bg-slate-900/60 p-4 transition hover:border-sky-500/40 hover:bg-slate-900"
+              className="glass-modern rounded-2xl p-4 transition hover:border-brand-400/40"
             >
               <p className="text-sm font-semibold text-sky-100">{item.title}</p>
               <p className="mt-2 text-xs leading-relaxed text-white/50">{item.body}</p>

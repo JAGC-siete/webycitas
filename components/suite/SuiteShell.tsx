@@ -11,6 +11,16 @@ import {
   SUITE_RESERVAS_PATH,
   SUITE_SITIO_PATH,
 } from '../../lib/suite/paths'
+import { cn } from '../../lib/utils'
+
+function navClass(active: boolean) {
+  return cn(
+    'rounded-md px-2.5 py-1.5 text-sm transition-colors',
+    active
+      ? 'border border-brand-400/30 bg-brand-600/20 font-semibold text-white'
+      : 'text-white/65 hover:bg-white/5 hover:text-white'
+  )
+}
 
 export default function SuiteShell({
   tenant,
@@ -30,64 +40,65 @@ export default function SuiteShell({
     void router.push('/app/login')
   }
 
-  const navClass = (path: string) => {
-    const active =
-      path === SUITE_HOME_PATH
-        ? router.pathname === SUITE_HOME_PATH
-        : router.pathname === path || router.pathname.startsWith(`${path}/`)
-    return active
-      ? 'rounded-md bg-sky-500/20 px-2.5 py-1.5 text-sm font-semibold text-sky-100'
-      : 'rounded-md px-2.5 py-1.5 text-sm text-white/65 hover:bg-white/5 hover:text-white'
-  }
+  const isActive = (path: string) =>
+    path === SUITE_HOME_PATH
+      ? router.pathname === SUITE_HOME_PATH
+      : router.pathname === path || router.pathname.startsWith(`${path}/`)
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <header className="border-b border-white/10 bg-slate-900/80">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+    <div className="relative isolate min-h-screen overflow-x-hidden bg-mesh text-white">
+      <header className="glass-modern sticky top-0 z-40 border-b border-white/10 shadow-glass">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div>
-            <p className="text-sm font-semibold">{tenant.businessName}</p>
+            <p className="text-sm font-semibold tracking-tight">{tenant.businessName}</p>
             <p className="text-xs text-white/50">{tenant.email}</p>
           </div>
-          <nav className="flex flex-wrap items-center gap-1">
-            <Link href={SUITE_HOME_PATH} className={navClass(SUITE_HOME_PATH)}>
+          <nav className="flex flex-wrap items-center gap-1.5">
+            <Link href={SUITE_HOME_PATH} className={navClass(isActive(SUITE_HOME_PATH))}>
               Panel
             </Link>
             {hasBooking ? (
-              <Link href={SUITE_RESERVAS_PATH} className={navClass(SUITE_RESERVAS_PATH)}>
+              <Link href={SUITE_RESERVAS_PATH} className={navClass(isActive(SUITE_RESERVAS_PATH))}>
                 Agenda
               </Link>
             ) : null}
             {hasSitio ? (
-              <Link href={SUITE_SITIO_PATH} className={navClass(SUITE_SITIO_PATH)}>
+              <Link href={SUITE_SITIO_PATH} className={navClass(isActive(SUITE_SITIO_PATH))}>
                 Mi sitio
               </Link>
             ) : null}
             {hasInventario ? (
-              <Link href={SUITE_INVENTARIO_PATH} className={navClass(SUITE_INVENTARIO_PATH)}>
+              <Link
+                href={SUITE_INVENTARIO_PATH}
+                className={navClass(isActive(SUITE_INVENTARIO_PATH))}
+              >
                 Inventario
               </Link>
             ) : null}
             {hasContabilidad ? (
-              <Link href={SUITE_CONTABILIDAD_PATH} className={navClass(SUITE_CONTABILIDAD_PATH)}>
+              <Link
+                href={SUITE_CONTABILIDAD_PATH}
+                className={navClass(isActive(SUITE_CONTABILIDAD_PATH))}
+              >
                 Contabilidad
               </Link>
             ) : null}
             {hasBooking ? (
-              <Link href={SUITE_CLIENTES_PATH} className={navClass(SUITE_CLIENTES_PATH)}>
+              <Link href={SUITE_CLIENTES_PATH} className={navClass(isActive(SUITE_CLIENTES_PATH))}>
                 Clientes
               </Link>
             ) : null}
             <button
               type="button"
               onClick={() => void logout()}
-              className="ml-1 rounded-md px-2.5 py-1.5 text-sm text-white/45 hover:bg-white/5 hover:text-white/80"
+              className="ml-1 rounded-md px-2.5 py-1.5 text-sm text-white/45 transition-colors hover:bg-white/5 hover:text-white/80"
             >
               Salir
             </button>
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl">{children}</main>
+      <main className="relative z-10 mx-auto max-w-5xl">{children}</main>
     </div>
   )
 }

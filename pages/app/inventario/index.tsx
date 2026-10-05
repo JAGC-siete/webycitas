@@ -200,7 +200,7 @@ export default function SuiteInventarioPage({ tenant }: { tenant: SuiteTenant })
 
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
 
-        <Card className="border-white/10 bg-white/5">
+        <Card variant="liquid">
           <CardContent className="space-y-4 p-4">
             {loading ? (
               <div className="flex items-center gap-2 text-sm text-gray-300">
