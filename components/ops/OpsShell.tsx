@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { signOutClient } from '../../lib/auth/client-session'
+import { LANDINGS_ADMIN_PATH } from '../../lib/landings/paths'
 import {
   OPS_ADMIN_INQUIRIES_PATH,
   OPS_ADMIN_PREFIX,
@@ -37,6 +38,9 @@ export default function OpsShell({
             </Link>
             <Link href={OPS_ADMIN_SITES_PATH} className="text-sky-200 hover:underline">
               Sites
+            </Link>
+            <Link href={LANDINGS_ADMIN_PATH} className="text-sky-200 hover:underline">
+              Landings
             </Link>
             <Link href={OPS_ADMIN_INQUIRIES_PATH} className="text-sky-200 hover:underline">
               Consultas

@@ -133,9 +133,10 @@ export async function requireSuperAdminPage(ctx: GetServerSidePropsContext): Pro
   | { ok: false; redirect: { destination: string; permanent: false } }
 > {
   const actor = await resolveAuthActor(ctx.req, ctx.res)
+  const path = ctx.resolvedUrl?.split('?')[0] ?? '/admin'
   const current =
-    ctx.resolvedUrl && ctx.resolvedUrl.startsWith('/admin') && !ctx.resolvedUrl.startsWith('/admin/login')
-      ? ctx.resolvedUrl.split('?')[0]
+    (path.startsWith('/admin') && !path.startsWith('/admin/login')) || path.startsWith('/app/landings')
+      ? path
       : '/admin'
   if (!actor) {
     return { ok: false, redirect: { destination: loginPath(current), permanent: false } }

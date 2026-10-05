@@ -10,11 +10,12 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "npx tsx --test tests/preview.test.ts tests/publish.test.ts tests/schema.test.ts tests/ops-admin.test.ts tests/auth-login.test.ts tests/invite-owner.test.ts tests/owner-welcome-email.test.ts tests/suite-booking.test.ts tests/mercado-schema.test.ts tests/mercado-jsonld.test.ts tests/mercado-chrome.test.ts tests/mercado-vendors-db.test.ts tests/mercado-inscription.test.ts tests/mercado-public-shell.test.ts tests/mercado-v2.test.ts",
+    "test": "npx tsx --test tests/preview.test.ts tests/publish.test.ts tests/schema.test.ts tests/ops-admin.test.ts tests/auth-login.test.ts tests/invite-owner.test.ts tests/owner-welcome-email.test.ts tests/suite-booking.test.ts tests/mercado-schema.test.ts tests/mercado-jsonld.test.ts tests/mercado-chrome.test.ts tests/mercado-vendors-db.test.ts tests/mercado-inscription.test.ts tests/mercado-public-shell.test.ts tests/mercado-v2.test.ts tests/landing-editor.test.ts",
     "seed:super-admin": "node --env-file=.env.local --import tsx scripts/seed-super-admin.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@hookform/resolvers": "^5.9.1",
     "@radix-ui/react-slot": "^1.2.3",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.52.1",
@@ -24,6 +25,7 @@
     "next": "^15.5.9",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-hook-form": "^7.89.0",
     "resend": "^6.1.0",
     "tailwind-merge": "^3.3.1",
     "zod": "^4.1.5"

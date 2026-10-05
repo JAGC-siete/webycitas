@@ -29,6 +29,7 @@ describe('login unificado Webycitas', () => {
 
   it('postLoginPath separa super_admin y owner', () => {
     assert.equal(postLoginPath('super_admin', '/admin/sites'), '/admin/sites')
+    assert.equal(postLoginPath('super_admin', '/app/landings'), '/app/landings')
     assert.equal(postLoginPath('super_admin', '/app'), '/admin')
     assert.equal(postLoginPath('super_admin'), '/admin')
     assert.equal(postLoginPath('owner', '/admin'), '/app')

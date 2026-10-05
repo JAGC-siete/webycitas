@@ -7,8 +7,10 @@ import { Badge } from '../../components/ui/badge'
 import { Card, CardContent } from '../../components/ui/card'
 import { requireSuperAdminPage } from '../../lib/auth/api-auth'
 import { opsFetch } from '../../lib/auth/client-session'
+import { landingAdminEditPath } from '../../lib/landings/paths'
 import { OPS_ADMIN_SITES_API_PATH } from '../../lib/ops/paths'
 import { formatDateTimeForHonduras } from '../../lib/timezone'
+import { Button } from '../../components/ui/button'
 
 interface SiteRow {
   id: string
@@ -79,6 +81,11 @@ export default function OpsSitesPage({ operatorEmail }: { operatorEmail: string 
                       ? `Publicado ${formatDateTimeForHonduras(row.published_at)}`
                       : `Creado ${formatDateTimeForHonduras(row.created_at)}`}
                   </p>
+                  <div className="pt-1">
+                    <Link href={landingAdminEditPath(row.id)}>
+                      <Button size="sm">Editar</Button>
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
             </li>

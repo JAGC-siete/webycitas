@@ -42,9 +42,19 @@ export function isAdminRedirect(value: string): boolean {
   return value === '/admin' || (value.startsWith('/admin/') && !value.startsWith('/admin/login'))
 }
 
+export function isLandingsAdminRedirect(value: string): boolean {
+  return value === '/app/landings' || value.startsWith('/app/landings/')
+}
+
 export function postLoginPath(role: AppRole, redirect?: string | null): string {
   if (role === SUPER_ADMIN_ROLE) {
-    if (redirect && isSafeAppRedirect(redirect) && isAdminRedirect(redirect)) return redirect
+    if (
+      redirect &&
+      isSafeAppRedirect(redirect) &&
+      (isAdminRedirect(redirect) || isLandingsAdminRedirect(redirect))
+    ) {
+      return redirect
+    }
     return '/admin'
   }
   return '/app'
