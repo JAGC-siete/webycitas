@@ -77,6 +77,19 @@ export const RESERVED_LANDING_SLUGS: readonly string[] = [
 
 const shortText = (max: number) => z.string().trim().min(1).max(max)
 
+/**
+ * El editor manda "" al quitar un enlace. Eso equivale a no tener valor.
+ * preprocess + optional deja la clave opcional en el tipo de salida.
+ */
+const blankOr = <T extends z.ZodType<string>>(schema: T) =>
+  z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    schema.optional()
+  )
+
+/** Ítem de lista enlazado a products. Vacío = sin inventario vivo. */
+export const optionalInventoryProductIdSchema = blankOr(z.string().uuid())
+
 /** Acepta URL https absoluta, ruta interna (/img/foo.webp) o ancla de la misma página (#horarios). */
 export const landingUrlSchema = z
   .string()
@@ -176,6 +189,8 @@ export const itemsBlockSchema = blockBase.extend({
         /** Etiqueta libre ("L. 150", "Desde L. 1,250", "A convenir"): el dueño escribe su realidad. */
         priceLabel: z.string().trim().max(40).optional(),
         imageUrl: landingUrlSchema.optional(),
+        /** Enlace a public.products. Con módulo inventory, /p lee precio y stock vivos. */
+        inventoryProductId: optionalInventoryProductIdSchema,
       })
     )
     .min(1)

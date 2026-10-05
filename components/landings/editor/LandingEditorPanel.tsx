@@ -356,6 +356,13 @@ function BlockFields({
                 <Field label="Image URL">
                   <Input {...register(`blocks.${index}.items.${i}.imageUrl`)} className={fieldClass} />
                 </Field>
+                <Field label="ID inventario (opcional)">
+                  <Input
+                    {...register(`blocks.${index}.items.${i}.inventoryProductId`)}
+                    className={fieldClass}
+                    placeholder="uuid del producto"
+                  />
+                </Field>
               </>
             )}
           />
