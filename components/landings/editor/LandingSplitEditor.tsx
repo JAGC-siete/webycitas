@@ -15,7 +15,6 @@ import {
   BlockAccordion,
   GlobalFields,
   fieldErrorMessage,
-  type EditableBlockRef,
   type EditorFormValues,
 } from './LandingEditorPanel'
 import { Badge } from '../../ui/badge'
@@ -146,7 +145,6 @@ export default function LandingSplitEditor({
 
   const currentTitle = watch('_title') ?? ''
   const currentSlug = watch('_slug') ?? record.slug
-  const blocks = (watch('blocks') ?? []) as EditableBlockRef[]
 
   useEffect(() => {
     const parsed = readLandingPageContent(initial.content_json)
@@ -427,7 +425,6 @@ export default function LandingSplitEditor({
 
           <GlobalFields register={controls.register} control={controls.control} errors={errors} />
           <BlockAccordion
-            blocks={blocks}
             control={controls.control}
             register={controls.register}
             errors={errors}

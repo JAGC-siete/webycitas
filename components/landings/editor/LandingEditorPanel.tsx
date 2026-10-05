@@ -1,11 +1,12 @@
 /**
- * Campos globales + accordion de bloques para el editor ops.
- * MVP: edita campos existentes y visible; no reordena ni crea bloques.
+ * Campos globales + accordion de bloques para el editor.
+ * Anti-scroll (solo un panel abierto) + reorder de bloques con grip HTML5.
  */
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type DragEvent, type ReactNode } from 'react'
 import {
   useFieldArray,
+  useWatch,
   type Control,
   type FieldArrayPath,
   type FieldErrors,
@@ -13,8 +14,10 @@ import {
   type UseFormRegister,
   type UseFormReturn,
 } from 'react-hook-form'
-import { ChevronDown } from 'lucide-react'
-import { Card, CardContent } from '../../ui/card'
+import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react'
+import { cn } from '../../../lib/utils'
+import { Card, CardContent, CardHeader } from '../../ui/card'
+import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import type { LandingBlock, LandingPageContentInput } from '../../../types/landing'
 
@@ -151,27 +154,23 @@ function CheckboxField({
 
 function AccordionSection({
   title,
-  defaultOpen = false,
-  forceOpen = false,
+  open,
+  onToggle,
   hasError = false,
   children,
 }: {
   title: string
-  defaultOpen?: boolean
-  forceOpen?: boolean
+  open: boolean
+  onToggle: () => void
   hasError?: boolean
   children: ReactNode
 }) {
-  const [open, setOpen] = useState(defaultOpen || forceOpen)
-  useEffect(() => {
-    if (forceOpen) setOpen(true)
-  }, [forceOpen])
   return (
     <Card variant="glass" className={hasError ? 'ring-1 ring-red-400/50' : undefined}>
       <button
         type="button"
         className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-white"
-        onClick={() => setOpen((v) => !v)}
+        onClick={onToggle}
         aria-expanded={open}
       >
         <span className="flex items-center gap-2">
@@ -182,11 +181,26 @@ function AccordionSection({
             </span>
           ) : null}
         </span>
-        <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        {open ? (
+          <ChevronUp className="h-4 w-4 shrink-0 text-white/50" />
+        ) : (
+          <ChevronDown className="h-4 w-4 shrink-0 text-white/50" />
+        )}
       </button>
       {open ? <CardContent className="space-y-3 border-t border-white/10 p-4 pt-3">{children}</CardContent> : null}
     </Card>
   )
+}
+
+function blockPreviewLabel(block: LandingBlock | undefined): string {
+  if (!block) return ''
+  if ('headline' in block && typeof block.headline === 'string' && block.headline.trim()) {
+    return block.headline.trim()
+  }
+  if ('title' in block && typeof block.title === 'string' && block.title.trim()) {
+    return block.title.trim()
+  }
+  return block.id
 }
 
 function CtaFields({
@@ -719,16 +733,31 @@ export function GlobalFields({
   control: Control<EditorFormValues>
   errors?: FieldErrors<EditorFormValues>
 }) {
+  type GlobalSection = 'business' | 'seo' | 'theme'
   const businessError = subtreeHasErrors(errors, 'business')
   const metaError = subtreeHasErrors(errors, 'meta')
   const themeError = subtreeHasErrors(errors, 'theme')
+  const [openSection, setOpenSection] = useState<GlobalSection | null>('business')
+
+  useEffect(() => {
+    if (businessError) setOpenSection('business')
+    else if (metaError) setOpenSection('seo')
+    else if (themeError) setOpenSection('theme')
+  }, [businessError, metaError, themeError])
+
+  const toggleSection = (section: GlobalSection) => {
+    setOpenSection((prev) => {
+      if (prev === section) return null
+      return section
+    })
+  }
 
   return (
     <div className="space-y-4">
       <AccordionSection
         title="Datos del negocio"
-        defaultOpen
-        forceOpen={businessError}
+        open={openSection === 'business'}
+        onToggle={() => toggleSection('business')}
         hasError={businessError}
       >
         <ErrorList errors={errors} path="business" />
@@ -767,7 +796,12 @@ export function GlobalFields({
         </Field>
       </AccordionSection>
 
-      <AccordionSection title="SEO" forceOpen={metaError} hasError={metaError}>
+      <AccordionSection
+        title="SEO"
+        open={openSection === 'seo'}
+        onToggle={() => toggleSection('seo')}
+        hasError={metaError}
+      >
         <ErrorList errors={errors} path="meta" />
         <Field label="Título SEO" error={fieldErrorMessage(errors, 'meta.seoTitle')}>
           <Input {...register('meta.seoTitle')} className={fieldClass} />
@@ -784,7 +818,12 @@ export function GlobalFields({
         <CheckboxField register={register} name="meta.noindex" label="noindex" />
       </AccordionSection>
 
-      <AccordionSection title="Tema" forceOpen={themeError} hasError={themeError}>
+      <AccordionSection
+        title="Tema"
+        open={openSection === 'theme'}
+        onToggle={() => toggleSection('theme')}
+        hasError={themeError}
+      >
         <ErrorList errors={errors} path="theme" />
         <Field label="Tono" error={fieldErrorMessage(errors, 'theme.tone')}>
           <select
@@ -829,32 +868,198 @@ export function GlobalFields({
 }
 
 export function BlockAccordion({
-  blocks,
   control,
   register,
   errors,
 }: {
-  blocks: EditableBlockRef[]
   control: Control<EditorFormValues>
   register: UseFormRegister<EditorFormValues>
   errors?: FieldErrors<EditorFormValues>
 }) {
+  const { fields, move } = useFieldArray({
+    control,
+    name: 'blocks',
+    keyName: '_rhfId',
+  })
+  const watchedBlocks = useWatch({ control, name: 'blocks' }) as LandingBlock[] | undefined
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  const [dragFrom, setDragFrom] = useState<number | null>(null)
+  const [dragOver, setDragOver] = useState<number | null>(null)
+
+  const isCollapsed = (fieldId: string, index: number) => {
+    if (collapsed[fieldId] !== undefined) return collapsed[fieldId]
+    // Por defecto: con >3 bloques, colapsar todas salvo la última (anti scroll fatigue)
+    return fields.length > 3 && index < fields.length - 1
+  }
+
+  const setBlockCollapsed = (fieldId: string, value: boolean) => {
+    setCollapsed((prev) => ({ ...prev, [fieldId]: value }))
+  }
+
+  const expandOnly = (fieldId: string) => {
+    const next: Record<string, boolean> = {}
+    for (const f of fields) next[f._rhfId] = f._rhfId !== fieldId
+    setCollapsed(next)
+  }
+
+  useEffect(() => {
+    if (!errors?.blocks || !Array.isArray(errors.blocks)) return
+    for (let i = 0; i < fields.length; i++) {
+      if (subtreeHasErrors(errors, `blocks.${i}`)) {
+        expandOnly(fields[i]._rhfId)
+        break
+      }
+    }
+    // Solo reaccionar a errores; fields se lee fresco en el cuerpo
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [errors?.blocks])
+
+  const onDragStart = (index: number) => (e: DragEvent) => {
+    setDragFrom(index)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(index))
+  }
+
+  const onDragOver = (index: number) => (e: DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (dragOver !== index) setDragOver(index)
+  }
+
+  const onDrop = (toIndex: number) => (e: DragEvent) => {
+    e.preventDefault()
+    const from =
+      dragFrom ?? Number.parseInt(e.dataTransfer.getData('text/plain'), 10)
+    setDragFrom(null)
+    setDragOver(null)
+    if (!Number.isFinite(from) || from === toIndex) return
+    move(from, toIndex)
+  }
+
   return (
     <div className="space-y-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Bloques</p>
-      {blocks.map((block, index) => {
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+          Bloques · arrastrá el grip para reordenar
+        </p>
+        <div className="flex gap-1">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-xs text-gray-400 hover:text-white"
+            onClick={() => {
+              const next: Record<string, boolean> = {}
+              for (const f of fields) next[f._rhfId] = true
+              setCollapsed(next)
+            }}
+          >
+            Colapsar
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-xs text-gray-400 hover:text-white"
+            onClick={() => {
+              const next: Record<string, boolean> = {}
+              for (const f of fields) next[f._rhfId] = false
+              setCollapsed(next)
+            }}
+          >
+            Expandir
+          </Button>
+        </div>
+      </div>
+
+      {fields.map((field, index) => {
         const path = `blocks.${index}`
         const hasError = subtreeHasErrors(errors, path)
+        const block = watchedBlocks?.[index]
+        const kind = block?.kind ?? (field as { kind?: string }).kind ?? 'bloque'
+        const preview = blockPreviewLabel(block)
+        const collapsedNow = isCollapsed(field._rhfId, index)
+        const visible = block?.visible !== false
+
         return (
-          <AccordionSection
-            key={block.id}
-            title={`${index + 1}. ${block.kind} · ${block.id}`}
-            forceOpen={hasError}
-            hasError={hasError}
+          <Card
+            key={field._rhfId}
+            variant="glass"
+            draggable={false}
+            onDragOver={onDragOver(index)}
+            onDrop={onDrop(index)}
+            className={cn(
+              'transition-colors',
+              hasError && 'ring-1 ring-red-400/50',
+              dragOver === index && dragFrom !== index && 'ring-2 ring-brand-400/60'
+            )}
           >
-            <ErrorList errors={errors} path={path} />
-            <BlockFields index={index} kind={block.kind} register={register} control={control} />
-          </AccordionSection>
+            <CardHeader className="flex flex-row items-center gap-2 space-y-0 px-3 py-2">
+              <button
+                type="button"
+                className="cursor-grab touch-none rounded p-1 text-white/40 hover:bg-white/10 hover:text-white active:cursor-grabbing"
+                title="Arrastrar para reordenar"
+                aria-label={`Arrastrar bloque ${kind}`}
+                draggable
+                onDragStart={onDragStart(index)}
+                onDragEnd={() => {
+                  setDragFrom(null)
+                  setDragOver(null)
+                }}
+              >
+                <GripVertical className="h-5 w-5" />
+              </button>
+
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                onClick={() => {
+                  if (collapsedNow) expandOnly(field._rhfId)
+                  else setBlockCollapsed(field._rhfId, true)
+                }}
+                aria-expanded={!collapsedNow}
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-brand-600/25 text-xs font-bold text-brand-200">
+                  {index + 1}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <span className="block truncate text-sm font-semibold text-white">{kind}</span>
+                    {hasError ? (
+                      <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-red-300">
+                        Error
+                      </span>
+                    ) : null}
+                    {!visible ? (
+                      <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-white/50">
+                        Oculto
+                      </span>
+                    ) : null}
+                  </span>
+                  {collapsedNow ? (
+                    <span className="block truncate text-xs text-white/45">{preview || 'sin título'}</span>
+                  ) : null}
+                </span>
+                {collapsedNow ? (
+                  <ChevronDown className="h-4 w-4 shrink-0 text-white/50" />
+                ) : (
+                  <ChevronUp className="h-4 w-4 shrink-0 text-white/50" />
+                )}
+              </button>
+            </CardHeader>
+
+            {!collapsedNow ? (
+              <CardContent className="space-y-3 border-t border-white/10 p-4 pt-3">
+                <ErrorList errors={errors} path={path} />
+                <BlockFields
+                  index={index}
+                  kind={(block?.kind ?? kind) as LandingBlock['kind']}
+                  register={register}
+                  control={control}
+                />
+              </CardContent>
+            ) : null}
+          </Card>
         )
       })}
     </div>
