@@ -1,6 +1,8 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  buildOwnerAccessUrl,
+  isLocalAuthOrigin,
   ownerUpdatePasswordRedirectPath,
   parseAuthHash,
   updatePasswordHashTarget,
@@ -23,6 +25,20 @@ describe('auth hash invite handoff', () => {
       updatePasswordHashTarget(hash),
       `/auth/update-password?next=${encodeURIComponent('/app/login')}${hash}`
     )
+  })
+
+  it('buildOwnerAccessUrl usa token_hash en nuestra app (anti-prefetch)', () => {
+    const url = buildOwnerAccessUrl({
+      origin: 'https://webycitas.humanosisu.net',
+      tokenHash: 'abc123',
+      type: 'invite',
+    })
+    assert.equal(
+      url,
+      'https://webycitas.humanosisu.net/auth/update-password?token_hash=abc123&type=invite&next=%2Fapp%2Flogin'
+    )
+    assert.equal(isLocalAuthOrigin('http://localhost:3000'), true)
+    assert.equal(isLocalAuthOrigin('https://webycitas.humanosisu.net'), false)
   })
 
   it('owner redirectTo incluye next=/app/login', () => {

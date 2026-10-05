@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SEO_BASE_URL } from '../seo/assets'
+import { siteAbsoluteUrl } from '../site'
 import {
   escapeHtml,
   liquidCta,
@@ -429,7 +429,7 @@ export function buildDemoLocalOwnerEmail(
   const hasLanding = lead.services.includes('landing')
   const hasBooking = lead.services.includes('booking')
   const liveUrl = options?.publicUrl
-  const pageUrl = liveUrl || `${SEO_BASE_URL}${DEMO_LOCAL_PUBLIC_PATH}`
+  const pageUrl = liveUrl || siteAbsoluteUrl(DEMO_LOCAL_PUBLIC_PATH)
   const panelUrl = options?.panelUrl
 
   const productBits: string[] = []
@@ -458,14 +458,13 @@ export function buildDemoLocalOwnerEmail(
   if (hasBooking) {
     parts.push(
       liquidParagraph(
-        panelUrl
-          ? 'El sistema de citas se administra desde tu panel (calendario, equipo y solicitudes).'
-          : 'El sistema de citas se administra desde tu panel cuando creés la contraseña.'
+        options?.accessUrl
+          ? 'El sistema de citas (calendario, equipo y solicitudes) se administra desde tu panel después de crear la contraseña.'
+          : panelUrl
+            ? 'El sistema de citas se administra desde tu panel (calendario, equipo y solicitudes).'
+            : 'El sistema de citas se administra desde tu panel cuando creés la contraseña.'
       )
     )
-    if (panelUrl) {
-      parts.push(liquidCta(panelUrl, 'Ir al panel de reservas'))
-    }
   }
 
   if (options?.accessUrl) {
@@ -476,8 +475,12 @@ export function buildDemoLocalOwnerEmail(
     )
     parts.push(liquidCta(options.accessUrl, 'Crear contraseña y entrar al panel'))
   } else if (panelUrl) {
-    parts.push(liquidParagraph('Si ya tenés contraseña, entrá directo al panel:'))
-    parts.push(liquidCta(panelUrl, 'Iniciar sesión'))
+    if (hasBooking) {
+      parts.push(liquidCta(panelUrl, 'Ir al panel de reservas'))
+    } else {
+      parts.push(liquidParagraph('Si ya tenés contraseña, entrá directo al panel:'))
+      parts.push(liquidCta(panelUrl, 'Iniciar sesión'))
+    }
   }
 
   parts.push(

@@ -5,7 +5,7 @@ import { maskEmail, normalizeSoftPhone } from '../../lib/privacy'
 import { getNotifyEmail, getResendFrom } from '../../lib/resend-from'
 import { createAdminClient } from '../../lib/supabase/admin'
 import { PUBLIC_LEAD_LIMIT, withRateLimit } from '../../lib/rate-limit'
-import { authAbsoluteUrl, SEO_BASE_URL } from '../../lib/site'
+import { authAbsoluteUrl, siteAbsoluteUrl } from '../../lib/site'
 import { formatDateTimeForHonduras } from '../../lib/timezone'
 import {
   buildDemoLocalInternalEmail,
@@ -155,7 +155,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     })
   }
 
-  const publicUrl = publicPath ? `${SEO_BASE_URL}${publicPath}` : undefined
+  const publicUrl = publicPath ? siteAbsoluteUrl(publicPath) : undefined
   const panelUrl = authAbsoluteUrl('/app/login')
   const notify = getNotifyEmail()
 

@@ -46,6 +46,15 @@ export function isLandingsAdminRedirect(value: string): boolean {
   return value === '/app/landings' || value.startsWith('/app/landings/')
 }
 
+export function isOwnerAppRedirect(value: string): boolean {
+  if (!isSafeAppRedirect(value)) return false
+  if (!value.startsWith('/app')) return false
+  if (value.startsWith('/app/login') || value.startsWith('/app/forgot-password')) return false
+  if (value.startsWith('/app/mercado')) return false
+  if (isLandingsAdminRedirect(value)) return false
+  return true
+}
+
 export function postLoginPath(role: AppRole, redirect?: string | null): string {
   if (role === SUPER_ADMIN_ROLE) {
     if (
@@ -57,6 +66,7 @@ export function postLoginPath(role: AppRole, redirect?: string | null): string {
     }
     return '/admin'
   }
+  if (redirect && isOwnerAppRedirect(redirect)) return redirect
   return '/app'
 }
 

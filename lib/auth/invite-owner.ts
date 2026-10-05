@@ -3,7 +3,12 @@ import { emailCta, emailParagraph, wrapEmail } from '../emails'
 import { logger } from '../logger'
 import { getResendFrom } from '../resend-from'
 import { authRedirectOrigin } from '../site'
-import { ownerUpdatePasswordRedirectPath } from './auth-hash'
+import {
+  buildOwnerAccessUrl,
+  isLocalAuthOrigin,
+  ownerUpdatePasswordRedirectPath,
+  type OwnerAccessLinkType,
+} from './auth-hash'
 import { OWNER_ROLE } from './role-access'
 
 export type InviteOwnerChannel = 'invite' | 'access_email' | 'access_link'
@@ -28,25 +33,23 @@ function ownerRedirectTo(): string {
   return `${authRedirectOrigin()}${ownerUpdatePasswordRedirectPath()}`
 }
 
-async function sendOwnerAccessEmail(input: {
+async function sendBrandedAccessEmail(input: {
   email: string
   actionLink: string
-  businessName?: string | null
+  title: string
+  introHtml: string
+  noteHtml: string
+  ctaLabel: string
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return { ok: false, error: 'RESEND_API_KEY ausente' }
 
-  const title = 'Acceso a tu panel Webycitas'
-  const intro = input.businessName
-    ? `Creá tu contraseña para administrar <strong>${input.businessName}</strong>.`
-    : 'Creá tu contraseña para administrar tu sitio y tus citas.'
-
   const html = wrapEmail(
-    title,
+    input.title,
     [
-      emailParagraph(intro),
-      emailParagraph('Este enlace es de un solo uso. Si expiró, pedí otra invitación al operador.'),
-      emailCta(input.actionLink, 'Crear contraseña y entrar'),
+      emailParagraph(input.introHtml),
+      emailParagraph(input.noteHtml),
+      emailCta(input.actionLink, input.ctaLabel),
     ].join('')
   )
 
@@ -55,11 +58,43 @@ async function sendOwnerAccessEmail(input: {
   const sent = await resend.emails.send({
     from: getResendFrom(),
     to: input.email,
-    subject: title,
+    subject: input.title,
     html,
   })
   if (sent.error) return { ok: false, error: sent.error.message }
   return { ok: true }
+}
+
+async function sendOwnerAccessEmail(input: {
+  email: string
+  actionLink: string
+  businessName?: string | null
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const intro = input.businessName
+    ? `Creá tu contraseña para administrar <strong>${input.businessName}</strong>.`
+    : 'Creá tu contraseña para administrar tu sitio y tus citas.'
+  return sendBrandedAccessEmail({
+    email: input.email,
+    actionLink: input.actionLink,
+    title: 'Acceso a tu panel Webycitas',
+    introHtml: intro,
+    noteHtml: 'Este enlace es de un solo uso. Si expiró, pedí otra invitación al operador o usá “Olvidé mi contraseña”.',
+    ctaLabel: 'Crear contraseña y entrar',
+  })
+}
+
+async function sendRecoveryAccessEmail(input: {
+  email: string
+  actionLink: string
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  return sendBrandedAccessEmail({
+    email: input.email,
+    actionLink: input.actionLink,
+    title: 'Restablecé tu contraseña · Webycitas',
+    introHtml: 'Elegí una contraseña nueva para entrar a tu panel.',
+    noteHtml: 'Este enlace es de un solo uso. Si expiró, volvé a pedir “Olvidé mi contraseña” en el login.',
+    ctaLabel: 'Crear contraseña y entrar',
+  })
 }
 
 async function upsertOwnerProfile(admin: SupabaseClient, userId: string): Promise<void> {
@@ -85,14 +120,25 @@ async function claimLead(admin: SupabaseClient, leadId: string, userId: string):
 /**
  * Crea o resuelve el auth user + perfil owner. Devuelve action_link (sin enviar correo).
  * generateLink no dispara el mail de Supabase: el caller manda el branded email.
+ *
+ * El enlace del mail apunta a NUESTRA app con token_hash (no a /auth/v1/verify).
+ * Así los scanners de correo no consumen el OTP al hacer GET del verify de Supabase.
  */
 export async function provisionOwnerAccess(
   admin: SupabaseClient,
   input: { email: string; leadId?: string; businessName?: string | null }
 ): Promise<ProvisionOwnerResult> {
   const email = input.email
+  const origin = authRedirectOrigin()
+  if (process.env.NODE_ENV === 'production' && isLocalAuthOrigin(origin)) {
+    throw new Error(
+      'NEXT_PUBLIC_SITE_URL apunta a localhost en producción. Configurá https://webycitas.humanosisu.net en Railway.'
+    )
+  }
+
   const redirectTo = ownerRedirectTo()
 
+  let linkType: OwnerAccessLinkType = 'invite'
   let created = true
   let generated = await admin.auth.admin.generateLink({
     type: 'invite',
@@ -102,6 +148,7 @@ export async function provisionOwnerAccess(
 
   if (generated.error || !generated.data.user) {
     created = false
+    linkType = 'recovery'
     generated = await admin.auth.admin.generateLink({
       type: 'recovery',
       email,
@@ -113,14 +160,70 @@ export async function provisionOwnerAccess(
     throw new Error(generated.error?.message || 'No se pudo provisionar el acceso del dueño')
   }
 
-  const actionLink = generated.data.properties?.action_link
-  if (!actionLink) throw new Error('Supabase no devolvió action_link')
+  const hashedToken = generated.data.properties?.hashed_token
+  const fallbackLink = generated.data.properties?.action_link
+  if (!hashedToken && !fallbackLink) {
+    throw new Error('Supabase no devolvió hashed_token ni action_link')
+  }
+
+  const actionLink = hashedToken
+    ? buildOwnerAccessUrl({ origin, tokenHash: hashedToken, type: linkType })
+    : (fallbackLink as string)
+
+  if (!hashedToken) {
+    logger.warn('Invite sin hashed_token; se usa action_link (vulnerable a prefetch)', { email })
+  }
 
   const userId = generated.data.user.id
   await upsertOwnerProfile(admin, userId)
   if (input.leadId) await claimLead(admin, input.leadId, userId)
 
   return { email, userId, actionLink, created }
+}
+
+/**
+ * Recovery branded (forgot-password): generateLink + token_hash en nuestra app + Resend.
+ * No usa resetPasswordForEmail (ese mail de Supabase se quema con prefetch).
+ */
+export async function sendOwnerPasswordReset(
+  admin: SupabaseClient,
+  email: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const origin = authRedirectOrigin()
+  if (process.env.NODE_ENV === 'production' && isLocalAuthOrigin(origin)) {
+    return {
+      ok: false,
+      error:
+        'NEXT_PUBLIC_SITE_URL apunta a localhost en producción. Configurá https://webycitas.humanosisu.net en Railway.',
+    }
+  }
+
+  const redirectTo = ownerRedirectTo()
+  const generated = await admin.auth.admin.generateLink({
+    type: 'recovery',
+    email,
+    options: { redirectTo },
+  })
+  if (generated.error || !generated.data.user) {
+    return { ok: false, error: generated.error?.message || 'Usuario no encontrado' }
+  }
+
+  const hashedToken = generated.data.properties?.hashed_token
+  const fallbackLink = generated.data.properties?.action_link
+  if (!hashedToken && !fallbackLink) {
+    return { ok: false, error: 'Supabase no devolvió hashed_token' }
+  }
+
+  const actionLink = hashedToken
+    ? buildOwnerAccessUrl({ origin, tokenHash: hashedToken, type: 'recovery' })
+    : (fallbackLink as string)
+
+  if (!hashedToken) {
+    logger.warn('Recovery sin hashed_token; se usa action_link (vulnerable a prefetch)', { email })
+  }
+
+  await upsertOwnerProfile(admin, generated.data.user.id)
+  return sendRecoveryAccessEmail({ email, actionLink })
 }
 
 /**

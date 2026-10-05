@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { parseAuthHash, updatePasswordHashTarget } from '../../lib/auth/auth-hash'
 
 /**
@@ -7,7 +7,7 @@ import { parseAuthHash, updatePasswordHashTarget } from '../../lib/auth/auth-has
  * Usa window.location.replace para no perder el hash (Next router lo descarta).
  */
 export default function AuthHashRedirect() {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window === 'undefined') return
     const { hash, pathname } = window.location
     if (!hash || hash.length < 2) return

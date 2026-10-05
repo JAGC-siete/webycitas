@@ -75,7 +75,7 @@ RLS: `anon` lee fichas `status='active'` (GRANT por columna). `mercado_vendor_ap
 3. Seed one-shot del primer `super_admin` (env, nunca en el repo):
    `WEBYCITAS_SUPERADMIN_EMAIL` + `WEBYCITAS_SUPERADMIN_PASSWORD` (o el trio viejo `WEBYCITAS_ADMIN_*` solo para el corte).
    `npm run seed:super-admin`
-4. En Supabase Auth → URL configuration: Site URL `https://webycitas.humanosisu.net` y Redirect `https://webycitas.humanosisu.net/auth/update-password`.
+4. En Supabase Auth → URL configuration: Site URL `https://webycitas.humanosisu.net` (nunca localhost) y Redirect Allow List con `https://webycitas.humanosisu.net/auth/update-password**`. En Railway, `NEXT_PUBLIC_SITE_URL` debe ser esa misma URL pública.
 5. En Supabase Auth → Password security: activar **Leaked password protection** (HaveIBeenPwned) en el proyecto `cthzofskbfpcgapdauac`.
 6. `npm install && npm test && npm run dev`.
 7. Tras verificar login JWT, borrar `WEBYCITAS_ADMIN_EMAIL` / `WEBYCITAS_ADMIN_PASSWORD` / `WEBYCITAS_ADMIN_SESSION_SECRET` de Railway.

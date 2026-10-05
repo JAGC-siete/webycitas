@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import type { EmailOtpType } from '@supabase/supabase-js'
 import { persistLogin } from '../../lib/auth/client-session'
 import { normalizePassword } from '../../lib/auth/credentials'
 import { isAppRole, isSafeAppRedirect, postLoginPath, type AppRole } from '../../lib/auth/role-access'
@@ -30,11 +31,20 @@ interface LoginResponse {
 
 const SESSION_WAIT_MS = 2000
 
+function asOtpType(value: unknown): EmailOtpType {
+  if (value === 'recovery' || value === 'invite' || value === 'email' || value === 'magiclink') {
+    return value
+  }
+  return 'invite'
+}
+
 export default function UpdatePasswordPage() {
   const router = useRouter()
   const nextQuery = typeof router.query.next === 'string' ? router.query.next : undefined
   const loginFallback =
     nextQuery && nextQuery.startsWith('/app/login') ? nextQuery : '/app/login'
+  const tokenHash = typeof router.query.token_hash === 'string' ? router.query.token_hash : null
+  const otpType = asOtpType(router.query.type)
 
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -43,6 +53,14 @@ export default function UpdatePasswordPage() {
   const [gate, setGate] = useState<Gate>('loading')
 
   useEffect(() => {
+    if (!router.isReady) return
+
+    // token_hash: no verificar hasta el submit (anti-prefetch de scanners).
+    if (tokenHash) {
+      setGate('ready')
+      return
+    }
+
     const supabase = createBrowserSupabase()
     let cancelled = false
     let ready = false
@@ -85,7 +103,7 @@ export default function UpdatePasswordPage() {
       cancelled = true
       sub.subscription.unsubscribe()
     }
-  }, [])
+  }, [router.isReady, tokenHash])
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -102,6 +120,20 @@ export default function UpdatePasswordPage() {
     setError(null)
     try {
       const supabase = createBrowserSupabase()
+
+      if (tokenHash) {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: otpType,
+        })
+        if (verifyError) {
+          setGate('expired')
+          throw new Error(
+            'El enlace expiró o ya se usó. Pedí otro enlace o usá “Olvidé mi contraseña”.'
+          )
+        }
+      }
+
       const { data: sessionData } = await supabase.auth.getSession()
       const email = sessionData.session?.user?.email
       if (!email) throw new Error('Sesión de invitación no encontrada. Pedí otro enlace.')
@@ -164,18 +196,29 @@ export default function UpdatePasswordPage() {
           {gate === 'expired' ? (
             <div className="space-y-4">
               <p className="text-sm text-white/70">
-                El enlace expiró o ya se usó. Pedí otra invitación al operador e intentá de nuevo.
+                El enlace expiró o ya se usó. Pedí otro enlace al operador o restablecé la contraseña
+                desde el login.
               </p>
-              <Link href="/app/login">
-                <Button type="button" variant="outline">
-                  Ir al login
-                </Button>
-              </Link>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/app/forgot-password">
+                  <Button type="button">Olvidé mi contraseña</Button>
+                </Link>
+                <Link href="/app/login">
+                  <Button type="button" variant="outline">
+                    Ir al login
+                  </Button>
+                </Link>
+              </div>
             </div>
           ) : null}
 
           {gate === 'ready' ? (
             <form onSubmit={(event) => void onSubmit(event)} className="space-y-4">
+              {tokenHash ? (
+                <p className="text-xs text-white/50">
+                  El acceso se activa al guardar la contraseña (no al abrir el correo).
+                </p>
+              ) : null}
               <label className="block text-sm text-gray-200">
                 Contraseña
                 <Input

@@ -15,18 +15,28 @@ const baseLead: DemoLocalLead = {
 }
 
 describe('correo de bienvenida al dueño', () => {
-  it('incluye landing, panel de reservas y enlace de acceso', () => {
+  it('con accessUrl prioriza CTA de contraseña (no login antes de crear clave)', () => {
     const mail = buildDemoLocalOwnerEmail(baseLead, {
       publicUrl: 'https://webycitas.humanosisu.net/p/demo',
-      accessUrl: 'https://xxx.supabase.co/auth/v1/verify?token=abc',
-      panelUrl: 'http://localhost:3000/app/login',
+      accessUrl: 'https://webycitas.humanosisu.net/auth/update-password?token_hash=abc&type=invite',
+      panelUrl: 'https://webycitas.humanosisu.net/app/login',
     })
     assert.match(mail.subject, /Webycitas/)
     assert.match(mail.html, /Ver mi landing/)
-    assert.match(mail.html, /panel de reservas/)
     assert.match(mail.html, /Crear contraseña y entrar al panel/)
     assert.match(mail.html, /p\/demo/)
-    assert.match(mail.html, /token=abc/)
+    assert.match(mail.html, /token_hash=abc/)
+    assert.doesNotMatch(mail.html, /Ir al panel de reservas/)
+    assert.doesNotMatch(mail.html, /Iniciar sesión/)
+  })
+
+  it('sin accessUrl y con booking ofrece panel de reservas', () => {
+    const mail = buildDemoLocalOwnerEmail(baseLead, {
+      publicUrl: 'https://webycitas.humanosisu.net/p/demo',
+      panelUrl: 'https://webycitas.humanosisu.net/app/login',
+    })
+    assert.match(mail.html, /Ir al panel de reservas/)
+    assert.doesNotMatch(mail.html, /Crear contraseña y entrar al panel/)
   })
 
   it('sin booking no promete panel de reservas', () => {

@@ -33,6 +33,8 @@ describe('login unificado Webycitas', () => {
     assert.equal(postLoginPath('super_admin', '/app'), '/admin')
     assert.equal(postLoginPath('super_admin'), '/admin')
     assert.equal(postLoginPath('owner', '/admin'), '/app')
+    assert.equal(postLoginPath('owner', '/app/sitio'), '/app/sitio')
+    assert.equal(postLoginPath('owner', '/app/landings'), '/app')
     assert.equal(postLoginPath('owner', 'https://evil.test'), '/app')
   })
 
