@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Button } from '../ui/button'
 import { trackCTAClick } from '../../lib/analytics/googleAds'
 import { APP_LOGIN_PATH } from '../../lib/ops/paths'
+import { serializeJsonLd } from '../../lib/seo/schema'
 import { siteAbsoluteUrl } from '../../lib/site'
 
 export default function MagnetChrome({
@@ -44,7 +45,7 @@ export default function MagnetChrome({
         <meta property="og:url" content={canonical} />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       </Head>
       <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/70 backdrop-blur">

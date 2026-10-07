@@ -1,11 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { clientIp } from '../../../../lib/auth/request'
 import {
   mercadoAdminConfigured,
   mercadoAdminSetCookie,
   verifyMercadoAdminCredentials,
 } from '../../../../lib/mercado/admin-auth'
+import { AUTH_LOGIN_IP_EMAIL_LIMIT, AUTH_LOGIN_IP_LIMIT, consumeRateLimit } from '../../../../lib/rate-limit'
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
     return res.status(405).json({ error: 'Método no permitido' })
@@ -17,6 +19,15 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const email = typeof req.body?.email === 'string' ? req.body.email : ''
   const password = typeof req.body?.password === 'string' ? req.body.password : ''
+  const ip = clientIp(req)
+
+  if (
+    !(await consumeRateLimit(`mercado-login:ip:${ip}`, AUTH_LOGIN_IP_LIMIT)) ||
+    !(await consumeRateLimit(`mercado-login:ip-email:${ip}:${email.trim().toLowerCase()}`, AUTH_LOGIN_IP_EMAIL_LIMIT))
+  ) {
+    return res.status(429).json({ error: 'Demasiados intentos. Intenta en unos minutos.' })
+  }
+
   if (!verifyMercadoAdminCredentials(email, password)) {
     return res.status(401).json({ error: 'Credenciales inválidas' })
   }

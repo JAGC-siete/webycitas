@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { emailCta, emailParagraph, wrapEmail } from '../emails'
+import { emailCta, emailParagraph, escapeHtml, wrapEmail } from '../emails'
 import { logger } from '../logger'
 import { getResendFrom } from '../resend-from'
 import { authRedirectOrigin } from '../site'
@@ -71,7 +71,7 @@ async function sendOwnerAccessEmail(input: {
   businessName?: string | null
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const intro = input.businessName
-    ? `Creá tu contraseña para administrar <strong>${input.businessName}</strong>.`
+    ? `Creá tu contraseña para administrar <strong>${escapeHtml(input.businessName)}</strong>.`
     : 'Creá tu contraseña para administrar tu sitio y tus citas.'
   return sendBrandedAccessEmail({
     email: input.email,
@@ -97,10 +97,15 @@ async function sendRecoveryAccessEmail(input: {
   })
 }
 
-async function upsertOwnerProfile(admin: SupabaseClient, userId: string): Promise<void> {
+/**
+ * Crea el perfil owner solo si el usuario no tiene perfil. Nunca toca role ni
+ * is_active de uno existente: el magnet y forgot-password son públicos y llegan
+ * acá con cualquier correo (incluido el de un super_admin o un owner desactivado).
+ */
+export async function ensureOwnerProfile(admin: SupabaseClient, userId: string): Promise<void> {
   const { error } = await admin.from('user_profiles').upsert(
     { id: userId, role: OWNER_ROLE, is_active: true, permissions: {} },
-    { onConflict: 'id' }
+    { onConflict: 'id', ignoreDuplicates: true }
   )
   if (error) throw error
 }
@@ -175,7 +180,7 @@ export async function provisionOwnerAccess(
   }
 
   const userId = generated.data.user.id
-  await upsertOwnerProfile(admin, userId)
+  await ensureOwnerProfile(admin, userId)
   if (input.leadId) await claimLead(admin, input.leadId, userId)
 
   return { email, userId, actionLink, created }
@@ -222,7 +227,7 @@ export async function sendOwnerPasswordReset(
     logger.warn('Recovery sin hashed_token; se usa action_link (vulnerable a prefetch)', { email })
   }
 
-  await upsertOwnerProfile(admin, generated.data.user.id)
+  await ensureOwnerProfile(admin, generated.data.user.id)
   return sendRecoveryAccessEmail({ email, actionLink })
 }
 

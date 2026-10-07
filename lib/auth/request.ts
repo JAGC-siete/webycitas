@@ -2,13 +2,18 @@ import { createHash } from 'crypto'
 import type { IncomingHttpHeaders } from 'http'
 import type { NextApiRequest } from 'next'
 
+/**
+ * IP del cliente detrás del proxy de Railway (un solo salto).
+ * Usa la ÚLTIMA entrada de X-Forwarded-For: la agrega el proxy. Las anteriores
+ * las manda el cliente y se pueden inventar para esquivar el rate limit.
+ */
 export function clientIp(req: { headers: IncomingHttpHeaders; socket?: { remoteAddress?: string } }): string {
   const forwarded = req.headers['x-forwarded-for']
-  if (typeof forwarded === 'string' && forwarded.length > 0) {
-    return forwarded.split(',')[0]?.trim() || 'unknown'
-  }
-  if (Array.isArray(forwarded) && forwarded[0]) {
-    return forwarded[0].split(',')[0]?.trim() || 'unknown'
+  const raw = Array.isArray(forwarded) ? forwarded.join(',') : forwarded
+  if (typeof raw === 'string' && raw.length > 0) {
+    const hops = raw.split(',').map((hop) => hop.trim()).filter(Boolean)
+    const last = hops[hops.length - 1]
+    if (last) return last
   }
   return req.socket?.remoteAddress || 'unknown'
 }
