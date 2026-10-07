@@ -2,9 +2,10 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { z } from 'zod'
 import { requireSuiteApi } from '../../../../lib/suite/tenant'
 import { landingPageContentSchema } from '../../../../lib/landings/page-schema'
+import { withPublishState } from '../../../../lib/landings/publish-state'
 
 const SITE_EDITOR_COLUMNS =
-  'id, slug, title, status, template_type, content_json, lead_notify_email, published_at'
+  'id, slug, title, status, template_type, content_json, published_content_json, lead_notify_email, published_at'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const ctx = await requireSuiteApi(req, res, { module: 'sitio' })
@@ -21,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .maybeSingle()
       if (error) throw error
       if (!data) return res.status(404).json({ error: 'Sitio no encontrado' })
-      return res.status(200).json({ site: data })
+      return res.status(200).json({ site: withPublishState(data) })
     }
 
     if (req.method === 'PATCH') {
@@ -51,7 +52,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .select(SITE_EDITOR_COLUMNS)
         .maybeSingle()
       if (error) throw error
-      return res.status(200).json({ site: data })
+      if (!data) return res.status(404).json({ error: 'Sitio no encontrado' })
+      return res.status(200).json({ site: withPublishState(data) })
     }
 
     res.setHeader('Allow', 'GET, PATCH')

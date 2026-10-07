@@ -8,6 +8,7 @@ import Link from 'next/link'
 import type { GetServerSideProps } from 'next'
 import { Loader2, Plus } from 'lucide-react'
 import {
+  InventoryMoveDialog,
   InventoryProductDialog,
   InventoryTable,
   type InventoryDraft,
@@ -55,6 +56,9 @@ export default function SuiteInventarioPage({ tenant }: { tenant: SuiteTenant })
   )
   const [saving, setSaving] = useState(false)
   const [dialogError, setDialogError] = useState<string | null>(null)
+  const [moveTarget, setMoveTarget] = useState<InventoryProductView | null>(null)
+  const [moving, setMoving] = useState(false)
+  const [moveError, setMoveError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -97,6 +101,22 @@ export default function SuiteInventarioPage({ tenant }: { tenant: SuiteTenant })
       if (fresh) setProducts(fresh.products)
     } finally {
       setPendingId(null)
+    }
+  }
+
+  async function onMove(delta: number) {
+    if (!moveTarget) return
+    setMoving(true)
+    setMoveError(null)
+    try {
+      const result = await moveSuiteInventoryStock(moveTarget.id, delta)
+      setProducts((current) => current.map((item) => (item.id === result.product.id ? result.product : item)))
+      setMoveTarget(null)
+      setError(null)
+    } catch (err: unknown) {
+      setMoveError(err instanceof Error ? err.message : 'No se pudo mover el stock')
+    } finally {
+      setMoving(false)
     }
   }
 
@@ -179,7 +199,7 @@ export default function SuiteInventarioPage({ tenant }: { tenant: SuiteTenant })
           <div>
             <h1 className="text-xl font-semibold">Inventario</h1>
             <p className="text-sm text-white/60">
-              Productos, precios y saldo. El stock solo se mueve con + y −.
+              Productos, precios y saldo. Usa + y − de a uno, o «Mover» para entradas y salidas grandes.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -218,10 +238,25 @@ export default function SuiteInventarioPage({ tenant }: { tenant: SuiteTenant })
                   setDialog({ mode: 'edit', product })
                 }}
                 onDelta={(product, delta) => void onDelta(product, delta)}
+                onMove={(product) => {
+                  setMoveError(null)
+                  setMoveTarget(product)
+                }}
               />
             )}
           </CardContent>
         </Card>
+
+        {moveTarget ? (
+          <InventoryMoveDialog
+            key={moveTarget.id}
+            product={moveTarget}
+            saving={moving}
+            error={moveError}
+            onClose={() => setMoveTarget(null)}
+            onSubmit={(delta) => void onMove(delta)}
+          />
+        ) : null}
 
         {dialog && tenant.site ? (
           <InventoryProductDialog

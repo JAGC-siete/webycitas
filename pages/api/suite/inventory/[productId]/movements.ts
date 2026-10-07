@@ -1,10 +1,13 @@
 /**
- * Entrada o salida de una unidad. El saldo lo escribe inventory_apply_movement.
+ * Entrada o salida de stock. El saldo lo escribe inventory_apply_movement.
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { logger } from '../../../../../lib/logger'
-import { inventoryMovementSchema } from '../../../../../lib/landings/inventory-schema'
+import {
+  INVENTORY_MOVEMENT_MAX,
+  inventoryMovementSchema,
+} from '../../../../../lib/landings/inventory-schema'
 import { applyInventoryMovement } from '../../../../../lib/landings/inventory-server'
 import { requireSuiteApi } from '../../../../../lib/suite/tenant'
 
@@ -27,7 +30,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const parsed = inventoryMovementSchema.safeParse(req.body)
-  if (!parsed.success) return res.status(400).json({ error: 'El movimiento es +1 o -1.' })
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: `La cantidad tiene que ser un entero entre 1 y ${INVENTORY_MOVEMENT_MAX.toLocaleString('es-HN')}.`,
+    })
+  }
 
   const siteId = ctx.tenant.site.id
   const moved = await applyInventoryMovement(ctx.supabase, productId, siteId, parsed.data.delta)

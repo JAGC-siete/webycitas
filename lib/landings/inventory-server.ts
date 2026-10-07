@@ -35,7 +35,7 @@ export async function applyInventoryMovement(
 ): Promise<{ product: InventoryProductView | null; status: number; error: string | null }> {
   const { data: owned, error: ownedError } = await supabase
     .from(PRODUCTS_TABLE)
-    .select('id')
+    .select('id, stock_actual')
     .eq('id', productId)
     .eq('site_id', siteId)
     .maybeSingle()
@@ -51,7 +51,15 @@ export async function applyInventoryMovement(
   if (error) {
     const message = error.message ?? ''
     if (message.includes('stock_negative')) {
-      return { product: null, status: 409, error: 'No hay stock para sacar.' }
+      const left = (owned as { stock_actual?: number }).stock_actual
+      return {
+        product: null,
+        status: 409,
+        error:
+          typeof left === 'number'
+            ? `No hay suficiente stock para esa salida (quedan ${left}).`
+            : 'No hay suficiente stock para esa salida.',
+      }
     }
     if (message.includes('no_tenant') || message.includes('product_not_found')) {
       return { product: null, status: 404, error: 'Producto no encontrado' }
