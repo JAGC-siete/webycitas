@@ -13,6 +13,7 @@ import LandingRenderer from '../LandingRenderer'
 import {
   asEditorControls,
   BlockAccordion,
+  EditorModeProvider,
   GlobalFields,
   fieldErrorMessage,
   type EditorFormValues,
@@ -26,6 +27,9 @@ import type {
   PublishLandingResult,
   SaveLandingDraftInput,
 } from '../../../lib/landings/editor-types'
+import { prepareEditorFormValues } from '../../../lib/landings/editor-form'
+import type { EditorMode } from '../../../lib/landings/editor-labels'
+import type { InventoryProductView } from '../../../lib/landings/inventory'
 import { readLandingPageContent } from '../../../lib/landings/page-schema'
 import { landingPublicPath } from '../../../lib/landings/paths'
 import { formatDateTimeForHonduras } from '../../../lib/timezone'
@@ -46,7 +50,13 @@ export interface LandingSplitEditorProps {
   leadsHref?: string
   onSave: (input: SaveLandingDraftInput) => Promise<LandingEditRecord>
   onPublish: (action: 'publish' | 'unpublish') => Promise<PublishLandingResult>
+  /** `owner`: editor simple del dueño. Por defecto, el editor técnico de ops. */
+  mode?: EditorMode
+  /** Inventario del dueño para vincular productos (solo `owner`). */
+  inventory?: InventoryProductView[] | null
 }
+
+const INVALID_FORM = 'invalid-form'
 
 const PreviewPane = memo(function PreviewPane({
   control,
@@ -65,7 +75,8 @@ const PreviewPane = memo(function PreviewPane({
   const lastValidPreview = useRef<LandingPageContent | null>(null)
 
   const preview = useMemo(() => {
-    const read = readLandingPageContent(values as LandingPageContentInput)
+    // Igual que al guardar: los inputs vacíos llegan como '' y no pasan el esquema.
+    const read = readLandingPageContent(prepareEditorFormValues(values) as LandingPageContentInput)
     if (read.ok) {
       lastValidPreview.current = read.content
       return {
@@ -93,13 +104,14 @@ const PreviewPane = memo(function PreviewPane({
   }, [values, landingId, slug, title, templateType])
 
   return (
-    <div className="sticky top-6 space-y-2">
+    <div className="sticky top-6 min-w-0 space-y-2">
       {preview.stale && (
         <p className="animate-pulse text-xs text-amber-300">
           Vista previa en pausa: hay un campo incompleto. Se muestra la última versión válida.
         </p>
       )}
-      <div className="overflow-hidden rounded-xl border border-white/10 bg-slate-900/50 shadow-2xl">
+      {/* transform: las barras `fixed` de la plantilla quedan dentro del recuadro, no sobre el editor. */}
+      <div className="overflow-hidden rounded-xl border border-white/10 bg-slate-900/50 shadow-2xl [transform:translateZ(0)]">
         {preview.page ? (
           <div className="max-h-[82vh] overflow-y-auto">
             <LandingRenderer page={preview.page} />
@@ -124,7 +136,10 @@ export default function LandingSplitEditor({
   leadsHref,
   onSave,
   onPublish,
+  mode = 'ops',
+  inventory = null,
 }: LandingSplitEditorProps) {
+  const owner = mode === 'owner'
   const [record, setRecord] = useState<LandingEditRecord>(initial)
   const [status, setStatus] = useState<LandingPageStatus>(initial.status)
   const [unpublished, setUnpublished] = useState(initial.has_unpublished_changes ?? false)
@@ -238,7 +253,8 @@ export default function LandingSplitEditor({
                 }
               },
               () => {
-                reject(new Error('Hay campos inválidos. Corrígelos antes de publicar.'))
+                // El aviso de campos con error ya sale arriba del formulario.
+                reject(new Error(INVALID_FORM))
               }
             )()
           })
@@ -255,6 +271,7 @@ export default function LandingSplitEditor({
           text: 'Despublicada. La dirección pública deja de responder.',
         })
       } catch (err: unknown) {
+        if (err instanceof Error && err.message === INVALID_FORM) return
         setMessage({
           tone: 'error',
           text: err instanceof Error ? err.message : 'No se pudo cambiar la publicación',
@@ -283,7 +300,7 @@ export default function LandingSplitEditor({
   const busy = saving || publishing
   const pendingPublish = isDirty || unpublished
 
-  return (
+  const content = (
     <div className="mx-auto w-full max-w-[1600px] px-4 py-6">
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div className="flex items-center gap-3">
@@ -389,41 +406,54 @@ export default function LandingSplitEditor({
 
       {hasErrors && (
         <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-300">
-          Hay campos inválidos. Los paneles con error se abrieron automáticamente.
+          {owner
+            ? 'Faltan datos en algunos campos. Las secciones con error quedaron abiertas.'
+            : 'Hay campos inválidos. Los paneles con error se abrieron automáticamente.'}
         </div>
       )}
 
-      <div className={`grid gap-6 ${showPreview ? 'lg:grid-cols-[400px_1fr]' : 'grid-cols-1'}`}>
-        <div className="space-y-4">
+      <div
+        className={`grid grid-cols-[minmax(0,1fr)] gap-6 ${showPreview ? 'lg:grid-cols-[400px_minmax(0,1fr)]' : ''}`}
+      >
+        <div className="min-w-0 space-y-4">
           <Card variant="glass">
             <CardContent className="space-y-3 p-4">
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-gray-300">Título interno</span>
-                <Input {...register('_title')} className="bg-white/10 text-white" />
-                {fieldErrorMessage(errors, '_title') ? (
-                  <span className="mt-1 block text-xs text-red-400">{fieldErrorMessage(errors, '_title')}</span>
-                ) : null}
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-gray-300">Dirección pública</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-400">/p/</span>
-                  <Input
-                    {...register('_slug')}
-                    className="bg-white/10 text-white"
-                    readOnly={!slugEditable}
-                    disabled={!slugEditable}
-                  />
-                </div>
-                {!slugEditable ? (
-                  <span className="mt-1 block text-xs text-gray-500">El slug no se puede cambiar desde aquí.</span>
-                ) : fieldErrorMessage(errors, '_slug') ? (
-                  <span className="mt-1 block text-xs text-red-400">{fieldErrorMessage(errors, '_slug')}</span>
-                ) : null}
-              </label>
+              {owner ? (
+                <p className="text-xs text-gray-400">
+                  Tu página:{' '}
+                  <span className="font-mono text-gray-200">{landingPublicPath(currentSlug)}</span>
+                </p>
+              ) : (
+                <>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-gray-300">Título interno</span>
+                  <Input {...register('_title')} className="bg-white/10 text-white" />
+                  {fieldErrorMessage(errors, '_title') ? (
+                    <span className="mt-1 block text-xs text-red-400">{fieldErrorMessage(errors, '_title')}</span>
+                  ) : null}
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-gray-300">Dirección pública</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-400">/p/</span>
+                    <Input
+                      {...register('_slug')}
+                      className="bg-white/10 text-white"
+                      readOnly={!slugEditable}
+                      disabled={!slugEditable}
+                    />
+                  </div>
+                  {!slugEditable ? (
+                    <span className="mt-1 block text-xs text-gray-500">El slug no se puede cambiar desde aquí.</span>
+                  ) : fieldErrorMessage(errors, '_slug') ? (
+                    <span className="mt-1 block text-xs text-red-400">{fieldErrorMessage(errors, '_slug')}</span>
+                  ) : null}
+                </label>
+                </>
+              )}
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-gray-300">
-                  Correo para avisos de leads
+                  {owner ? 'Correo donde te llegan los mensajes de tu página' : 'Correo para avisos de leads'}
                 </span>
                 <Input
                   {...register('_notifyEmail')}
@@ -436,7 +466,9 @@ export default function LandingSplitEditor({
                   </span>
                 ) : (
                   <span className="mt-1 block text-xs text-gray-500">
-                    Si lo dejas vacío, el aviso llega al correo de quien creó la página.
+                    {owner
+                      ? 'Si lo dejas vacío no te llega correo; los mensajes igual quedan en tu panel.'
+                      : 'Si lo dejas vacío, no se envía aviso por correo (la consulta queda guardada).'}
                   </span>
                 )}
               </label>
@@ -468,5 +500,11 @@ export default function LandingSplitEditor({
         )}
       </div>
     </div>
+  )
+
+  return (
+    <EditorModeProvider mode={mode} inventory={owner ? inventory : null}>
+      {content}
+    </EditorModeProvider>
   )
 }

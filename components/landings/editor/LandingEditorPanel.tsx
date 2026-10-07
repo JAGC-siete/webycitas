@@ -1,9 +1,19 @@
 /**
  * Campos globales + accordion de bloques para el editor.
  * Anti-scroll (solo un panel abierto) + reorder de bloques con grip HTML5.
+ * Modo `owner` (dueño): nombres en español llano, sin campos técnicos y con
+ * selector de inventario. Modo `ops`: editor completo.
  */
 
-import { useEffect, useState, type DragEvent, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+  type ReactNode,
+} from 'react'
 import {
   useController,
   useFieldArray,
@@ -15,7 +25,21 @@ import {
   type UseFormRegister,
   type UseFormReturn,
 } from 'react-hook-form'
-import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, GripVertical, Plus, Trash2 } from 'lucide-react'
+import {
+  NEW_ARRAY_ITEM,
+  OPS_CTA_ACTIONS,
+  OWNER_CTA_ACTIONS,
+  blockDisplayName,
+  friendlyErrorPath,
+  friendlyFieldError,
+  itemFromInventoryProduct,
+  unlinkedInventory,
+  type EditorMode,
+} from '../../../lib/landings/editor-labels'
+import { formatInventoryPrice, type InventoryProductView } from '../../../lib/landings/inventory'
+import { MAX_ITEMS_PER_BLOCK } from '../../../lib/landings/page-schema'
+import { SUITE_INVENTARIO_PATH } from '../../../lib/suite/paths'
 import { cn } from '../../../lib/utils'
 import type { SiteMediaKind } from '../../../lib/suite/media'
 import { Card, CardContent, CardHeader } from '../../ui/card'
@@ -50,21 +74,26 @@ function subtreeHasErrors(errors: FieldErrors | undefined, path: string): boolea
   return cur !== undefined && cur !== null
 }
 
-function collectErrorMessages(node: unknown, prefix = '', out: string[] = []): string[] {
+function collectErrors(
+  node: unknown,
+  prefix = '',
+  out: { path: string; message: string }[] = []
+): { path: string; message: string }[] {
   if (!node || typeof node !== 'object') return out
   if ('message' in node && typeof (node as { message?: unknown }).message === 'string') {
     const message = (node as { message: string }).message
-    if (message) out.push(prefix ? `${prefix}: ${message}` : message)
+    if (message) out.push({ path: prefix, message })
   }
   for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
     if (key === 'message' || key === 'type' || key === 'ref') continue
     const next = prefix ? `${prefix}.${key}` : key
-    collectErrorMessages(value, next, out)
+    collectErrors(value, next, out)
   }
   return out
 }
 
 function ErrorList({ errors, path }: { errors?: FieldErrors; path: string }) {
+  const { mode } = useEditorMode()
   if (!subtreeHasErrors(errors, path)) return null
   const parts = path.split('.')
   let cur: unknown = errors
@@ -72,7 +101,14 @@ function ErrorList({ errors, path }: { errors?: FieldErrors; path: string }) {
     if (!cur || typeof cur !== 'object') return null
     cur = (cur as Record<string, unknown>)[part]
   }
-  const messages = collectErrorMessages(cur).slice(0, 6)
+  const messages = collectErrors(cur)
+    .slice(0, 6)
+    .map(({ path: at, message }) => {
+      if (mode === 'ops') return at ? `${at}: ${message}` : message
+      const where = friendlyErrorPath(at)
+      const what = friendlyFieldError(message)
+      return where ? `${where}: ${what}` : what
+    })
   if (messages.length === 0) return null
   return (
     <ul className="space-y-1 rounded-md border border-red-400/30 bg-red-500/10 p-2 text-xs text-red-300">
@@ -100,6 +136,37 @@ export function asEditorControls(form: UseFormReturn<EditorFormValues>): EditorC
   return { register: form.register, control: form.control }
 }
 
+interface EditorModeValue {
+  mode: EditorMode
+  /** Inventario del dueño; null si no tiene el módulo o es ops. */
+  inventory: InventoryProductView[] | null
+}
+
+const EditorModeContext = createContext<EditorModeValue>({ mode: 'ops', inventory: null })
+
+export function EditorModeProvider({
+  mode,
+  inventory,
+  children,
+}: EditorModeValue & { children: ReactNode }) {
+  return <EditorModeContext.Provider value={{ mode, inventory }}>{children}</EditorModeContext.Provider>
+}
+
+function useEditorMode(): EditorModeValue {
+  return useContext(EditorModeContext)
+}
+
+/** Errores del formulario para marcar campos y filas sin pasarlos por props. */
+const EditorErrorsContext = createContext<FieldErrors<EditorFormValues> | undefined>(undefined)
+
+/** Etiqueta según quién edita: `t('Título principal', 'Headline')`. */
+function useLabel(): (owner: string, ops: string) => string {
+  const { mode } = useEditorMode()
+  return (owner, ops) => (mode === 'owner' ? owner : ops)
+}
+
+const selectClass = 'flex h-10 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white'
+
 function FieldLabel({ children }: { children: ReactNode }) {
   return <span className="mb-1 block text-xs font-medium text-gray-300">{children}</span>
 }
@@ -108,16 +175,29 @@ function Field({
   label,
   children,
   error,
+  hint,
+  path,
 }: {
   label: string
   children: ReactNode
   error?: string
+  hint?: string
+  /** Ruta del campo: muestra su error sin pasarlo a mano. */
+  path?: string
 }) {
+  const { mode } = useEditorMode()
+  const errors = useContext(EditorErrorsContext)
+  const found = error ?? (path ? fieldErrorMessage(errors, path) : undefined)
+  error = found && mode === 'owner' ? friendlyFieldError(found) : found
   return (
     <label className="block">
       <FieldLabel>{label}</FieldLabel>
       {children}
-      {error ? <span className="mt-1 block text-xs text-red-400">{error}</span> : null}
+      {error ? (
+        <span className="mt-1 block text-xs text-red-400">{error}</span>
+      ) : hint ? (
+        <span className="mt-1 block text-xs text-gray-500">{hint}</span>
+      ) : null}
     </label>
   )
 }
@@ -234,67 +314,423 @@ function blockPreviewLabel(block: LandingBlock | undefined): string {
 
 function CtaFields({
   register,
+  control,
   prefix,
   label,
 }: {
   register: UseFormRegister<EditorFormValues>
+  control: Control<EditorFormValues>
   prefix: `blocks.${number}.primaryCta` | `blocks.${number}.secondaryCta`
   label: string
 }) {
+  const { mode } = useEditorMode()
+  const action = useWatch({ control, name: `${prefix}.action` })
+  const owner = mode === 'owner'
+  const actions = owner ? OWNER_CTA_ACTIONS : OPS_CTA_ACTIONS
+
   return (
     <div className="space-y-2 rounded-lg border border-white/10 p-3">
       <p className="text-xs font-semibold text-gray-200">{label}</p>
-      <Field label="Etiqueta">
+      <Field label={owner ? 'Texto del botón' : 'Etiqueta'}>
         <Input {...register(`${prefix}.label`)} className={fieldClass} />
       </Field>
-      <Field label="Acción">
-        <select
-          {...register(`${prefix}.action`)}
-          className="flex h-10 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white"
-        >
-          <option value="lead-form">Formulario</option>
-          <option value="whatsapp">WhatsApp</option>
-          <option value="call">Llamar</option>
-          <option value="maps">Mapas</option>
-          <option value="link">Link</option>
+      <Field label={owner ? 'Qué hace al tocarlo' : 'Acción'}>
+        <select {...register(`${prefix}.action`)} className={selectClass}>
+          {actions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
       </Field>
-      <Field label="Href (si link)">
-        <Input {...register(`${prefix}.href`)} className={fieldClass} />
-      </Field>
-      <Field label="Mensaje WhatsApp">
-        <Input {...register(`${prefix}.message`)} className={fieldClass} />
-      </Field>
+      {!owner || action === 'link' ? (
+        <Field label={owner ? 'Enlace' : 'Href (si link)'}>
+          <Input
+            {...register(`${prefix}.href`)}
+            className={fieldClass}
+            placeholder={owner ? 'https://…' : undefined}
+          />
+        </Field>
+      ) : null}
+      {!owner || action === 'whatsapp' ? (
+        <Field
+          label={owner ? 'Mensaje que te llega por WhatsApp' : 'Mensaje WhatsApp'}
+          hint={owner ? 'Opcional. Así sabes desde qué botón te escriben.' : undefined}
+        >
+          <Input {...register(`${prefix}.message`)} className={fieldClass} />
+        </Field>
+      ) : null}
     </div>
   )
 }
 
+interface ArrayToolbar {
+  append: (value: Record<string, unknown>) => void
+  count: number
+  max: number
+}
+
 function ArrayEditor<TName extends FieldArrayPath<EditorFormValues>>({
   control,
-  register,
   name,
   label,
+  itemNoun = 'elemento',
+  max,
+  newItem,
+  summary,
+  toolbar,
   renderItem,
 }: {
   control: Control<EditorFormValues>
-  register: UseFormRegister<EditorFormValues>
+  register?: UseFormRegister<EditorFormValues>
   name: TName
   label: string
+  itemNoun?: string
+  /** Tope del esquema. Con `newItem`, habilita agregar hasta ese número. */
+  max?: number
+  /** Sin `newItem` la lista es fija: no se agrega ni se quita. */
+  newItem?: () => Record<string, unknown>
+  /** Resumen de la fila cerrada. Con resumen, el dueño ve la lista plegada. */
+  summary?: (index: number) => ReactNode
+  toolbar?: (helpers: ArrayToolbar) => ReactNode
   renderItem: (index: number) => ReactNode
 }) {
-  const { fields } = useFieldArray({ control, name })
+  const { mode } = useEditorMode()
+  const errors = useContext(EditorErrorsContext)
+  const { fields, append, remove, move } = useFieldArray({ control, name })
+  const initialIds = useRef<Set<string> | null>(null)
+  if (initialIds.current === null) initialIds.current = new Set(fields.map((field) => field.id))
+  const [open, setOpen] = useState<Record<string, boolean>>({})
+
+  const editable = Boolean(newItem)
+  const limit = max ?? Number.POSITIVE_INFINITY
+  const isOpen = (id: string) => {
+    if (open[id] !== undefined) return open[id]
+    if (!summary || mode === 'ops') return true
+    // Lo recién agregado entra abierto; lo que ya estaba, plegado.
+    return !initialIds.current?.has(id)
+  }
+  const appendItem = (value: Record<string, unknown>) => append(value as never)
+
   return (
     <div className="space-y-3">
       <p className="text-xs font-semibold text-gray-200">
         {label} ({fields.length})
       </p>
-      {fields.map((field, index) => (
-        <div key={field.id} className="space-y-2 rounded-lg border border-white/10 p-3">
-          <p className="text-[11px] uppercase tracking-wide text-gray-500">#{index + 1}</p>
-          {renderItem(index)}
-        </div>
-      ))}
+      {toolbar ? toolbar({ append: appendItem, count: fields.length, max: limit }) : null}
+      {fields.map((field, index) => {
+        const rowError = subtreeHasErrors(errors, `${name}.${index}`)
+        // Una fila con error siempre queda abierta para ver qué falta.
+        const expanded = rowError || isOpen(field.id)
+        return (
+          <div
+            key={field.id}
+            className={cn('rounded-lg border', rowError ? 'border-red-400/50' : 'border-white/10')}
+          >
+            <div className="flex items-center gap-2 px-3 py-2">
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                onClick={() => setOpen((prev) => ({ ...prev, [field.id]: !expanded }))}
+                aria-expanded={expanded}
+              >
+                <span className="hidden text-[11px] uppercase tracking-wide text-gray-500 sm:inline">
+                  #{index + 1}
+                </span>
+                <span className="min-w-0 flex-1">{summary ? summary(index) : null}</span>
+                {expanded ? (
+                  <ChevronUp className="h-4 w-4 shrink-0 text-white/40" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 shrink-0 text-white/40" />
+                )}
+              </button>
+              {editable ? (
+                <div className="flex shrink-0 items-center">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-white/50 hover:text-white"
+                    aria-label={`Subir ${itemNoun}`}
+                    disabled={index === 0}
+                    onClick={() => move(index, index - 1)}
+                  >
+                    <ArrowUp className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-white/50 hover:text-white"
+                    aria-label={`Bajar ${itemNoun}`}
+                    disabled={index === fields.length - 1}
+                    onClick={() => move(index, index + 1)}
+                  >
+                    <ArrowDown className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-red-300/70 hover:text-red-300"
+                    aria-label={`Quitar ${itemNoun}`}
+                    title={fields.length <= 1 ? `Tiene que quedar al menos un ${itemNoun}` : undefined}
+                    disabled={fields.length <= 1}
+                    onClick={() => {
+                      if (mode === 'owner' && !window.confirm(`¿Quitar este ${itemNoun}?`)) return
+                      remove(index)
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+            {expanded ? (
+              <div className="space-y-2 border-t border-white/10 p-3">{renderItem(index)}</div>
+            ) : null}
+          </div>
+        )
+      })}
+      {editable && newItem ? (
+        fields.length < limit ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => appendItem(newItem())}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar {itemNoun}
+          </Button>
+        ) : (
+          <p className="text-xs text-gray-500">Llegaste al máximo de {limit}.</p>
+        )
+      ) : null}
     </div>
+  )
+}
+
+/** Resumen de una fila: el valor de un campo, o un texto de relleno. */
+function TextSummary({
+  control,
+  name,
+  fallback,
+}: {
+  control: Control<EditorFormValues>
+  name: FieldPath<EditorFormValues>
+  fallback: string
+}) {
+  const value = useWatch({ control, name })
+  const text = typeof value === 'string' && value.trim() ? value.trim() : fallback
+  return <span className="block truncate text-sm text-white/80">{text}</span>
+}
+
+type ProductItemValues = {
+  name?: string
+  priceLabel?: string
+  imageUrl?: string
+  inventoryProductId?: string
+}
+
+function ProductSummary({
+  control,
+  blockIndex,
+  itemIndex,
+}: {
+  control: Control<EditorFormValues>
+  blockIndex: number
+  itemIndex: number
+}) {
+  const { inventory } = useEditorMode()
+  const item = useWatch({ control, name: `blocks.${blockIndex}.items.${itemIndex}` }) as
+    | ProductItemValues
+    | undefined
+  const linked = item?.inventoryProductId
+    ? inventory?.find((product) => product.id === item.inventoryProductId)
+    : undefined
+  const price = linked ? formatInventoryPrice(linked.precio) : item?.priceLabel
+
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      {item?.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={item.imageUrl} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />
+      ) : (
+        <span className="h-8 w-8 shrink-0 rounded border border-dashed border-white/15" />
+      )}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm text-white/90">
+          {item?.name?.trim() || 'Producto sin nombre'}
+        </span>
+        <span className="block truncate text-xs text-white/45">
+          {price || 'Sin precio'}
+          {linked ? (
+            <span className={linked.stockActual === 0 ? 'text-red-300' : 'text-emerald-300'}>
+              {' · '}
+              {linked.stockActual === 0 ? 'Agotado' : `${linked.stockActual} en stock`}
+            </span>
+          ) : null}
+        </span>
+      </span>
+    </span>
+  )
+}
+
+/** Precio + vínculo de inventario de un producto. Elige la variante según el modo. */
+function ProductPriceFields({
+  control,
+  register,
+  blockIndex,
+  itemIndex,
+}: {
+  control: Control<EditorFormValues>
+  register: UseFormRegister<EditorFormValues>
+  blockIndex: number
+  itemIndex: number
+}) {
+  const { mode, inventory } = useEditorMode()
+  const base = `blocks.${blockIndex}.items.${itemIndex}` as const
+
+  if (mode === 'owner' && inventory) {
+    return <OwnerInventoryPriceFields control={control} base={base} inventory={inventory} />
+  }
+
+  return (
+    <>
+      <Field
+        label="Precio"
+        hint={mode === 'owner' ? 'Escríbelo como quieras que se vea: «L. 1,450», «Desde L. 900»…' : undefined}
+      >
+        <Input {...register(`${base}.priceLabel`)} className={fieldClass} />
+      </Field>
+      {mode === 'ops' ? (
+        <Field label="ID inventario (opcional)">
+          <Input
+            {...register(`${base}.inventoryProductId`)}
+            className={fieldClass}
+            placeholder="uuid del producto"
+          />
+        </Field>
+      ) : null}
+    </>
+  )
+}
+
+function OwnerInventoryPriceFields({
+  control,
+  base,
+  inventory,
+}: {
+  control: Control<EditorFormValues>
+  base: `blocks.${number}.items.${number}`
+  inventory: InventoryProductView[]
+}) {
+  const link = useController({ control, name: `${base}.inventoryProductId` })
+  const price = useController({ control, name: `${base}.priceLabel` })
+  const linkedId = typeof link.field.value === 'string' ? link.field.value : ''
+  const product = inventory.find((item) => item.id === linkedId)
+  const priceValue = typeof price.field.value === 'string' ? price.field.value : ''
+
+  return (
+    <>
+      <Field
+        label="Vincular con inventario"
+        hint="Si lo vinculas, tu página muestra el precio del inventario y avisa «Agotado» cuando no quede stock."
+      >
+        <select
+          className={selectClass}
+          value={linkedId}
+          onChange={(event) => {
+            const id = event.target.value
+            link.field.onChange(id)
+            const next = inventory.find((item) => item.id === id)
+            if (next) price.field.onChange(formatInventoryPrice(next.precio))
+          }}
+        >
+          <option value="">Sin vincular</option>
+          {linkedId && !product ? <option value={linkedId}>Ya no existe en tu inventario</option> : null}
+          {inventory.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.nombre} · {item.sku} · {item.stockActual} en stock
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field
+        label="Precio"
+        hint={
+          product
+            ? `Viene del inventario: ${formatInventoryPrice(product.precio)} · ${product.stockActual} en stock. Se cambia en Inventario.`
+            : 'Escríbelo como quieras que se vea: «L. 1,450», «Desde L. 900»…'
+        }
+      >
+        <Input
+          value={product ? formatInventoryPrice(product.precio) : priceValue}
+          onChange={(event) => price.field.onChange(event.target.value)}
+          onBlur={price.field.onBlur}
+          disabled={Boolean(product)}
+          className={fieldClass}
+        />
+      </Field>
+    </>
+  )
+}
+
+/** Selector "Agregar desde inventario" del bloque de productos (solo dueño). */
+function AddFromInventory({
+  control,
+  blockIndex,
+  helpers,
+}: {
+  control: Control<EditorFormValues>
+  blockIndex: number
+  helpers: ArrayToolbar
+}) {
+  const { mode, inventory } = useEditorMode()
+  const items = useWatch({ control, name: `blocks.${blockIndex}.items` }) as ProductItemValues[] | undefined
+  if (mode !== 'owner' || !inventory) return null
+
+  if (inventory.length === 0) {
+    return (
+      <p className="rounded-md border border-dashed border-white/15 p-2 text-xs text-gray-400">
+        Tu inventario está vacío. Agrega productos en{' '}
+        <a href={SUITE_INVENTARIO_PATH} className="text-sky-200 underline">
+          Inventario
+        </a>{' '}
+        para traerlos aquí con precio y stock.
+      </p>
+    )
+  }
+
+  const options = unlinkedInventory(inventory, items)
+  const full = helpers.count >= helpers.max
+
+  return (
+    <select
+      className={selectClass}
+      value=""
+      disabled={full || options.length === 0}
+      aria-label="Agregar desde inventario"
+      onChange={(event) => {
+        const product = inventory.find((item) => item.id === event.target.value)
+        if (product) helpers.append({ ...itemFromInventoryProduct(product) })
+      }}
+    >
+      <option value="">
+        {full
+          ? 'Llegaste al máximo de productos en esta sección'
+          : options.length === 0
+            ? 'Todo tu inventario ya está en esta sección'
+            : '+ Agregar desde inventario…'}
+      </option>
+      {options.map((item) => (
+        <option key={item.id} value={item.id}>
+          {item.nombre} · {formatInventoryPrice(item.precio)} · {item.stockActual} en stock
+        </option>
+      ))}
+    </select>
   )
 }
 
@@ -311,7 +747,12 @@ function BlockFields({
   control: Control<EditorFormValues>
   siteId: string
 }) {
-  const base = (
+  const { mode } = useEditorMode()
+  const owner = mode === 'owner'
+  const t = useLabel()
+  const base = owner ? (
+    <CheckboxField register={register} name={`blocks.${index}.visible`} label="Mostrar en la página" />
+  ) : (
     <>
       <CheckboxField register={register} name={`blocks.${index}.visible`} label="Visible" />
       <Field label="Id bloque">
@@ -325,27 +766,26 @@ function BlockFields({
       return (
         <>
           {base}
-          <Field label="Layout">
-            <select
-              {...register(`blocks.${index}.layout`)}
-              className="flex h-10 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white"
-            >
-              <option value="classic">classic</option>
-              <option value="visit">visit</option>
-              <option value="booking">booking</option>
-              <option value="boutique">boutique</option>
-            </select>
-          </Field>
-          <Field label="Badge">
+          {owner ? null : (
+            <Field label="Layout">
+              <select {...register(`blocks.${index}.layout`)} className={selectClass}>
+                <option value="classic">classic</option>
+                <option value="visit">visit</option>
+                <option value="booking">booking</option>
+                <option value="boutique">boutique</option>
+              </select>
+            </Field>
+          )}
+          <Field label={t('Etiqueta pequeña (va arriba del título)', 'Badge')}>
             <Input {...register(`blocks.${index}.badge`)} className={fieldClass} />
           </Field>
-          <Field label="Headline">
+          <Field label={t('Título principal', 'Headline')}>
             <Input {...register(`blocks.${index}.headline`)} className={fieldClass} />
           </Field>
-          <Field label="Subheadline">
+          <Field label={t('Texto debajo del título', 'Subheadline')}>
             <TextArea register={register} name={`blocks.${index}.subheadline`} />
           </Field>
-          <Field label="Imagen">
+          <Field label={t('Imagen de portada', 'Imagen')}>
             <FormImageField
               control={control}
               name={`blocks.${index}.imageUrl`}
@@ -354,72 +794,86 @@ function BlockFields({
               label="hero"
             />
           </Field>
-          <Field label="Placeholder búsqueda">
-            <Input {...register(`blocks.${index}.searchPlaceholder`)} className={fieldClass} />
-          </Field>
-          <Field label="Hint búsqueda">
-            <Input {...register(`blocks.${index}.searchHint`)} className={fieldClass} />
-          </Field>
-          <Field label="Label submit búsqueda">
-            <Input {...register(`blocks.${index}.searchSubmitLabel`)} className={fieldClass} />
-          </Field>
-          <CtaFields register={register} prefix={`blocks.${index}.primaryCta`} label="CTA primario" />
-          <CtaFields register={register} prefix={`blocks.${index}.secondaryCta`} label="CTA secundario" />
+          {owner ? null : (
+            <>
+              <Field label="Placeholder búsqueda">
+                <Input {...register(`blocks.${index}.searchPlaceholder`)} className={fieldClass} />
+              </Field>
+              <Field label="Hint búsqueda">
+                <Input {...register(`blocks.${index}.searchHint`)} className={fieldClass} />
+              </Field>
+              <Field label="Label submit búsqueda">
+                <Input {...register(`blocks.${index}.searchSubmitLabel`)} className={fieldClass} />
+              </Field>
+            </>
+          )}
+          <CtaFields
+            register={register}
+            control={control}
+            prefix={`blocks.${index}.primaryCta`}
+            label={t('Botón principal', 'CTA primario')}
+          />
+          <CtaFields
+            register={register}
+            control={control}
+            prefix={`blocks.${index}.secondaryCta`}
+            label={t('Botón secundario (opcional)', 'CTA secundario')}
+          />
         </>
       )
     case 'items':
       return (
         <>
           {base}
-          <Field label="Título">
+          <Field label={t('Título de la sección', 'Título')}>
             <Input {...register(`blocks.${index}.title`)} className={fieldClass} />
           </Field>
-          <Field label="Subtítulo">
+          <Field label={t('Subtítulo (opcional)', 'Subtítulo')}>
             <Input {...register(`blocks.${index}.subtitle`)} className={fieldClass} />
           </Field>
-          <Field label="Layout">
-            <select
-              {...register(`blocks.${index}.layout`)}
-              className="flex h-10 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white"
-            >
-              <option value="grid">grid</option>
-              <option value="list">list</option>
-              <option value="carousel">carousel</option>
-            </select>
-          </Field>
+          {owner ? null : (
+            <Field label="Layout">
+              <select {...register(`blocks.${index}.layout`)} className={selectClass}>
+                <option value="grid">grid</option>
+                <option value="list">list</option>
+                <option value="carousel">carousel</option>
+              </select>
+            </Field>
+          )}
           <ArrayEditor
             control={control}
-            register={register}
             name={`blocks.${index}.items`}
-            label="Ítems"
+            label={t('Productos', 'Ítems')}
+            itemNoun={t('producto', 'ítem')}
+            max={MAX_ITEMS_PER_BLOCK}
+            newItem={NEW_ARRAY_ITEM.items}
+            summary={(i) => <ProductSummary control={control} blockIndex={index} itemIndex={i} />}
+            toolbar={(helpers) => <AddFromInventory control={control} blockIndex={index} helpers={helpers} />}
             renderItem={(i) => (
               <>
-                <Field label="Nombre">
+                <Field label="Nombre" path={`blocks.${index}.items.${i}.name`}>
                   <Input {...register(`blocks.${index}.items.${i}.name`)} className={fieldClass} />
                 </Field>
-                <Field label="Detalle">
+                <Field
+                  label={t('Descripción', 'Detalle')}
+                  hint={owner ? 'Opcional. Ej. «Notas de ámbar y vainilla · 100 ml».' : undefined}
+                >
                   <Input {...register(`blocks.${index}.items.${i}.detail`)} className={fieldClass} />
                 </Field>
-                <Field label="Categoría">
+                <Field
+                  label="Categoría"
+                  hint={owner ? 'Agrupa y filtra en tu página. Ej. «Para ella», «Noche».' : undefined}
+                >
                   <Input {...register(`blocks.${index}.items.${i}.category`)} className={fieldClass} />
                 </Field>
-                <Field label="Precio">
-                  <Input {...register(`blocks.${index}.items.${i}.priceLabel`)} className={fieldClass} />
-                </Field>
-                <Field label="Imagen">
+                <ProductPriceFields control={control} register={register} blockIndex={index} itemIndex={i} />
+                <Field label={t('Foto', 'Imagen')}>
                   <FormImageField
                     control={control}
                     name={`blocks.${index}.items.${i}.imageUrl`}
                     siteId={siteId}
                     kind="item"
-                    label="ítem"
-                  />
-                </Field>
-                <Field label="ID inventario (opcional)">
-                  <Input
-                    {...register(`blocks.${index}.items.${i}.inventoryProductId`)}
-                    className={fieldClass}
-                    placeholder="uuid del producto"
+                    label={t('foto', 'ítem')}
                   />
                 </Field>
               </>
@@ -436,9 +890,14 @@ function BlockFields({
           </Field>
           <ArrayEditor
             control={control}
-            register={register}
             name={`blocks.${index}.images`}
-            label="Imágenes"
+            label={t('Fotos', 'Imágenes')}
+            itemNoun="foto"
+            max={12}
+            newItem={NEW_ARRAY_ITEM.images}
+            summary={(i) => (
+              <TextSummary control={control} name={`blocks.${index}.images.${i}.alt`} fallback="Foto" />
+            )}
             renderItem={(i) => (
               <>
                 <Field label="Imagen">
@@ -450,7 +909,10 @@ function BlockFields({
                     label="galería"
                   />
                 </Field>
-                <Field label="Alt">
+                <Field
+                  label={t('Descripción de la foto', 'Alt')}
+                  hint={owner ? 'Ayuda a Google y a personas con lector de pantalla.' : undefined}
+                >
                   <Input {...register(`blocks.${index}.images.${i}.alt`)} className={fieldClass} />
                 </Field>
               </>
@@ -477,20 +939,33 @@ function BlockFields({
           <Field label="Título">
             <Input {...register(`blocks.${index}.title`)} className={fieldClass} />
           </Field>
-          <Field label="Nota">
+          <Field label={t('Nota (opcional)', 'Nota')}>
             <Input {...register(`blocks.${index}.note`)} className={fieldClass} />
           </Field>
           <ArrayEditor
             control={control}
-            register={register}
             name={`blocks.${index}.rows`}
-            label="Filas"
+            label={t('Días y horas', 'Filas')}
+            itemNoun={t('fila', 'fila')}
+            max={8}
+            newItem={NEW_ARRAY_ITEM.rows}
+            summary={(i) => (
+              <TextSummary control={control} name={`blocks.${index}.rows.${i}.label`} fallback="Día" />
+            )}
             renderItem={(i) => (
               <>
-                <Field label="Etiqueta">
+                <Field
+                  label={t('Día(s)', 'Etiqueta')}
+                  hint={owner ? 'Ej. «Lunes a viernes».' : undefined}
+                  path={`blocks.${index}.rows.${i}.label`}
+                >
                   <Input {...register(`blocks.${index}.rows.${i}.label`)} className={fieldClass} />
                 </Field>
-                <Field label="Valor">
+                <Field
+                  label={t('Horario', 'Valor')}
+                  hint={owner ? 'Ej. «9:00 a. m. – 6:00 p. m.».' : undefined}
+                  path={`blocks.${index}.rows.${i}.value`}
+                >
                   <Input {...register(`blocks.${index}.rows.${i}.value`)} className={fieldClass} />
                 </Field>
               </>
@@ -507,18 +982,23 @@ function BlockFields({
           </Field>
           <ArrayEditor
             control={control}
-            register={register}
             name={`blocks.${index}.items`}
-            label="Testimonios"
+            label={t('Opiniones', 'Testimonios')}
+            itemNoun={t('opinión', 'testimonio')}
+            max={9}
+            newItem={NEW_ARRAY_ITEM.testimonials}
+            summary={(i) => (
+              <TextSummary control={control} name={`blocks.${index}.items.${i}.author`} fallback="Sin nombre" />
+            )}
             renderItem={(i) => (
               <>
-                <Field label="Autor">
+                <Field label={t('Nombre', 'Autor')} path={`blocks.${index}.items.${i}.author`}>
                   <Input {...register(`blocks.${index}.items.${i}.author`)} className={fieldClass} />
                 </Field>
-                <Field label="Rol">
+                <Field label={t('Detalle (opcional)', 'Rol')} hint={owner ? 'Ej. «Clienta desde 2023».' : undefined}>
                   <Input {...register(`blocks.${index}.items.${i}.role`)} className={fieldClass} />
                 </Field>
-                <Field label="Cita">
+                <Field label={t('Opinión', 'Cita')} path={`blocks.${index}.items.${i}.quote`}>
                   <TextArea register={register} name={`blocks.${index}.items.${i}.quote`} />
                 </Field>
               </>
@@ -535,15 +1015,24 @@ function BlockFields({
           </Field>
           <ArrayEditor
             control={control}
-            register={register}
             name={`blocks.${index}.items`}
             label="Preguntas"
+            itemNoun="pregunta"
+            max={12}
+            newItem={NEW_ARRAY_ITEM.faq}
+            summary={(i) => (
+              <TextSummary
+                control={control}
+                name={`blocks.${index}.items.${i}.question`}
+                fallback="Pregunta sin escribir"
+              />
+            )}
             renderItem={(i) => (
               <>
-                <Field label="Pregunta">
+                <Field label="Pregunta" path={`blocks.${index}.items.${i}.question`}>
                   <Input {...register(`blocks.${index}.items.${i}.question`)} className={fieldClass} />
                 </Field>
-                <Field label="Respuesta">
+                <Field label="Respuesta" path={`blocks.${index}.items.${i}.answer`}>
                   <TextArea register={register} name={`blocks.${index}.items.${i}.answer`} />
                 </Field>
               </>
@@ -561,16 +1050,16 @@ function BlockFields({
           <Field label="Subtítulo">
             <Input {...register(`blocks.${index}.subtitle`)} className={fieldClass} />
           </Field>
-          <Field label="Label enviar">
+          <Field label={t('Texto del botón enviar', 'Label enviar')}>
             <Input {...register(`blocks.${index}.submitLabel`)} className={fieldClass} />
           </Field>
-          <Field label="Texto consentimiento">
+          <Field label={t('Texto de consentimiento', 'Texto consentimiento')}>
             <TextArea register={register} name={`blocks.${index}.consentText`} />
           </Field>
-          <Field label="Éxito · título">
+          <Field label={t('Mensaje al enviar · título', 'Éxito · título')}>
             <Input {...register(`blocks.${index}.successTitle`)} className={fieldClass} />
           </Field>
-          <Field label="Éxito · cuerpo">
+          <Field label={t('Mensaje al enviar · texto', 'Éxito · cuerpo')}>
             <TextArea register={register} name={`blocks.${index}.successBody`} />
           </Field>
           <CheckboxField
@@ -597,7 +1086,7 @@ function BlockFields({
           </Field>
           <CheckboxField register={register} name={`blocks.${index}.showWhatsapp`} label="WhatsApp" />
           <CheckboxField register={register} name={`blocks.${index}.showPhone`} label="Teléfono" />
-          <CheckboxField register={register} name={`blocks.${index}.showEmail`} label="Email" />
+          <CheckboxField register={register} name={`blocks.${index}.showEmail`} label={t('Correo', 'Email')} />
           <CheckboxField register={register} name={`blocks.${index}.showAddress`} label="Dirección" />
           <CheckboxField register={register} name={`blocks.${index}.showMap`} label="Mapa" />
         </>
@@ -606,13 +1095,13 @@ function BlockFields({
       return (
         <>
           {base}
-          <Field label="Headline">
+          <Field label={t('Título', 'Headline')}>
             <Input {...register(`blocks.${index}.headline`)} className={fieldClass} />
           </Field>
-          <Field label="Subheadline">
+          <Field label={t('Texto', 'Subheadline')}>
             <Input {...register(`blocks.${index}.subheadline`)} className={fieldClass} />
           </Field>
-          <Field label="Imagen (banner destacado)">
+          <Field label={t('Imagen del banner', 'Imagen (banner destacado)')}>
             <FormImageField
               control={control}
               name={`blocks.${index}.imageUrl`}
@@ -621,7 +1110,12 @@ function BlockFields({
               label="banner"
             />
           </Field>
-          <CtaFields register={register} prefix={`blocks.${index}.primaryCta`} label="CTA" />
+          <CtaFields
+            register={register}
+            control={control}
+            prefix={`blocks.${index}.primaryCta`}
+            label={t('Botón', 'CTA')}
+          />
         </>
       )
     case 'visit':
@@ -634,16 +1128,16 @@ function BlockFields({
           <Field label="Cuerpo">
             <TextArea register={register} name={`blocks.${index}.body`} rows={5} />
           </Field>
-          <Field label="Geo label">
+          <Field label={t('Zona o referencia', 'Geo label')}>
             <Input {...register(`blocks.${index}.geoLabel`)} className={fieldClass} />
           </Field>
-          <Field label="CTA mapas">
+          <Field label={t('Texto del botón de mapa', 'CTA mapas')}>
             <Input {...register(`blocks.${index}.mapsCtaLabel`)} className={fieldClass} />
           </Field>
-          <Field label="CTA horarios">
+          <Field label={t('Texto del botón de horario', 'CTA horarios')}>
             <Input {...register(`blocks.${index}.hoursCtaLabel`)} className={fieldClass} />
           </Field>
-          <Field label="Placeholder mapa">
+          <Field label={t('Texto mientras carga el mapa', 'Placeholder mapa')}>
             <Input {...register(`blocks.${index}.mapPlaceholder`)} className={fieldClass} />
           </Field>
         </>
@@ -657,18 +1151,23 @@ function BlockFields({
           </Field>
           <ArrayEditor
             control={control}
-            register={register}
             name={`blocks.${index}.items`}
-            label="Beneficios"
+            label={t('Razones', 'Beneficios')}
+            itemNoun={t('razón', 'beneficio')}
+            max={MAX_ITEMS_PER_BLOCK}
+            newItem={NEW_ARRAY_ITEM.benefits}
+            summary={(i) => (
+              <TextSummary control={control} name={`blocks.${index}.items.${i}.title`} fallback="Sin título" />
+            )}
             renderItem={(i) => (
               <>
-                <Field label="Marca">
+                <Field label={t('Ícono o símbolo corto', 'Marca')} hint={owner ? 'Hasta 8 caracteres. Ej. «✦» o «100%».' : undefined}>
                   <Input {...register(`blocks.${index}.items.${i}.mark`)} className={fieldClass} />
                 </Field>
                 <Field label="Título">
                   <Input {...register(`blocks.${index}.items.${i}.title`)} className={fieldClass} />
                 </Field>
-                <Field label="Cuerpo">
+                <Field label={t('Texto', 'Cuerpo')}>
                   <TextArea register={register} name={`blocks.${index}.items.${i}.body`} />
                 </Field>
               </>
@@ -688,9 +1187,14 @@ function BlockFields({
           </Field>
           <ArrayEditor
             control={control}
-            register={register}
             name={`blocks.${index}.items`}
             label="Equipo"
+            itemNoun="persona"
+            max={MAX_ITEMS_PER_BLOCK}
+            newItem={NEW_ARRAY_ITEM.team}
+            summary={(i) => (
+              <TextSummary control={control} name={`blocks.${index}.items.${i}.name`} fallback="Sin nombre" />
+            )}
             renderItem={(i) => (
               <>
                 <Field label="Nombre">
@@ -699,7 +1203,7 @@ function BlockFields({
                 <Field label="Rol">
                   <Input {...register(`blocks.${index}.items.${i}.role`)} className={fieldClass} />
                 </Field>
-                <Field label="Bio">
+                <Field label={t('Descripción', 'Bio')}>
                   <TextArea register={register} name={`blocks.${index}.items.${i}.bio`} />
                 </Field>
                 <Field label="Imagen">
@@ -731,27 +1235,28 @@ function BlockFields({
           </Field>
           <ArrayEditor
             control={control}
-            register={register}
             name={`blocks.${index}.items`}
-            label="Áreas / productos"
+            label={t('Secciones', 'Áreas / productos')}
             renderItem={(i) => (
               <>
-                <Field label="Id">
-                  <Input {...register(`blocks.${index}.items.${i}.id`)} className={fieldClass} />
-                </Field>
+                {owner ? null : (
+                  <Field label="Id">
+                    <Input {...register(`blocks.${index}.items.${i}.id`)} className={fieldClass} />
+                  </Field>
+                )}
                 <Field label="Título">
                   <Input {...register(`blocks.${index}.items.${i}.title`)} className={fieldClass} />
                 </Field>
-                <Field label="Pasillo / aisle">
+                <Field label={t('Pasillo', 'Pasillo / aisle')}>
                   <Input {...register(`blocks.${index}.items.${i}.aisle`)} className={fieldClass} />
                 </Field>
                 <Field label="Descripción">
                   <TextArea register={register} name={`blocks.${index}.items.${i}.description`} />
                 </Field>
-                <Field label="CTA">
+                <Field label={t('Texto del botón', 'CTA')}>
                   <Input {...register(`blocks.${index}.items.${i}.ctaLabel`)} className={fieldClass} />
                 </Field>
-                <Field label="Hint">
+                <Field label={t('Ayuda', 'Hint')}>
                   <Input {...register(`blocks.${index}.items.${i}.hintLabel`)} className={fieldClass} />
                 </Field>
                 <Field label="Imagen">
@@ -763,10 +1268,10 @@ function BlockFields({
                     label="área"
                   />
                 </Field>
-                <Field label="Image alt">
+                <Field label={t('Descripción de la foto', 'Image alt')}>
                   <Input {...register(`blocks.${index}.items.${i}.imageAlt`)} className={fieldClass} />
                 </Field>
-                <Field label="Needles (coma)">
+                <Field label={t('Palabras para el buscador (separadas por coma)', 'Needles (coma)')}>
                   <Input
                     {...register(`blocks.${index}.items.${i}.needles`, {
                       setValueAs: (v: unknown) => {
@@ -791,7 +1296,9 @@ function BlockFields({
       return (
         <>
           {base}
-          <p className="text-xs text-amber-300">Tipo de bloque sin campos dedicados en el MVP.</p>
+          <p className="text-xs text-amber-300">
+            {t('Esta sección no se puede editar desde aquí.', 'Tipo de bloque sin campos dedicados en el MVP.')}
+          </p>
         </>
       )
   }
@@ -805,6 +1312,9 @@ export function GlobalFields({
   control: Control<EditorFormValues>
   errors?: FieldErrors<EditorFormValues>
 }) {
+  const { mode } = useEditorMode()
+  const owner = mode === 'owner'
+  const t = useLabel()
   type GlobalSection = 'business' | 'seo' | 'theme'
   const businessError = subtreeHasErrors(errors, 'business')
   const metaError = subtreeHasErrors(errors, 'meta')
@@ -845,7 +1355,11 @@ export function GlobalFields({
         <Field label="Dirección" error={fieldErrorMessage(errors, 'business.address')}>
           <Input {...register('business.address')} className={fieldClass} />
         </Field>
-        <Field label="Búsqueda de Maps" error={fieldErrorMessage(errors, 'business.mapsQuery')}>
+        <Field
+          label={t('Cómo te buscan en Google Maps', 'Búsqueda de Maps')}
+          error={fieldErrorMessage(errors, 'business.mapsQuery')}
+          hint={owner ? 'Tal como aparece tu negocio en Maps: nombre y ciudad.' : undefined}
+        >
           <Input {...register('business.mapsQuery')} className={fieldClass} />
         </Field>
         <Field label="WhatsApp" error={fieldErrorMessage(errors, 'business.whatsapp')}>
@@ -854,7 +1368,7 @@ export function GlobalFields({
         <Field label="Teléfono" error={fieldErrorMessage(errors, 'business.phone')}>
           <Input {...register('business.phone')} className={fieldClass} />
         </Field>
-        <Field label="Email del negocio" error={fieldErrorMessage(errors, 'business.email')}>
+        <Field label={t('Correo del negocio', 'Email del negocio')} error={fieldErrorMessage(errors, 'business.email')}>
           <Input {...register('business.email')} className={fieldClass} />
         </Field>
         <Field label="Instagram" error={fieldErrorMessage(errors, 'business.socials.instagram')}>
@@ -869,72 +1383,84 @@ export function GlobalFields({
       </AccordionSection>
 
       <AccordionSection
-        title="SEO"
+        title={t('Avanzado (cómo te ve Google)', 'SEO')}
         open={openSection === 'seo'}
         onToggle={() => toggleSection('seo')}
         hasError={metaError}
       >
         <ErrorList errors={errors} path="meta" />
-        <Field label="Título SEO" error={fieldErrorMessage(errors, 'meta.seoTitle')}>
+        <Field
+          label={t('Título en Google', 'Título SEO')}
+          error={fieldErrorMessage(errors, 'meta.seoTitle')}
+          hint={owner ? 'El título azul que sale en los resultados de búsqueda.' : undefined}
+        >
           <Input {...register('meta.seoTitle')} className={fieldClass} />
         </Field>
-        <Field label="Descripción SEO" error={fieldErrorMessage(errors, 'meta.seoDescription')}>
+        <Field
+          label={t('Descripción en Google', 'Descripción SEO')}
+          error={fieldErrorMessage(errors, 'meta.seoDescription')}
+        >
           <TextArea register={register} name="meta.seoDescription" />
         </Field>
-        <Field label="Keywords" error={fieldErrorMessage(errors, 'meta.keywords')}>
+        <Field label={t('Palabras clave', 'Keywords')} error={fieldErrorMessage(errors, 'meta.keywords')}>
           <Input {...register('meta.keywords')} className={fieldClass} />
         </Field>
-        <Field label="OG image URL" error={fieldErrorMessage(errors, 'meta.ogImageUrl')}>
+        <Field
+          label={t('Imagen al compartir en redes (enlace)', 'OG image URL')}
+          error={fieldErrorMessage(errors, 'meta.ogImageUrl')}
+        >
           <Input {...register('meta.ogImageUrl')} className={fieldClass} />
         </Field>
-        <CheckboxField register={register} name="meta.noindex" label="noindex" />
+        {owner ? null : <CheckboxField register={register} name="meta.noindex" label="noindex" />}
       </AccordionSection>
 
-      <AccordionSection
-        title="Tema"
-        open={openSection === 'theme'}
-        onToggle={() => toggleSection('theme')}
-        hasError={themeError}
-      >
-        <ErrorList errors={errors} path="theme" />
-        <Field label="Tono" error={fieldErrorMessage(errors, 'theme.tone')}>
-          <select
-            {...register('theme.tone')}
-            className="flex h-10 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white"
-          >
-            <option value="light">light</option>
-            <option value="dark">dark</option>
-          </select>
-        </Field>
-        <Field label="Primary" error={fieldErrorMessage(errors, 'theme.primary')}>
-          <Input {...register('theme.primary')} className={fieldClass} />
-        </Field>
-        <Field label="Accent" error={fieldErrorMessage(errors, 'theme.accent')}>
-          <Input {...register('theme.accent')} className={fieldClass} />
-        </Field>
-        <Field label="Surface" error={fieldErrorMessage(errors, 'theme.surface')}>
-          <Input {...register('theme.surface')} className={fieldClass} />
-        </Field>
-        <Field label="Fuente" error={fieldErrorMessage(errors, 'theme.font')}>
-          <select
-            {...register('theme.font')}
-            className="flex h-10 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white"
-          >
-            <option value="sans">sans</option>
-            <option value="serif">serif</option>
-          </select>
-        </Field>
-        <Field label="Radio" error={fieldErrorMessage(errors, 'theme.radius')}>
-          <select
-            {...register('theme.radius')}
-            className="flex h-10 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white"
-          >
-            <option value="sm">sm</option>
-            <option value="md">md</option>
-            <option value="lg">lg</option>
-          </select>
-        </Field>
-      </AccordionSection>
+      {owner ? null : (
+        <AccordionSection
+          title="Tema"
+          open={openSection === 'theme'}
+          onToggle={() => toggleSection('theme')}
+          hasError={themeError}
+        >
+          <ErrorList errors={errors} path="theme" />
+          <Field label="Tono" error={fieldErrorMessage(errors, 'theme.tone')}>
+            <select
+              {...register('theme.tone')}
+              className="flex h-10 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white"
+            >
+              <option value="light">light</option>
+              <option value="dark">dark</option>
+            </select>
+          </Field>
+          <Field label="Primary" error={fieldErrorMessage(errors, 'theme.primary')}>
+            <Input {...register('theme.primary')} className={fieldClass} />
+          </Field>
+          <Field label="Accent" error={fieldErrorMessage(errors, 'theme.accent')}>
+            <Input {...register('theme.accent')} className={fieldClass} />
+          </Field>
+          <Field label="Surface" error={fieldErrorMessage(errors, 'theme.surface')}>
+            <Input {...register('theme.surface')} className={fieldClass} />
+          </Field>
+          <Field label="Fuente" error={fieldErrorMessage(errors, 'theme.font')}>
+            <select
+              {...register('theme.font')}
+              className="flex h-10 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white"
+            >
+              <option value="sans">sans</option>
+              <option value="serif">serif</option>
+            </select>
+          </Field>
+          <Field label="Radio" error={fieldErrorMessage(errors, 'theme.radius')}>
+            <select
+              {...register('theme.radius')}
+              className="flex h-10 w-full rounded-md border border-white/10 bg-white/10 px-3 text-sm text-white"
+            >
+              <option value="sm">sm</option>
+              <option value="md">md</option>
+              <option value="lg">lg</option>
+            </select>
+          </Field>
+        </AccordionSection>
+      )}
     </div>
   )
 }
@@ -950,6 +1476,8 @@ export function BlockAccordion({
   errors?: FieldErrors<EditorFormValues>
   siteId: string
 }) {
+  const { mode } = useEditorMode()
+  const owner = mode === 'owner'
   const { fields, move } = useFieldArray({
     control,
     name: 'blocks',
@@ -1011,10 +1539,11 @@ export function BlockAccordion({
   }
 
   return (
+    <EditorErrorsContext.Provider value={errors}>
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-          Bloques · arrastrá el grip para reordenar
+          {owner ? 'Secciones de tu página' : 'Bloques · arrastrá el grip para reordenar'}
         </p>
         <div className="flex gap-1">
           <Button
@@ -1028,7 +1557,7 @@ export function BlockAccordion({
               setCollapsed(next)
             }}
           >
-            Colapsar
+            {owner ? 'Cerrar todo' : 'Colapsar'}
           </Button>
           <Button
             type="button"
@@ -1041,7 +1570,7 @@ export function BlockAccordion({
               setCollapsed(next)
             }}
           >
-            Expandir
+            {owner ? 'Abrir todo' : 'Expandir'}
           </Button>
         </div>
       </div>
@@ -1051,6 +1580,7 @@ export function BlockAccordion({
         const hasError = subtreeHasErrors(errors, path)
         const block = watchedBlocks?.[index]
         const kind = block?.kind ?? (field as { kind?: string }).kind ?? 'bloque'
+        const kindName = blockDisplayName(kind, mode)
         const preview = blockPreviewLabel(block)
         const collapsedNow = isCollapsed(field._rhfId, index)
         const visible = block?.visible !== false
@@ -1073,7 +1603,7 @@ export function BlockAccordion({
                 type="button"
                 className="cursor-grab touch-none rounded p-1 text-white/40 hover:bg-white/10 hover:text-white active:cursor-grabbing"
                 title="Arrastrar para reordenar"
-                aria-label={`Arrastrar bloque ${kind}`}
+                aria-label={`Arrastrar ${owner ? 'sección' : 'bloque'} ${kindName}`}
                 draggable
                 onDragStart={onDragStart(index)}
                 onDragEnd={() => {
@@ -1098,7 +1628,7 @@ export function BlockAccordion({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
-                    <span className="block truncate text-sm font-semibold text-white">{kind}</span>
+                    <span className="block truncate text-sm font-semibold text-white">{kindName}</span>
                     {hasError ? (
                       <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-red-300">
                         Error
@@ -1111,7 +1641,9 @@ export function BlockAccordion({
                     ) : null}
                   </span>
                   {collapsedNow ? (
-                    <span className="block truncate text-xs text-white/45">{preview || 'sin título'}</span>
+                    <span className="block truncate text-xs text-white/45">
+                      {preview && preview !== block?.id ? preview : owner ? '' : preview || 'sin título'}
+                    </span>
                   ) : null}
                 </span>
                 {collapsedNow ? (
@@ -1120,6 +1652,31 @@ export function BlockAccordion({
                   <ChevronUp className="h-4 w-4 shrink-0 text-white/50" />
                 )}
               </button>
+              {/* Flechas: el grip HTML5 no funciona con el dedo en el celular. */}
+              <div className="flex shrink-0 items-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-white/40 hover:text-white"
+                  aria-label={`Subir ${kindName}`}
+                  disabled={index === 0}
+                  onClick={() => move(index, index - 1)}
+                >
+                  <ArrowUp className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-white/40 hover:text-white"
+                  aria-label={`Bajar ${kindName}`}
+                  disabled={index === fields.length - 1}
+                  onClick={() => move(index, index + 1)}
+                >
+                  <ArrowDown className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </CardHeader>
 
             {!collapsedNow ? (
@@ -1138,5 +1695,6 @@ export function BlockAccordion({
         )
       })}
     </div>
+    </EditorErrorsContext.Provider>
   )
 }
