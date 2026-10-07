@@ -12,4 +12,11 @@ export const LANDING_STOCK = {
   salonHero: '/landings/stock/salon-hero.png',
   salonManicura: '/landings/stock/salon-manicura.png',
   barberiaHero: '/landings/stock/barberia-hero.png',
+  perfumeriaHero: '/landings/stock/perfumeria-hero.svg',
+  perfumeriaAmbar: '/landings/stock/perfumeria-ambar.svg',
+  perfumeriaOud: '/landings/stock/perfumeria-oud.svg',
+  perfumeriaCitrico: '/landings/stock/perfumeria-citrico.svg',
+  perfumeriaRosa: '/landings/stock/perfumeria-rosa.svg',
+  perfumeriaVainilla: '/landings/stock/perfumeria-vainilla.svg',
+  perfumeriaMarino: '/landings/stock/perfumeria-marino.svg',
 } as const

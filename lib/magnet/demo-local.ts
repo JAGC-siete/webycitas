@@ -24,6 +24,7 @@ export const WEBYCITAS_RETAIL_RUBROS = [
   'papeleria',
   'supermercado',
   'ferreteria',
+  'perfumeria',
 ] as const
 
 export const WEBYCITAS_SERVICE_RUBROS = ['spa', 'clinica', 'barberia', 'salon'] as const
@@ -195,6 +196,20 @@ export const DEMO_LOCAL_CATALOGS: Record<DemoLocalRubro, DemoLocalCatalog> = {
       { name: 'Carnes y lácteos', detail: 'Del día, por peso', price: 'Según peso' },
       { name: 'Abarrotes', detail: 'Limpieza y despensa', price: 'Precio de góndola' },
       { name: 'Entrega a domicilio', detail: 'Radio del barrio', price: 'L. 25' },
+    ],
+  },
+  perfumeria: {
+    id: 'perfumeria',
+    label: 'Perfumería',
+    shopName: 'Perfumería Esencia',
+    neighborhood: 'Centro comercial, local 12',
+    mapsQuery: 'perfumería cerca de mí',
+    hours: 'Lun–Sáb 10:00–19:00 · Dom 11:00–17:00',
+    items: [
+      { name: 'Perfume de nicho 100 ml', detail: 'Original, con empaque sellado', price: 'Desde L. 3,200' },
+      { name: 'Decant 10 ml', detail: 'Del frasco original, atomizador de vidrio', price: 'Desde L. 250' },
+      { name: 'Perfume árabe 100 ml', detail: 'Larga duración', price: 'Desde L. 1,150' },
+      { name: 'Set de regalo', detail: 'Tres decants en caja con tarjeta', price: 'L. 950' },
     ],
   },
   spa: {
