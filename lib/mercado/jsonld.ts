@@ -207,6 +207,4 @@ export function mercadoSitemapUrls(vendorSlugs?: string[]) {
   ]
 }
 
-export function serializeJsonLd(data: unknown) {
-  return JSON.stringify(data).replace(/</g, '\\u003c')
-}
+export { serializeJsonLd } from '../seo/schema'

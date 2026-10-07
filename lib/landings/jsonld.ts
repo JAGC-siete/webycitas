@@ -17,6 +17,7 @@ const SCHEMA_TYPE: Record<LandingTemplateKey, string> = {
   mercadito: 'GroceryStore',
   supermercado: 'GroceryStore',
   clinica: 'MedicalClinic',
+  perfumeria: 'Store',
 }
 
 export function landingSchemaType(templateType: LandingTemplateKey): string {

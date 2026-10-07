@@ -13,9 +13,11 @@ import { resolveCta } from '../../lib/landings/cta'
 import { heroCopyClass, heroLayoutClass, landingThemeCssVars } from '../../lib/landings/theme-css'
 import { cn } from '../../lib/utils'
 import LandingLeadForm from './LandingLeadForm'
+import PerfumeriaRenderer from './PerfumeriaRenderer'
 import RetailVisitRenderer from './RetailVisitRenderer'
 import ServiceBookingRenderer from './ServiceBookingRenderer'
 import { formatInventoryPrice, type PublicInventoryOffer } from '../../lib/landings/inventory'
+import { isPerfumeriaContent } from '../../lib/landings/perfumeria'
 import { isRetailVisitContent } from '../../lib/landings/retail-visit'
 import { isServiceBookingContent } from '../../lib/landings/service-booking'
 import type { LandingBlock, LandingCta, LandingPageBusiness, PublicLandingPage } from '../../types/landing'
@@ -39,6 +41,9 @@ export default function LandingRenderer({ page, stockByProductId }: LandingRende
   }
   if (isServiceBookingContent(page.content)) {
     return <ServiceBookingRenderer page={page} />
+  }
+  if (isPerfumeriaContent(page.content)) {
+    return <PerfumeriaRenderer page={page} stockByProductId={stockByProductId} />
   }
 
   const { theme, business, blocks } = page.content

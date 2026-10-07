@@ -333,6 +333,7 @@ function BlockFields({
               <option value="classic">classic</option>
               <option value="visit">visit</option>
               <option value="booking">booking</option>
+              <option value="boutique">boutique</option>
             </select>
           </Field>
           <Field label="Badge">
@@ -383,6 +384,7 @@ function BlockFields({
             >
               <option value="grid">grid</option>
               <option value="list">list</option>
+              <option value="carousel">carousel</option>
             </select>
           </Field>
           <ArrayEditor
@@ -609,6 +611,15 @@ function BlockFields({
           </Field>
           <Field label="Subheadline">
             <Input {...register(`blocks.${index}.subheadline`)} className={fieldClass} />
+          </Field>
+          <Field label="Imagen (banner destacado)">
+            <FormImageField
+              control={control}
+              name={`blocks.${index}.imageUrl`}
+              siteId={siteId}
+              kind="hero"
+              label="banner"
+            />
           </Field>
           <CtaFields register={register} prefix={`blocks.${index}.primaryCta`} label="CTA" />
         </>

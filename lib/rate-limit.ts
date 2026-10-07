@@ -57,6 +57,8 @@ export function withRateLimit(
 }
 
 export const PUBLIC_LEAD_LIMIT = { windowMs: 10 * 60 * 1000, max: 6 }
+/** Magnet: cuántas veces un mismo correo puede recibir maqueta + acceso. Evita usar el form para bombardear un buzón ajeno. */
+export const PUBLIC_LEAD_EMAIL_LIMIT = { windowMs: 60 * 60 * 1000, max: 3 }
 export const AUTH_LOGIN_IP_LIMIT = { windowMs: 15 * 60 * 1000, max: 40 }
 export const AUTH_LOGIN_IP_EMAIL_LIMIT = { windowMs: 15 * 60 * 1000, max: 8 }
 export const AUTH_FORGOT_LIMIT = { windowMs: 15 * 60 * 1000, max: 5 }

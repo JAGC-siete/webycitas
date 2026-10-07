@@ -4,7 +4,7 @@ import { logger } from '../../lib/logger'
 import { maskEmail, normalizeSoftPhone } from '../../lib/privacy'
 import { getNotifyEmail, getResendFrom } from '../../lib/resend-from'
 import { createAdminClient } from '../../lib/supabase/admin'
-import { PUBLIC_LEAD_LIMIT, withRateLimit } from '../../lib/rate-limit'
+import { PUBLIC_LEAD_EMAIL_LIMIT, PUBLIC_LEAD_LIMIT, consumeRateLimit, withRateLimit } from '../../lib/rate-limit'
 import { authAbsoluteUrl, siteAbsoluteUrl } from '../../lib/site'
 import { formatDateTimeForHonduras } from '../../lib/timezone'
 import {
@@ -22,7 +22,8 @@ import { publishLeadSite } from '../../lib/magnet/publish'
 
 const MAX_BODY_BYTES = 8 * 1024
 const BURST_WINDOW_MS = 60 * 1000
-const BURST_MAX = 8
+/** Corta-circuito global (todas las IPs). Alto a propósito: el freno real es por IP y por correo. */
+const BURST_MAX = 30
 
 type Supabase = ReturnType<typeof createAdminClient>
 
@@ -91,6 +92,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (looksLikeDemoLocalBot(lead)) {
     logger.info('Lead webycitas descartado por honeypot')
     return res.status(200).json({ success: true })
+  }
+
+  if (!(await consumeRateLimit(`lead:email:${lead.email}`, PUBLIC_LEAD_EMAIL_LIMIT))) {
+    logger.warn('Lead webycitas frenado por correo', { email: maskEmail(lead.email) })
+    return res.status(429).json({ success: false, error: 'Demasiados envíos. Intenta en unos minutos.' })
   }
 
   let supabase: Supabase

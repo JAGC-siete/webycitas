@@ -11,6 +11,7 @@ import { landingLocalBusinessJsonLd } from '../../lib/landings/jsonld'
 import { landingPublicUrl } from '../../lib/landings/paths'
 import { createPublicClient } from '../../lib/supabase/public'
 import { siteAbsoluteUrl } from '../../lib/site'
+import { serializeJsonLd } from '../../lib/seo/schema'
 import { logger } from '../../lib/logger'
 import type { LandingPagePublicRow, PublicLandingPage } from '../../types/landing'
 
@@ -49,7 +50,7 @@ export default function PublicLandingPageView({ page, stockByProductId }: Public
         {jsonLd ? (
           <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
           />
         ) : null}
       </Head>

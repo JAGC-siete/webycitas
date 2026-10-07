@@ -1,5 +1,13 @@
 import { siteAbsoluteUrl } from '../site'
 
+/**
+ * JSON para <script type="application/ld+json">. Escapa `<` para que un texto
+ * del owner (p. ej. "</script><script>…") no cierre el script y corra en el origen.
+ */
+export function serializeJsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, '\\u003c')
+}
+
 export function generateWebPageSchema(params: {
   url: string
   title: string

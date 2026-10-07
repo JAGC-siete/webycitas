@@ -13,6 +13,7 @@ import {
   type LandingTemplateKey,
 } from './page-schema'
 import { brandedSeoTitle } from './seo-title'
+import { PERFUMERIA_TEMPLATE_CONTENT } from './perfumeria'
 import { RETAIL_VISIT_TEMPLATE_CONTENT } from './retail-visit'
 import { SERVICE_BOOKING_TEMPLATE_CONTENT } from './service-booking'
 
@@ -78,6 +79,12 @@ export const LANDING_TEMPLATE_OPTIONS: readonly LandingTemplateOption[] = [
     label: 'Clínica',
     description: 'Consulta con proceso de primera visita, equipo y cita reservada.',
     slugHint: 'clinica',
+  },
+  {
+    key: 'perfumeria',
+    label: 'Perfumería',
+    description: 'Vitrina oscura: catálogo por ocasión, decants y pedido por WhatsApp.',
+    slugHint: 'perfumeria',
   },
 ]
 
@@ -224,6 +231,7 @@ const TEMPLATE_CONTENT: Record<LandingTemplateKey, LandingPageContentInput> = {
   mercadito: RETAIL_VISIT_TEMPLATE_CONTENT.mercadito,
   supermercado: RETAIL_VISIT_TEMPLATE_CONTENT.supermercado,
   clinica: SERVICE_BOOKING_TEMPLATE_CONTENT.clinica,
+  perfumeria: PERFUMERIA_TEMPLATE_CONTENT,
 }
 
 /**

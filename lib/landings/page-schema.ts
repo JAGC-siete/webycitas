@@ -17,6 +17,7 @@ export const LANDING_TEMPLATE_KEYS = [
   'mercadito',
   'supermercado',
   'clinica',
+  'perfumeria',
 ] as const
 export type LandingTemplateKey = (typeof LANDING_TEMPLATE_KEYS)[number]
 
@@ -160,8 +161,8 @@ const blockBase = z.object({
 
 export const heroBlockSchema = blockBase.extend({
   kind: z.literal('hero'),
-  /** `visit` = recinto retail. `booking` = cita de servicios (salud/belleza). */
-  layout: z.enum(['classic', 'visit', 'booking']).optional(),
+  /** `visit` = recinto retail. `booking` = cita de servicios (salud/belleza). `boutique` = vitrina de perfumería. */
+  layout: z.enum(['classic', 'visit', 'booking', 'boutique']).optional(),
   badge: z.string().trim().max(60).optional(),
   headline: shortText(120),
   subheadline: z.string().trim().max(320).optional(),
@@ -177,7 +178,8 @@ export const itemsBlockSchema = blockBase.extend({
   kind: z.literal('items'),
   title: shortText(90),
   subtitle: z.string().trim().max(240).optional(),
-  layout: z.enum(['list', 'grid']).default('grid'),
+  /** `carousel` solo lo interpreta la vitrina boutique; el render genérico lo pinta como lista. */
+  layout: z.enum(['list', 'grid', 'carousel']).default('grid'),
   items: z
     .array(
       z.object({
@@ -280,6 +282,8 @@ export const ctaBlockSchema = blockBase.extend({
   kind: z.literal('cta'),
   headline: shortText(120),
   subheadline: z.string().trim().max(240).optional(),
+  /** Banner con foto (producto destacado en boutique). El render genérico la ignora. */
+  imageUrl: landingUrlSchema.optional(),
   primaryCta: landingCtaSchema,
 })
 
