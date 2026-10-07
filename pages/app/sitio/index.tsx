@@ -9,6 +9,8 @@ import { Button } from '../../../components/ui/button'
 import { suiteFetch } from '../../../lib/auth/client-session'
 import { suiteEditorFormSchema } from '../../../lib/landings/editor-form'
 import type { LandingEditRecord, SaveLandingDraftInput } from '../../../lib/landings/editor-types'
+import type { InventoryProductView } from '../../../lib/landings/inventory'
+import { fetchSuiteInventory } from '../../../lib/suite/inventory-api'
 import { SUITE_SERVICES_API } from '../../../lib/suite/paths'
 import { formatLempirasFromCents } from '../../../lib/suite/schemas'
 import {
@@ -26,8 +28,9 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   return { props: tenantProps(auth.context.tenant) }
 }
 
-function SuitePageEditor() {
+function SuitePageEditor({ hasInventory }: { hasInventory: boolean }) {
   const [initial, setInitial] = useState<LandingEditRecord | null>(null)
+  const [inventory, setInventory] = useState<InventoryProductView[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -49,6 +52,20 @@ function SuitePageEditor() {
       active = false
     }
   }, [])
+
+  useEffect(() => {
+    if (!hasInventory) return
+    let active = true
+    // Sin inventario el editor sigue funcionando: solo no ofrece vincular.
+    fetchSuiteInventory()
+      .then(({ products }) => {
+        if (active) setInventory(products)
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [hasInventory])
 
   const onSave = useCallback(async (input: SaveLandingDraftInput) => {
     const { landing } = await saveSuiteSite(input)
@@ -83,6 +100,8 @@ function SuitePageEditor() {
       canUnpublish
       onSave={onSave}
       onPublish={onPublish}
+      mode="owner"
+      inventory={inventory}
     />
   )
 }
@@ -247,7 +266,11 @@ export default function SitioPage({ tenant }: { tenant: SuiteTenant }) {
           </button>
         </div>
       ) : null}
-      {tab === 'pagina' || !hasBooking ? <SuitePageEditor /> : <ServicesPanel />}
+      {tab === 'pagina' || !hasBooking ? (
+        <SuitePageEditor hasInventory={tenant.modules.includes('inventario')} />
+      ) : (
+        <ServicesPanel />
+      )}
     </SuiteShell>
   )
 }
