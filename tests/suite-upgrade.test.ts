@@ -1,6 +1,7 @@
 import { afterEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  shouldOfferBookingUpgrade,
   suiteSupportWhatsAppDigits,
   suiteUpgradeBookingHref,
 } from '../lib/suite/upgrade'
@@ -38,5 +39,20 @@ describe('suite upgrade CTA', () => {
     })
     assert.ok(href?.startsWith('mailto:'))
     assert.match(href!, /Activar%20reservas/)
+  })
+})
+
+describe('oferta de reservas', () => {
+  it('no se ofrece a rubros de venta', () => {
+    assert.equal(shouldOfferBookingUpgrade({ modules: ['sitio', 'inventario'], rubro: 'perfumeria' }), false)
+    assert.equal(shouldOfferBookingUpgrade({ modules: ['sitio'], rubro: 'ferreteria' }), false)
+  })
+
+  it('se ofrece a servicios sin reservas', () => {
+    assert.equal(shouldOfferBookingUpgrade({ modules: ['sitio'], rubro: 'barberia' }), true)
+  })
+
+  it('no se ofrece si ya la tiene', () => {
+    assert.equal(shouldOfferBookingUpgrade({ modules: ['sitio', 'reservas'], rubro: 'spa' }), false)
   })
 })

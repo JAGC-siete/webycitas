@@ -4,6 +4,13 @@
  * El CTA del owner abre WhatsApp (o mailto) hacia soporte.
  */
 
+import { isRetailRubro } from '../magnet/demo-local'
+
+/** Reservas solo se ofrece a rubros de servicio que todavía no la tienen. */
+export function shouldOfferBookingUpgrade(input: { modules: readonly string[]; rubro: string }): boolean {
+  return !input.modules.includes('reservas') && !isRetailRubro(input.rubro)
+}
+
 function digitsOnly(value: string): string {
   return value.replace(/\D/g, '')
 }

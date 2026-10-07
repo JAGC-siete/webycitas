@@ -14,7 +14,7 @@ import {
   SUITE_SITIO_PATH,
 } from '../../lib/suite/paths'
 import { formatLempirasFromCents } from '../../lib/suite/schemas'
-import { suiteUpgradeBookingHref } from '../../lib/suite/upgrade'
+import { shouldOfferBookingUpgrade, suiteUpgradeBookingHref } from '../../lib/suite/upgrade'
 import { formatDateTimeForHonduras } from '../../lib/timezone'
 
 interface DashboardPayload {
@@ -59,6 +59,7 @@ export default function SuiteHomePage({ tenant }: { tenant: SuiteTenant }) {
   const hasBooking = tenant.modules.includes('reservas')
   const hasSitio = tenant.modules.includes('sitio')
   const hasInventario = tenant.modules.includes('inventario')
+  const canUpgradeBooking = shouldOfferBookingUpgrade(tenant)
   const upgradeHref = suiteUpgradeBookingHref({
     businessName: tenant.businessName,
     email: tenant.email,
@@ -153,10 +154,11 @@ export default function SuiteHomePage({ tenant }: { tenant: SuiteTenant }) {
               </p>
             )}
 
-            {!hasBooking ? (
+            {canUpgradeBooking ? (
               <BookingUpsell
                 upgradeHref={upgradeHref}
                 businessName={tenant.businessName}
+                rubro={tenant.rubro}
               />
             ) : null}
 
@@ -228,9 +230,11 @@ export default function SuiteHomePage({ tenant }: { tenant: SuiteTenant }) {
 function BookingUpsell({
   upgradeHref,
   businessName,
+  rubro,
 }: {
   upgradeHref: string | null
   businessName: string
+  rubro: string
 }) {
   return (
     <section className="glass-modern overflow-hidden rounded-2xl border border-cyan-400/25">
@@ -253,20 +257,25 @@ function BookingUpsell({
               </a>
             </Button>
           ) : (
-            <p className="text-sm text-white/50">
-              Pedí a soporte que active <span className="font-mono text-white/70">booking</span>{' '}
-              en tu lead.
-            </p>
+            <p className="text-sm text-white/50">Escribinos a soporte para activar reservas.</p>
           )}
         </div>
-        <BookingPreviewSkeleton />
+        <BookingPreviewSkeleton rubro={rubro} />
       </div>
     </section>
   )
 }
 
+const PREVIEW_SLOTS: Record<string, string[]> = {
+  barberia: ['10:00 · Corte', '11:30 · Barba', '15:00 · Fade'],
+  salon: ['10:00 · Corte', '11:30 · Tinte', '15:00 · Peinado'],
+  spa: ['10:00 · Masaje', '11:30 · Facial', '15:00 · Manicure'],
+  clinica: ['10:00 · Consulta', '11:30 · Control', '15:00 · Limpieza'],
+}
+const DEFAULT_PREVIEW_SLOTS = ['10:00 · Cita', '11:30 · Cita', '15:00 · Cita']
+
 /** Placeholder visual — no son métricas reales. */
-function BookingPreviewSkeleton() {
+function BookingPreviewSkeleton({ rubro }: { rubro: string }) {
   return (
     <div
       className="relative border-t border-white/10 bg-black/20 p-4 lg:border-l lg:border-t-0"
@@ -276,7 +285,7 @@ function BookingPreviewSkeleton() {
         Vista previa del módulo
       </p>
       <div className="space-y-2 opacity-60">
-        {['10:00 · Corte', '11:30 · Barba', '15:00 · Color'].map((label) => (
+        {(PREVIEW_SLOTS[rubro] ?? DEFAULT_PREVIEW_SLOTS).map((label) => (
           <div
             key={label}
             className="flex items-center justify-between rounded-lg border border-dashed border-white/15 bg-white/5 px-3 py-2 text-xs text-white/50"
