@@ -14,6 +14,11 @@ import {
   landingAdminEditPath,
   landingAdminPublishApiPath,
 } from '../lib/landings/paths'
+import {
+  hasUnpublishedChanges,
+  sameLandingContent,
+  withPublishState,
+} from '../lib/landings/publish-state'
 import { RETAIL_VISIT_TEMPLATE_CONTENT } from '../lib/landings/retail-visit'
 
 describe('landing editor ops', () => {
@@ -88,5 +93,42 @@ describe('landing editor ops', () => {
     assert.equal(parsed.success, true)
     if (!parsed.success) return
     assert.equal(parsed.data._title, 'Mi negocio')
+  })
+})
+
+describe('publish state', () => {
+  const draft = { version: 1, business: { name: 'Ville', tagline: 'v1' }, blocks: [] }
+
+  it('compara contenido sin importar el orden de las llaves', () => {
+    const reordered = { blocks: [], business: { tagline: 'v1', name: 'Ville' }, version: 1 }
+    assert.equal(sameLandingContent(draft, reordered), true)
+    assert.equal(sameLandingContent(draft, { ...draft, business: { name: 'Ville', tagline: 'v2' } }), false)
+  })
+
+  it('solo un site publicado tiene cambios pendientes', () => {
+    const edited = { ...draft, business: { name: 'Ville', tagline: 'v2' } }
+    assert.equal(
+      hasUnpublishedChanges({ status: 'published', content_json: edited, published_content_json: draft }),
+      true
+    )
+    assert.equal(
+      hasUnpublishedChanges({ status: 'published', content_json: draft, published_content_json: draft }),
+      false
+    )
+    assert.equal(
+      hasUnpublishedChanges({ status: 'draft', content_json: edited, published_content_json: draft }),
+      false
+    )
+  })
+
+  it('withPublishState no expone la copia publicada', () => {
+    const row = withPublishState({
+      id: 's1',
+      status: 'published',
+      content_json: draft,
+      published_content_json: null,
+    })
+    assert.equal('published_content_json' in row, false)
+    assert.equal(row.has_unpublished_changes, true)
   })
 })

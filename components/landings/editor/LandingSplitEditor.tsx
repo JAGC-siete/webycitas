@@ -127,6 +127,7 @@ export default function LandingSplitEditor({
 }: LandingSplitEditorProps) {
   const [record, setRecord] = useState<LandingEditRecord>(initial)
   const [status, setStatus] = useState<LandingPageStatus>(initial.status)
+  const [unpublished, setUnpublished] = useState(initial.has_unpublished_changes ?? false)
   const [saving, setSaving] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
@@ -155,6 +156,7 @@ export default function LandingSplitEditor({
     setBootError(null)
     setRecord(initial)
     setStatus(initial.status)
+    setUnpublished(initial.has_unpublished_changes ?? false)
     reset({
       ...parsed.content,
       _title: initial.title,
@@ -175,6 +177,7 @@ export default function LandingSplitEditor({
       })
       setRecord(saved)
       setStatus(saved.status)
+      setUnpublished(saved.has_unpublished_changes ?? saved.status === 'published')
       reset({
         ...content,
         _title: saved.title,
@@ -191,8 +194,14 @@ export default function LandingSplitEditor({
       setSaving(true)
       setMessage(null)
       try {
-        await persistDraft(formData)
-        setMessage({ tone: 'ok', text: 'Borrador guardado exitosamente.' })
+        const saved = await persistDraft(formData)
+        setMessage({
+          tone: 'ok',
+          text:
+            saved.status === 'published'
+              ? 'Guardado. Toca «Publicar cambios» para que se vea en tu página.'
+              : 'Borrador guardado exitosamente.',
+        })
       } catch (err: unknown) {
         setMessage({ tone: 'error', text: err instanceof Error ? err.message : 'No se pudo guardar' })
       } finally {
@@ -208,6 +217,7 @@ export default function LandingSplitEditor({
       setMessage(null)
       try {
         if (action === 'publish') {
+          const wasPublished = status === 'published'
           await new Promise<void>((resolve, reject) => {
             void handleSubmit(
               async (formData) => {
@@ -215,9 +225,12 @@ export default function LandingSplitEditor({
                   await persistDraft(formData)
                   const result = await onPublish('publish')
                   setStatus(result.status)
+                  setUnpublished(false)
                   setMessage({
                     tone: 'ok',
-                    text: 'Publicada. Ya se puede abrir la dirección pública.',
+                    text: wasPublished
+                      ? 'Cambios publicados. Ya se ven en tu página.'
+                      : 'Publicada. Ya se puede abrir la dirección pública.',
                   })
                   resolve()
                 } catch (err) {
@@ -250,7 +263,7 @@ export default function LandingSplitEditor({
         setPublishing(false)
       }
     },
-    [canUnpublish, handleSubmit, onPublish, persistDraft]
+    [canUnpublish, handleSubmit, onPublish, persistDraft, status]
   )
 
   if (bootError) {
@@ -268,6 +281,7 @@ export default function LandingSplitEditor({
 
   const hasErrors = Object.keys(errors).length > 0
   const busy = saving || publishing
+  const pendingPublish = isDirty || unpublished
 
   return (
     <div className="mx-auto w-full max-w-[1600px] px-4 py-6">
@@ -297,6 +311,8 @@ export default function LandingSplitEditor({
           </Badge>
           {isDirty ? (
             <Badge className="border-sky-500/30 bg-sky-500/15 text-sky-200">Sin guardar</Badge>
+          ) : unpublished ? (
+            <Badge className="border-amber-500/30 bg-amber-500/15 text-amber-300">Cambios sin publicar</Badge>
           ) : null}
         </div>
 
@@ -319,6 +335,15 @@ export default function LandingSplitEditor({
           </Button>
           {status === 'published' ? (
             <>
+              <Button
+                variant={pendingPublish ? 'modern' : 'outline'}
+                size="sm"
+                onClick={() => void onPublishAction('publish')}
+                disabled={busy || !pendingPublish}
+              >
+                {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Globe className="mr-2 h-4 w-4" />}
+                {publishing ? 'Publicando…' : 'Publicar cambios'}
+              </Button>
               <a href={landingPublicPath(currentSlug)} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm">
                   <ExternalLink className="mr-2 h-4 w-4" />

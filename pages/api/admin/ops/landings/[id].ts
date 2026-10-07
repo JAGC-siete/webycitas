@@ -5,10 +5,11 @@ import {
   landingPageContentSchema,
   landingSlugSchema,
 } from '../../../../../lib/landings/page-schema'
+import { withPublishState } from '../../../../../lib/landings/publish-state'
 import { createAdminClient } from '../../../../../lib/supabase/admin'
 
 const EDIT_COLUMNS =
-  'id, lead_id, title, slug, template_type, status, content_json, lead_notify_email, published_at, created_at, updated_at'
+  'id, lead_id, title, slug, template_type, status, content_json, published_content_json, lead_notify_email, published_at, created_at, updated_at'
 
 const patchSchema = z.object({
   title: z.string().trim().min(2).max(120),
@@ -41,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data, error } = await db.from('sites').select(EDIT_COLUMNS).eq('id', id).maybeSingle()
       if (error) throw error
       if (!data) return res.status(404).json({ error: 'Landing no encontrada' })
-      return res.status(200).json({ landing: data })
+      return res.status(200).json({ landing: withPublishState(data) })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'No se pudo cargar la landing'
       return res.status(500).json({ error: message })
@@ -95,7 +96,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .select(EDIT_COLUMNS)
         .maybeSingle()
       if (error) throw error
-      return res.status(200).json({ landing: data })
+      if (!data) return res.status(404).json({ error: 'Landing no encontrada' })
+      return res.status(200).json({ landing: withPublishState(data) })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'No se pudo guardar'
       return res.status(500).json({ error: message })

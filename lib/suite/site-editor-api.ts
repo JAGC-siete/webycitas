@@ -25,6 +25,7 @@ type SuiteSiteRow = {
   content_json: unknown
   lead_notify_email: string | null
   published_at: string | null
+  has_unpublished_changes?: boolean
 }
 
 function toEditRecord(site: SuiteSiteRow): LandingEditRecord {
@@ -37,6 +38,7 @@ function toEditRecord(site: SuiteSiteRow): LandingEditRecord {
     content_json: site.content_json,
     lead_notify_email: site.lead_notify_email,
     published_at: site.published_at,
+    has_unpublished_changes: site.has_unpublished_changes ?? false,
   }
 }
 

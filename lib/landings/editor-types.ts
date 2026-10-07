@@ -14,6 +14,8 @@ export interface LandingEditRecord {
   content_json: unknown
   lead_notify_email: string | null
   published_at: string | null
+  /** Publicado con un borrador distinto al que ve el público. */
+  has_unpublished_changes?: boolean
   created_at?: string
   updated_at?: string
 }
