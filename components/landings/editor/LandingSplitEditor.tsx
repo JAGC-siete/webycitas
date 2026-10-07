@@ -56,6 +56,8 @@ export interface LandingSplitEditorProps {
   inventory?: InventoryProductView[] | null
 }
 
+const INVALID_FORM = 'invalid-form'
+
 const PreviewPane = memo(function PreviewPane({
   control,
   landingId,
@@ -251,7 +253,8 @@ export default function LandingSplitEditor({
                 }
               },
               () => {
-                reject(new Error('Hay campos inválidos. Corrígelos antes de publicar.'))
+                // El aviso de campos con error ya sale arriba del formulario.
+                reject(new Error(INVALID_FORM))
               }
             )()
           })
@@ -268,6 +271,7 @@ export default function LandingSplitEditor({
           text: 'Despublicada. La dirección pública deja de responder.',
         })
       } catch (err: unknown) {
+        if (err instanceof Error && err.message === INVALID_FORM) return
         setMessage({
           tone: 'error',
           text: err instanceof Error ? err.message : 'No se pudo cambiar la publicación',

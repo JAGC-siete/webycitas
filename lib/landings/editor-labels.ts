@@ -90,3 +90,71 @@ export function unlinkedInventory<T extends { id: string }>(
   const linked = new Set((items ?? []).map((item) => item.inventoryProductId).filter(Boolean))
   return products.filter((product) => !linked.has(product.id))
 }
+
+const FIELD_NAMES: Record<string, string> = {
+  name: 'Nombre',
+  title: 'Título',
+  subtitle: 'Subtítulo',
+  headline: 'Título principal',
+  subheadline: 'Texto debajo del título',
+  badge: 'Etiqueta pequeña',
+  label: 'Texto',
+  href: 'Enlace',
+  message: 'Mensaje',
+  question: 'Pregunta',
+  answer: 'Respuesta',
+  priceLabel: 'Precio',
+  detail: 'Descripción',
+  category: 'Categoría',
+  imageUrl: 'Foto',
+  url: 'Foto',
+  alt: 'Descripción de la foto',
+  author: 'Nombre',
+  quote: 'Opinión',
+  role: 'Detalle',
+  mark: 'Ícono',
+  body: 'Texto',
+  value: 'Horario',
+  primaryCta: 'Botón principal',
+  secondaryCta: 'Botón secundario',
+  whatsapp: 'WhatsApp',
+  phone: 'Teléfono',
+  email: 'Correo',
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  tiktok: 'TikTok',
+  address: 'Dirección',
+  city: 'Ciudad',
+  tagline: 'Frase corta',
+}
+
+/** `items.6.name` → `#7 · Nombre`. Las listas cuentan desde 1, como en pantalla. */
+export function friendlyErrorPath(path: string): string {
+  const parts: string[] = []
+  for (const segment of path.split('.')) {
+    if (!segment) continue
+    if (/^\d+$/.test(segment)) {
+      parts.push(`#${Number(segment) + 1}`)
+      continue
+    }
+    const label = FIELD_NAMES[segment]
+    if (label) parts.push(label)
+  }
+  return parts.join(' · ')
+}
+
+/** Mensajes por defecto de zod → español llano. Los mensajes propios ya vienen en español. */
+export function friendlyFieldError(message: string): string {
+  if (/expected string, received undefined|expected .*received (null|undefined)/i.test(message)) {
+    return 'Falta completar este campo.'
+  }
+  const tooSmall = /too small: expected string to have >=(\d+) characters?/i.exec(message)
+  if (tooSmall) {
+    return Number(tooSmall[1]) <= 1 ? 'Falta completar este campo.' : `Escribe al menos ${tooSmall[1]} caracteres.`
+  }
+  const tooBig = /too big: expected string to have <=(\d+) characters?/i.exec(message)
+  if (tooBig) return `Es muy largo: máximo ${tooBig[1]} caracteres.`
+  if (/invalid email/i.test(message)) return 'Revisa el correo: no parece válido.'
+  if (/^invalid input/i.test(message)) return 'Revisa este campo.'
+  return message
+}

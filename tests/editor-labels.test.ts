@@ -4,6 +4,8 @@ import {
   NEW_ARRAY_ITEM,
   OWNER_CTA_ACTIONS,
   blockDisplayName,
+  friendlyErrorPath,
+  friendlyFieldError,
   itemFromInventoryProduct,
   unlinkedInventory,
 } from '../lib/landings/editor-labels'
@@ -83,5 +85,24 @@ describe('vista previa del editor', () => {
     assert.equal(readLandingPageContent(raw).ok, false)
     const cleaned = readLandingPageContent(prepareEditorFormValues(raw))
     assert.equal(cleaned.ok, true)
+  })
+})
+
+describe('errores para el dueño', () => {
+  it('traduce la ruta del error contando desde 1, como en pantalla', () => {
+    assert.equal(friendlyErrorPath('items.6.name'), '#7 · Nombre')
+    assert.equal(friendlyErrorPath('primaryCta.href'), 'Botón principal · Enlace')
+    assert.equal(friendlyErrorPath('socials.instagram'), 'Instagram')
+    assert.equal(friendlyErrorPath(''), '')
+  })
+
+  it('traduce los mensajes por defecto de zod y deja pasar los propios', () => {
+    assert.equal(friendlyFieldError('Invalid input: expected string, received undefined'), 'Falta completar este campo.')
+    assert.equal(friendlyFieldError('Too small: expected string to have >=1 characters'), 'Falta completar este campo.')
+    assert.equal(friendlyFieldError('Too small: expected string to have >=2 characters'), 'Escribe al menos 2 caracteres.')
+    assert.equal(friendlyFieldError('Too big: expected string to have <=80 characters'), 'Es muy largo: máximo 80 caracteres.')
+    assert.equal(friendlyFieldError('Invalid email address'), 'Revisa el correo: no parece válido.')
+    const own = 'Usa una URL https, una ruta interna que empiece con / o una ancla #seccion.'
+    assert.equal(friendlyFieldError(own), own)
   })
 })

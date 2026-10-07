@@ -31,6 +31,8 @@ import {
   OPS_CTA_ACTIONS,
   OWNER_CTA_ACTIONS,
   blockDisplayName,
+  friendlyErrorPath,
+  friendlyFieldError,
   itemFromInventoryProduct,
   unlinkedInventory,
   type EditorMode,
@@ -72,21 +74,26 @@ function subtreeHasErrors(errors: FieldErrors | undefined, path: string): boolea
   return cur !== undefined && cur !== null
 }
 
-function collectErrorMessages(node: unknown, prefix = '', out: string[] = []): string[] {
+function collectErrors(
+  node: unknown,
+  prefix = '',
+  out: { path: string; message: string }[] = []
+): { path: string; message: string }[] {
   if (!node || typeof node !== 'object') return out
   if ('message' in node && typeof (node as { message?: unknown }).message === 'string') {
     const message = (node as { message: string }).message
-    if (message) out.push(prefix ? `${prefix}: ${message}` : message)
+    if (message) out.push({ path: prefix, message })
   }
   for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
     if (key === 'message' || key === 'type' || key === 'ref') continue
     const next = prefix ? `${prefix}.${key}` : key
-    collectErrorMessages(value, next, out)
+    collectErrors(value, next, out)
   }
   return out
 }
 
 function ErrorList({ errors, path }: { errors?: FieldErrors; path: string }) {
+  const { mode } = useEditorMode()
   if (!subtreeHasErrors(errors, path)) return null
   const parts = path.split('.')
   let cur: unknown = errors
@@ -94,7 +101,14 @@ function ErrorList({ errors, path }: { errors?: FieldErrors; path: string }) {
     if (!cur || typeof cur !== 'object') return null
     cur = (cur as Record<string, unknown>)[part]
   }
-  const messages = collectErrorMessages(cur).slice(0, 6)
+  const messages = collectErrors(cur)
+    .slice(0, 6)
+    .map(({ path: at, message }) => {
+      if (mode === 'ops') return at ? `${at}: ${message}` : message
+      const where = friendlyErrorPath(at)
+      const what = friendlyFieldError(message)
+      return where ? `${where}: ${what}` : what
+    })
   if (messages.length === 0) return null
   return (
     <ul className="space-y-1 rounded-md border border-red-400/30 bg-red-500/10 p-2 text-xs text-red-300">
@@ -142,6 +156,9 @@ function useEditorMode(): EditorModeValue {
   return useContext(EditorModeContext)
 }
 
+/** Errores del formulario para marcar campos y filas sin pasarlos por props. */
+const EditorErrorsContext = createContext<FieldErrors<EditorFormValues> | undefined>(undefined)
+
 /** Etiqueta según quién edita: `t('Título principal', 'Headline')`. */
 function useLabel(): (owner: string, ops: string) => string {
   const { mode } = useEditorMode()
@@ -159,12 +176,19 @@ function Field({
   children,
   error,
   hint,
+  path,
 }: {
   label: string
   children: ReactNode
   error?: string
   hint?: string
+  /** Ruta del campo: muestra su error sin pasarlo a mano. */
+  path?: string
 }) {
+  const { mode } = useEditorMode()
+  const errors = useContext(EditorErrorsContext)
+  const found = error ?? (path ? fieldErrorMessage(errors, path) : undefined)
+  error = found && mode === 'owner' ? friendlyFieldError(found) : found
   return (
     <label className="block">
       <FieldLabel>{label}</FieldLabel>
@@ -372,6 +396,7 @@ function ArrayEditor<TName extends FieldArrayPath<EditorFormValues>>({
   renderItem: (index: number) => ReactNode
 }) {
   const { mode } = useEditorMode()
+  const errors = useContext(EditorErrorsContext)
   const { fields, append, remove, move } = useFieldArray({ control, name })
   const initialIds = useRef<Set<string> | null>(null)
   if (initialIds.current === null) initialIds.current = new Set(fields.map((field) => field.id))
@@ -394,9 +419,14 @@ function ArrayEditor<TName extends FieldArrayPath<EditorFormValues>>({
       </p>
       {toolbar ? toolbar({ append: appendItem, count: fields.length, max: limit }) : null}
       {fields.map((field, index) => {
-        const expanded = isOpen(field.id)
+        const rowError = subtreeHasErrors(errors, `${name}.${index}`)
+        // Una fila con error siempre queda abierta para ver qué falta.
+        const expanded = rowError || isOpen(field.id)
         return (
-          <div key={field.id} className="rounded-lg border border-white/10">
+          <div
+            key={field.id}
+            className={cn('rounded-lg border', rowError ? 'border-red-400/50' : 'border-white/10')}
+          >
             <div className="flex items-center gap-2 px-3 py-2">
               <button
                 type="button"
@@ -821,7 +851,7 @@ function BlockFields({
             toolbar={(helpers) => <AddFromInventory control={control} blockIndex={index} helpers={helpers} />}
             renderItem={(i) => (
               <>
-                <Field label="Nombre">
+                <Field label="Nombre" path={`blocks.${index}.items.${i}.name`}>
                   <Input {...register(`blocks.${index}.items.${i}.name`)} className={fieldClass} />
                 </Field>
                 <Field
@@ -924,10 +954,18 @@ function BlockFields({
             )}
             renderItem={(i) => (
               <>
-                <Field label={t('Día(s)', 'Etiqueta')} hint={owner ? 'Ej. «Lunes a viernes».' : undefined}>
+                <Field
+                  label={t('Día(s)', 'Etiqueta')}
+                  hint={owner ? 'Ej. «Lunes a viernes».' : undefined}
+                  path={`blocks.${index}.rows.${i}.label`}
+                >
                   <Input {...register(`blocks.${index}.rows.${i}.label`)} className={fieldClass} />
                 </Field>
-                <Field label={t('Horario', 'Valor')} hint={owner ? 'Ej. «9:00 a. m. – 6:00 p. m.».' : undefined}>
+                <Field
+                  label={t('Horario', 'Valor')}
+                  hint={owner ? 'Ej. «9:00 a. m. – 6:00 p. m.».' : undefined}
+                  path={`blocks.${index}.rows.${i}.value`}
+                >
                   <Input {...register(`blocks.${index}.rows.${i}.value`)} className={fieldClass} />
                 </Field>
               </>
@@ -954,13 +992,13 @@ function BlockFields({
             )}
             renderItem={(i) => (
               <>
-                <Field label={t('Nombre', 'Autor')}>
+                <Field label={t('Nombre', 'Autor')} path={`blocks.${index}.items.${i}.author`}>
                   <Input {...register(`blocks.${index}.items.${i}.author`)} className={fieldClass} />
                 </Field>
                 <Field label={t('Detalle (opcional)', 'Rol')} hint={owner ? 'Ej. «Clienta desde 2023».' : undefined}>
                   <Input {...register(`blocks.${index}.items.${i}.role`)} className={fieldClass} />
                 </Field>
-                <Field label={t('Opinión', 'Cita')}>
+                <Field label={t('Opinión', 'Cita')} path={`blocks.${index}.items.${i}.quote`}>
                   <TextArea register={register} name={`blocks.${index}.items.${i}.quote`} />
                 </Field>
               </>
@@ -991,10 +1029,10 @@ function BlockFields({
             )}
             renderItem={(i) => (
               <>
-                <Field label="Pregunta">
+                <Field label="Pregunta" path={`blocks.${index}.items.${i}.question`}>
                   <Input {...register(`blocks.${index}.items.${i}.question`)} className={fieldClass} />
                 </Field>
-                <Field label="Respuesta">
+                <Field label="Respuesta" path={`blocks.${index}.items.${i}.answer`}>
                   <TextArea register={register} name={`blocks.${index}.items.${i}.answer`} />
                 </Field>
               </>
@@ -1501,6 +1539,7 @@ export function BlockAccordion({
   }
 
   return (
+    <EditorErrorsContext.Provider value={errors}>
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
@@ -1656,5 +1695,6 @@ export function BlockAccordion({
         )
       })}
     </div>
+    </EditorErrorsContext.Provider>
   )
 }
