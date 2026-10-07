@@ -3,7 +3,9 @@ import assert from 'node:assert/strict'
 import { collectInventoryProductIds, formatInventoryPrice, toInventoryProductView } from '../lib/landings/inventory'
 import {
   createInventoryProductSchema,
+  INVENTORY_MOVEMENT_MAX,
   inventoryMovementSchema,
+  movementDelta,
   updateInventoryProductSchema,
 } from '../lib/landings/inventory-schema'
 import { optionalInventoryProductIdSchema, type LandingPageContent } from '../lib/landings/page-schema'
@@ -49,11 +51,22 @@ describe('inventario de site', () => {
     assert.equal(empty.success, false)
   })
 
-  it('el botón de stock solo mueve una unidad', () => {
-    assert.equal(inventoryMovementSchema.safeParse({ delta: 1 }).success, true)
-    assert.equal(inventoryMovementSchema.safeParse({ delta: -1 }).success, true)
-    assert.equal(inventoryMovementSchema.safeParse({ delta: 2 }).success, false)
-    assert.equal(inventoryMovementSchema.safeParse({ delta: 0 }).success, false)
+  it('un movimiento es un entero distinto de cero dentro del tope', () => {
+    for (const delta of [1, -1, 24, -24, INVENTORY_MOVEMENT_MAX, -INVENTORY_MOVEMENT_MAX]) {
+      assert.equal(inventoryMovementSchema.safeParse({ delta }).success, true, String(delta))
+    }
+    for (const delta of [0, 1.5, INVENTORY_MOVEMENT_MAX + 1, -INVENTORY_MOVEMENT_MAX - 1, '24']) {
+      assert.equal(inventoryMovementSchema.safeParse({ delta }).success, false, String(delta))
+    }
+  })
+
+  it('movementDelta firma la cantidad y no deja sacar más de lo que hay', () => {
+    assert.deepEqual(movementDelta('in', '24', 3), { delta: 24, error: null })
+    assert.deepEqual(movementDelta('out', ' 5 ', 20), { delta: -5, error: null })
+    assert.equal(movementDelta('out', '30', 27).error, 'Solo hay 27 en stock.')
+    for (const raw of ['', '0', '-3', '2.5', 'abc', String(INVENTORY_MOVEMENT_MAX + 1)]) {
+      assert.equal(movementDelta('in', raw, 0).delta, null, raw)
+    }
   })
 
   it('junta los ids citados en listas de precios', () => {

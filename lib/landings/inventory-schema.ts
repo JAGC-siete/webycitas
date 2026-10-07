@@ -49,9 +49,38 @@ export const updateInventoryProductSchema = z
   })
   .refine((value) => Object.keys(value).length > 0, { message: 'No hay cambios.' })
 
+/** Tope por movimiento: evita un dedazo de 100000 frascos. */
+export const INVENTORY_MOVEMENT_MAX = 10_000
+
 export const inventoryMovementSchema = z.object({
-  delta: z.union([z.literal(1), z.literal(-1)]),
+  delta: z
+    .number()
+    .int()
+    .min(-INVENTORY_MOVEMENT_MAX)
+    .max(INVENTORY_MOVEMENT_MAX)
+    .refine((value) => value !== 0),
 })
+
+export type MoveKind = 'in' | 'out'
+
+/** Cantidad del diálogo → delta firmado, o el error a mostrar. */
+export function movementDelta(
+  kind: MoveKind,
+  rawQty: string,
+  stock: number
+): { delta: number; error: null } | { delta: null; error: string } {
+  const qty = Number(rawQty.trim())
+  if (!rawQty.trim() || !Number.isInteger(qty) || qty < 1 || qty > INVENTORY_MOVEMENT_MAX) {
+    return {
+      delta: null,
+      error: `Escribe una cantidad entera entre 1 y ${INVENTORY_MOVEMENT_MAX.toLocaleString('es-HN')}.`,
+    }
+  }
+  if (kind === 'out' && qty > stock) {
+    return { delta: null, error: `Solo hay ${stock} en stock.` }
+  }
+  return { delta: kind === 'in' ? qty : -qty, error: null }
+}
 
 export type CreateInventoryProductInput = z.infer<typeof createInventoryProductSchema>
 export type UpdateInventoryProductInput = z.infer<typeof updateInventoryProductSchema>

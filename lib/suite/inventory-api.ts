@@ -56,7 +56,7 @@ export async function deleteSuiteInventoryProduct(productId: string): Promise<{ 
 
 export async function moveSuiteInventoryStock(
   productId: string,
-  delta: 1 | -1
+  delta: number
 ): Promise<{ product: InventoryProductView }> {
   const res = await suiteFetch(suiteInventoryMovementApi(productId), {
     method: 'POST',
