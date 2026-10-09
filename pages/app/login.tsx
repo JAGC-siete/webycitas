@@ -42,7 +42,7 @@ export default function AppLoginPage() {
 
   useEffect(() => {
     if (router.query.error === 'link_expired') {
-      setError('El enlace de acceso expiró o ya se usó. Pedí otra invitación desde el panel ops.')
+      setError('El enlace de acceso expiró o ya se usó. Pide un enlace nuevo a soporte.')
     }
   }, [router.query.error])
 

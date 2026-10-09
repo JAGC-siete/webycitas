@@ -280,7 +280,7 @@ export default function ContabilidadAsientoEditorPage({ tenant }: { tenant: Suit
 
         <div className="overflow-x-auto rounded-lg border border-white/10">
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-slate-900/80 text-xs uppercase tracking-wide text-white/45">
+            <thead className="bg-slate-900/80 text-xs uppercase tracking-wide text-white/55">
               <tr>
                 <th className="px-3 py-2">Cuenta</th>
                 <th className="px-3 py-2 text-right">Débito (L.)</th>
@@ -363,7 +363,7 @@ export default function ContabilidadAsientoEditorPage({ tenant }: { tenant: Suit
                     {!readOnly && lines.length > 2 ? (
                       <button
                         type="button"
-                        className="text-xs text-white/40 hover:text-white/70"
+                        className="text-xs text-white/55 hover:text-white/70"
                         onClick={() => setLines((prev) => prev.filter((_, i) => i !== index))}
                       >
                         Quitar

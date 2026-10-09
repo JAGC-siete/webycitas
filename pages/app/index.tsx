@@ -3,6 +3,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import type { GetServerSideProps } from 'next'
 import SuiteShell from '../../components/suite/SuiteShell'
+import Notices from '../../components/suite/Notices'
 import { Button } from '../../components/ui/button'
 import { suiteFetch } from '../../lib/auth/client-session'
 import { requireSuitePage, tenantProps, type SuiteTenant } from '../../lib/suite/tenant'
@@ -13,6 +14,7 @@ import {
   SUITE_RESERVAS_PATH,
   SUITE_SITIO_PATH,
 } from '../../lib/suite/paths'
+import { buildActivityFeed } from '../../lib/suite/activity'
 import { formatLempirasFromCents } from '../../lib/suite/schemas'
 import { shouldOfferBookingUpgrade, suiteUpgradeBookingHref } from '../../lib/suite/upgrade'
 import { formatDateTimeForHonduras } from '../../lib/timezone'
@@ -87,6 +89,8 @@ export default function SuiteHomePage({ tenant }: { tenant: SuiteTenant }) {
     void load()
   }, [load])
 
+  const activity = data ? buildActivityFeed(data.alerts, data.landing?.recent ?? []) : []
+
   return (
     <SuiteShell tenant={tenant}>
       <Head>
@@ -106,8 +110,9 @@ export default function SuiteHomePage({ tenant }: { tenant: SuiteTenant }) {
           ) : null}
         </div>
 
-        {loading ? <p className="text-sm text-white/60">Cargando…</p> : null}
-        {error ? <p className="text-sm text-red-400">{error}</p> : null}
+        <Notices notice={null} error={error} onRetry={() => void load()} />
+
+        {loading ? <DashboardSkeleton withBooking={hasBooking} /> : null}
 
         {!loading && data ? (
           <>
@@ -117,40 +122,28 @@ export default function SuiteHomePage({ tenant }: { tenant: SuiteTenant }) {
                 value={data.site ? siteStatusLabel(data.site.status) : 'Sin sitio'}
               />
               <Stat
-                label="Solicitudes (24 h)"
+                label="Mensajes (últimas 24 h)"
                 value={String(data.landing?.inquiries_24h ?? 0)}
               />
               <Stat
-                label="Solicitudes (7 d)"
+                label="Mensajes (últimos 7 días)"
                 value={String(data.landing?.inquiries_7d ?? 0)}
               />
             </div>
 
             {data.site ? (
               <div className="flex flex-wrap gap-2">
-                {hasSitio ? (
-                  <QuickLink href={SUITE_SITIO_PATH} label="Editar mi sitio" primary />
-                ) : null}
-                {hasInventario ? (
-                  <QuickLink href={SUITE_INVENTARIO_PATH} label="Inventario" />
-                ) : null}
                 {data.site.status === 'published' ? (
-                  <a
-                    href={data.site.publicPath}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded border border-white/20 bg-white/5 px-4 py-3 text-sm font-medium text-white/90 hover:bg-white/10"
-                  >
-                    Ver página pública
-                  </a>
+                  <QuickLink href={data.site.publicPath} label="Ver mi página" external />
                 ) : hasSitio ? (
-                  <QuickLink href={SUITE_SITIO_PATH} label="Publicar sitio" />
+                  <QuickLink href={SUITE_SITIO_PATH} label="Publicar mi página" primary />
                 ) : null}
+                {hasInventario ? <QuickLink href={SUITE_INVENTARIO_PATH} label="Inventario" /> : null}
               </div>
             ) : (
               <p className="text-sm text-white/60">
-                Todavía no tenés un sitio. Si acabás de registrarte, esperá la invitación o
-                contactá soporte.
+                Todavía no tienes un sitio. Si acabas de registrarte, espera la invitación o
+                escríbenos a soporte.
               </p>
             )}
 
@@ -167,63 +160,92 @@ export default function SuiteHomePage({ tenant }: { tenant: SuiteTenant }) {
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <Stat label="Citas hoy" value={String(data.summary.appointments_today)} />
                   <Stat
-                    label="Huecos libres"
-                    value={`${Math.floor(data.summary.open_minutes / 60)} h ${data.summary.open_minutes % 60} m`}
+                    label="Tiempo libre hoy"
+                    value={`${Math.floor(data.summary.open_minutes / 60)} h ${data.summary.open_minutes % 60} min`}
                   />
                   <Stat
-                    label="Ingreso estimado"
+                    label="Ingreso estimado hoy"
                     value={formatLempirasFromCents(data.summary.revenue_cents)}
                   />
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <QuickLink href={`${SUITE_RESERVAS_PATH}?new=1`} label="Crear cita manual" primary />
+                  <QuickLink href={SUITE_RESERVAS_PATH} label="Ver agenda" primary />
+                  <QuickLink href={`${SUITE_RESERVAS_PATH}?new=1`} label="Nueva cita" />
                   <QuickLink href={`${SUITE_RESERVAS_PATH}?block=1`} label="Bloquear horario" />
-                  <QuickLink href={`${SUITE_SITIO_PATH}?tab=negocio`} label="Horario de cierre" />
-                  <QuickLink href={SUITE_EQUIPO_PATH} label="Equipo" />
+                  <QuickLink href={SUITE_EQUIPO_PATH} label="Equipo y horarios" />
                 </div>
               </>
             ) : null}
 
             <section className="space-y-2">
               <h2 className="text-sm font-semibold text-white/80">Actividad reciente</h2>
-              {data.site ? (
-                <p className="text-xs text-white/40">
-                  Sitio actualizado {formatDateTimeForHonduras(data.site.updatedAt)}
-                </p>
-              ) : null}
-              {data.alerts.length === 0 && (!data.landing || data.landing.recent.length === 0) ? (
+              {activity.length === 0 ? (
                 <p className="text-sm text-white/50">
-                  Sin solicitudes nuevas. Cuando alguien escriba desde tu página, aparece acá.
+                  Sin mensajes nuevos. Cuando alguien te escriba desde tu página, aparece aquí.
                 </p>
               ) : (
                 <ul className="space-y-2">
-                  {(data.alerts.length > 0
-                    ? data.alerts
-                    : (data.landing?.recent ?? []).map((row) => ({
-                        type: 'inquiry',
-                        id: row.id,
-                        title: `Solicitud: ${row.full_name}`,
-                        at: row.created_at,
-                      }))
-                  ).map((alert) => (
-                    <li
-                      key={`${alert.type}-${alert.id}`}
-                      className="glass-modern rounded-xl px-3 py-2 text-sm"
-                    >
-                      <p>{alert.title}</p>
-                      <p className="text-xs text-white/40">
-                        {formatDateTimeForHonduras(alert.at)}
-                      </p>
-                    </li>
-                  ))}
+                  {activity.map((item) => {
+                    const content = (
+                      <>
+                        <span>
+                          <span className="block">{item.title}</span>
+                          <span className="text-xs text-white/50">
+                            {item.kind === 'cancellation' ? 'Era para el ' : ''}
+                            {formatDateTimeForHonduras(item.at)}
+                          </span>
+                        </span>
+                        {hasBooking ? (
+                          <span className="text-xs text-sky-200">
+                            {item.kind === 'inquiry' ? 'Agendar →' : 'Ver agenda →'}
+                          </span>
+                        ) : null}
+                      </>
+                    )
+                    return (
+                      <li key={item.key}>
+                        {hasBooking ? (
+                          <Link
+                            href={SUITE_RESERVAS_PATH}
+                            className="glass-modern flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-sm transition hover:border-brand-400/40"
+                          >
+                            {content}
+                          </Link>
+                        ) : (
+                          <div className="glass-modern flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-sm">
+                            {content}
+                          </div>
+                        )}
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
+              {data.site ? (
+                <p className="text-xs text-white/55">
+                  Tu página se actualizó el {formatDateTimeForHonduras(data.site.updatedAt)}
+                </p>
+              ) : null}
             </section>
           </>
         ) : null}
       </div>
     </SuiteShell>
+  )
+}
+
+function DashboardSkeleton({ withBooking }: { withBooking: boolean }) {
+  return (
+    <div className="space-y-3" aria-busy="true" aria-label="Cargando el panel">
+      {[0, withBooking ? 1 : null].filter((row) => row !== null).map((row) => (
+        <div key={row} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {[0, 1, 2].map((cell) => (
+            <div key={cell} className="glass-modern h-[4.5rem] animate-pulse rounded-xl" />
+          ))}
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -244,7 +266,7 @@ function BookingUpsell({
             Módulo disponible
           </p>
           <h2 className="text-base font-semibold text-white">
-            Activá reservas para que {businessName} agende 24/7
+            Activa reservas para que {businessName} agende 24/7
           </h2>
           <p className="text-sm text-white/65">
             El módulo de reservas no está en tu plan. Con agenda, equipo y bloqueos tus
@@ -257,7 +279,7 @@ function BookingUpsell({
               </a>
             </Button>
           ) : (
-            <p className="text-sm text-white/50">Escribinos a soporte para activar reservas.</p>
+            <p className="text-sm text-white/50">Escríbenos a soporte para activar reservas.</p>
           )}
         </div>
         <BookingPreviewSkeleton rubro={rubro} />
@@ -281,7 +303,7 @@ function BookingPreviewSkeleton({ rubro }: { rubro: string }) {
       className="relative border-t border-white/10 bg-black/20 p-4 lg:border-l lg:border-t-0"
       aria-hidden
     >
-      <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-white/35">
+      <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-white/55">
         Vista previa del módulo
       </p>
       <div className="space-y-2 opacity-60">
@@ -312,20 +334,25 @@ function QuickLink({
   href,
   label,
   primary = false,
+  external = false,
 }: {
   href: string
   label: string
   primary?: boolean
+  external?: boolean
 }) {
+  const className = primary
+    ? 'rounded-xl border border-brand-400/40 bg-brand-600/25 px-4 py-3 text-sm font-semibold text-white hover:bg-brand-600/35'
+    : 'glass rounded-xl px-4 py-3 text-sm font-medium text-white/90 hover:border-white/35'
+  if (external) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+        {label} ↗
+      </a>
+    )
+  }
   return (
-    <Link
-      href={href}
-      className={
-        primary
-          ? 'rounded-xl border border-brand-400/40 bg-brand-600/25 px-4 py-3 text-sm font-semibold text-white hover:bg-brand-600/35'
-          : 'glass rounded-xl px-4 py-3 text-sm font-medium text-white/90 hover:border-white/35'
-      }
-    >
+    <Link href={href} className={className}>
       {label}
     </Link>
   )
