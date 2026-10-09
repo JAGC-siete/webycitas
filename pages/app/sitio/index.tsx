@@ -2,14 +2,17 @@ import { useCallback, useEffect, useState } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import type { GetServerSideProps } from 'next'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Trash2 } from 'lucide-react'
 import LandingSplitEditor from '../../../components/landings/editor/LandingSplitEditor'
+import Notices from '../../../components/suite/Notices'
 import SuiteShell from '../../../components/suite/SuiteShell'
+import { useNotice } from '../../../components/suite/useNotice'
 import { Button } from '../../../components/ui/button'
 import { suiteFetch } from '../../../lib/auth/client-session'
 import { suiteEditorFormSchema } from '../../../lib/landings/editor-form'
 import type { LandingEditRecord, SaveLandingDraftInput } from '../../../lib/landings/editor-types'
 import type { InventoryProductView } from '../../../lib/landings/inventory'
+import { validateServiceForm, type FormErrors } from '../../../lib/suite/agenda'
 import { fetchSuiteInventory } from '../../../lib/suite/inventory-api'
 import { SUITE_SERVICES_API } from '../../../lib/suite/paths'
 import { formatLempirasFromCents } from '../../../lib/suite/schemas'
@@ -110,116 +113,180 @@ function ServicesPanel() {
   const [services, setServices] = useState<
     { id: string; name: string; price_cents: number; duration_min: number; is_active: boolean }[]
   >([])
-  const [svcForm, setSvcForm] = useState({ name: '', price: '150', duration: '30' })
-  const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [svcForm, setSvcForm] = useState({ name: '', price: '', duration: '30' })
+  const [formErrors, setFormErrors] = useState<FormErrors<'name' | 'price' | 'duration'>>({})
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [pendingId, setPendingId] = useState<string | null>(null)
+  const { notice, error, succeed, fail } = useNotice()
 
   const load = useCallback(async () => {
-    setLoading(true)
     try {
       const res = await suiteFetch(SUITE_SERVICES_API)
       const body = (await res.json()) as { services?: typeof services; error?: string }
       if (!res.ok) throw new Error(body.error || 'No se pudieron cargar los servicios')
       setServices(body.services ?? [])
-      setError(null)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'No se pudieron cargar los servicios')
+      fail(err instanceof Error ? err.message : 'No se pudieron cargar los servicios')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [fail])
 
   useEffect(() => {
     void load()
   }, [load])
 
   async function addService() {
-    setNotice(null)
-    const price_cents = Math.round(Number(svcForm.price) * 100)
-    const res = await suiteFetch(SUITE_SERVICES_API, {
-      method: 'POST',
-      body: JSON.stringify({
-        name: svcForm.name,
-        price_cents,
-        duration_min: Number(svcForm.duration) || 30,
-      }),
-    })
-    const body = (await res.json()) as { error?: string }
-    if (!res.ok) {
-      setError(body.error || 'No se pudo crear el servicio')
-      return
+    const errors = validateServiceForm(svcForm)
+    setFormErrors(errors)
+    if (Object.keys(errors).length > 0) return
+    setSaving(true)
+    try {
+      const res = await suiteFetch(SUITE_SERVICES_API, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: svcForm.name.trim(),
+          price_cents: Math.round(Number(svcForm.price.replace(',', '.')) * 100),
+          duration_min: Number(svcForm.duration),
+        }),
+      })
+      const body = (await res.json()) as { error?: string }
+      if (!res.ok) throw new Error(body.error || 'No se pudo crear el servicio')
+      setSvcForm({ name: '', price: '', duration: '30' })
+      succeed('Servicio agregado. Aparece en tu página cuando publiques los cambios.')
+      void load()
+    } catch (err: unknown) {
+      fail(err instanceof Error ? err.message : 'No se pudo crear el servicio')
+    } finally {
+      setSaving(false)
     }
-    setSvcForm({ name: '', price: '150', duration: '30' })
-    setNotice('Servicio agregado. Al publicar se sincroniza en el menú de la página.')
-    void load()
   }
 
   async function removeService(id: string, name: string) {
     if (!window.confirm(`¿Eliminar el servicio «${name}»? Las citas ya agendadas se mantienen, pero quedan sin servicio.`)) return
-    setNotice(null)
-    const res = await suiteFetch(`${SUITE_SERVICES_API}?id=${id}`, { method: 'DELETE' })
-    if (!res.ok) {
-      const body = (await res.json()) as { error?: string }
-      setError(body.error || 'No se pudo eliminar')
-      return
+    setPendingId(id)
+    try {
+      const res = await suiteFetch(`${SUITE_SERVICES_API}?id=${id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string }
+        throw new Error(body.error || 'No se pudo eliminar el servicio')
+      }
+      succeed(`Servicio «${name}» eliminado.`)
+      void load()
+    } catch (err: unknown) {
+      fail(err instanceof Error ? err.message : 'No se pudo eliminar el servicio')
+    } finally {
+      setPendingId(null)
     }
-    void load()
   }
 
   return (
     <section className="mx-auto max-w-3xl space-y-4 px-4 py-6">
       <div>
-        <h2 className="text-lg font-semibold">Servicios reservables</h2>
+        <h2 className="text-lg font-semibold">Servicios que se pueden reservar</h2>
         <p className="text-sm text-white/60">
-          Estos precios se inyectan en el bloque de ítems al publicar la página.
+          Tus clientes eligen uno de estos al pedir cita. Los precios se actualizan en tu página
+          cuando publicas los cambios.
         </p>
       </div>
-      {notice ? <p className="text-sm text-emerald-300">{notice}</p> : null}
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
-      {loading ? <p className="text-sm text-white/60">Cargando…</p> : null}
-      <div className="flex flex-wrap gap-2">
-        <input
-          className="input-glass px-2 py-1 text-sm"
-          placeholder="Nombre"
-          value={svcForm.name}
-          onChange={(e) => setSvcForm((f) => ({ ...f, name: e.target.value }))}
-        />
-        <input
-          className="w-24 input-glass px-2 py-1 text-sm"
-          placeholder="Precio"
-          value={svcForm.price}
-          onChange={(e) => setSvcForm((f) => ({ ...f, price: e.target.value }))}
-        />
-        <input
-          className="w-24 input-glass px-2 py-1 text-sm"
-          placeholder="Min"
-          value={svcForm.duration}
-          onChange={(e) => setSvcForm((f) => ({ ...f, duration: e.target.value }))}
-        />
-        <Button size="sm" type="button" onClick={() => void addService()}>
+      <Notices notice={notice} error={error} />
+      <form
+        noValidate
+        className="grid gap-3 rounded-xl border border-white/10 bg-white/5 p-3 sm:grid-cols-[minmax(0,1fr)_8rem_8rem_auto] sm:items-start"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void addService()
+        }}
+      >
+        <ServiceField label="Nombre del servicio" error={formErrors.name}>
+          <input
+            className="mt-1 w-full input-glass px-3 py-2 text-sm"
+            placeholder="Ej.: Corte de cabello"
+            value={svcForm.name}
+            aria-invalid={Boolean(formErrors.name)}
+            onChange={(e) => setSvcForm((f) => ({ ...f, name: e.target.value }))}
+          />
+        </ServiceField>
+        <ServiceField label="Precio (L.)" error={formErrors.price}>
+          <input
+            className="mt-1 w-full input-glass px-3 py-2 text-sm"
+            inputMode="decimal"
+            placeholder="150"
+            value={svcForm.price}
+            aria-invalid={Boolean(formErrors.price)}
+            onChange={(e) => setSvcForm((f) => ({ ...f, price: e.target.value }))}
+          />
+        </ServiceField>
+        <ServiceField label="Duración (min)" error={formErrors.duration}>
+          <input
+            className="mt-1 w-full input-glass px-3 py-2 text-sm"
+            inputMode="numeric"
+            value={svcForm.duration}
+            aria-invalid={Boolean(formErrors.duration)}
+            onChange={(e) => setSvcForm((f) => ({ ...f, duration: e.target.value }))}
+          />
+        </ServiceField>
+        <Button type="submit" className="sm:mt-6" disabled={saving}>
+          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Agregar
         </Button>
-      </div>
-      <ul className="space-y-2">
-        {services.map((s) => (
-          <li
-            key={s.id}
-            className="flex items-center justify-between rounded border border-white/10 px-3 py-2 text-sm"
-          >
-            <span>
-              {s.name} · {formatLempirasFromCents(s.price_cents)} · {s.duration_min} min
-            </span>
-            <button type="button" className="text-red-300 underline" onClick={() => void removeService(s.id, s.name)}>
-              Eliminar
-            </button>
-          </li>
-        ))}
-        {!loading && services.length === 0 ? (
-          <li className="text-sm text-white/50">Sin servicios todavía.</li>
-        ) : null}
-      </ul>
+      </form>
+      {loading ? (
+        <p className="flex items-center gap-2 text-sm text-white/60">
+          <Loader2 className="h-4 w-4 animate-spin" /> Cargando servicios…
+        </p>
+      ) : services.length === 0 ? (
+        <p className="text-sm text-white/50">Todavía no tienes servicios. Agrega el primero arriba.</p>
+      ) : (
+        <ul className="space-y-2">
+          {services.map((s) => (
+            <li
+              key={s.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm"
+            >
+              <span>
+                <span className="font-medium">{s.name}</span>
+                <span className="text-white/60">
+                  {' '}
+                  · {s.price_cents === 0 ? 'Sin precio' : formatLempirasFromCents(s.price_cents)} ·{' '}
+                  {s.duration_min} min
+                </span>
+              </span>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="text-red-300 hover:text-red-200"
+                disabled={pendingId === s.id}
+                onClick={() => void removeService(s.id, s.name)}
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                Eliminar
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
+  )
+}
+
+function ServiceField({
+  label,
+  error,
+  children,
+}: {
+  label: string
+  error?: string
+  children: React.ReactNode
+}) {
+  return (
+    <label className="block text-xs text-white/70">
+      {label}
+      {children}
+      {error ? <span className="mt-1 block text-xs text-red-300">{error}</span> : null}
+    </label>
   )
 }
 
@@ -252,21 +319,28 @@ export default function SitioPage({ tenant }: { tenant: SuiteTenant }) {
         <meta name="robots" content="noindex, nofollow" />
       </Head>
       {hasBooking ? (
-        <div className="flex flex-wrap gap-2 border-b border-white/10 px-4 pt-4 text-sm">
-          <button
-            type="button"
-            className={`rounded px-3 py-1 ${tab === 'pagina' ? 'bg-sky-500/30' : 'bg-white/5'}`}
-            onClick={() => selectTab('pagina')}
-          >
-            Página
-          </button>
-          <button
-            type="button"
-            className={`rounded px-3 py-1 ${tab === 'servicios' ? 'bg-sky-500/30' : 'bg-white/5'}`}
-            onClick={() => selectTab('servicios')}
-          >
-            Servicios
-          </button>
+        <div className="px-4 pt-4" role="tablist" aria-label="Mi sitio">
+          <div className="inline-flex rounded-lg border border-white/15 p-0.5">
+            {(
+              [
+                ['pagina', 'Página'],
+                ['servicios', 'Servicios'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={tab === value}
+                className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+                  tab === value ? 'bg-brand-600/40 font-semibold text-white' : 'text-white/70 hover:text-white'
+                }`}
+                onClick={() => selectTab(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
       {editing ? (
