@@ -25,9 +25,12 @@ function navClass(active: boolean) {
 export default function SuiteShell({
   tenant,
   children,
+  wide = false,
 }: {
   tenant: SuiteTenant
   children: ReactNode
+  /** Pantallas de dos columnas (editor + vista previa) que necesitan todo el ancho. */
+  wide?: boolean
 }) {
   const router = useRouter()
   const hasBooking = tenant.modules.includes('reservas')
@@ -46,9 +49,14 @@ export default function SuiteShell({
       : router.pathname === path || router.pathname.startsWith(`${path}/`)
 
   return (
-    <div className="relative isolate min-h-screen overflow-x-hidden bg-mesh text-white">
-      <header className="glass-modern sticky top-0 z-40 border-b border-white/10 shadow-glass">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+    <div className="relative isolate min-h-screen overflow-x-clip bg-mesh text-white">
+      <header className="glass-modern top-0 z-40 border-b border-white/10 shadow-glass lg:sticky">
+        <div
+          className={cn(
+            'mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-3',
+            wide ? 'max-w-[1600px]' : 'max-w-5xl'
+          )}
+        >
           <div>
             <p className="text-sm font-semibold tracking-tight">{tenant.businessName}</p>
             <p className="text-xs text-white/50">{tenant.email}</p>
@@ -98,7 +106,9 @@ export default function SuiteShell({
           </nav>
         </div>
       </header>
-      <main className="relative z-10 mx-auto max-w-5xl">{children}</main>
+      <main className={cn('relative z-10 mx-auto', wide ? 'max-w-[1600px]' : 'max-w-5xl')}>
+        {children}
+      </main>
     </div>
   )
 }

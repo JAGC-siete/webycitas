@@ -1,7 +1,22 @@
 import { z } from 'zod'
 
 export const APPOINTMENT_STATUSES = ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'] as const
-export const APPOINTMENT_SOURCES = ['manual', 'walk_in', 'inquiry', 'web'] as const
+export type AppointmentStatus = (typeof APPOINTMENT_STATUSES)[number]
+
+/** Etiqueta para el owner y verbo del botón que lleva a ese estado. */
+export const APPOINTMENT_STATUS_COPY: Record<AppointmentStatus, { label: string; action: string }> = {
+  pending: { label: 'Pendiente', action: 'Marcar pendiente' },
+  confirmed: { label: 'Confirmada', action: 'Confirmar' },
+  completed: { label: 'Atendida', action: 'Marcar atendida' },
+  cancelled: { label: 'Cancelada', action: 'Cancelar' },
+  no_show: { label: 'No vino', action: 'No vino' },
+}
+
+export function appointmentStatusLabel(status: string): string {
+  return APPOINTMENT_STATUS_COPY[status as AppointmentStatus]?.label ?? status
+}
+
+export const APPOINTMENT_SOURCES =['manual', 'walk_in', 'inquiry', 'web'] as const
 
 export const appointmentCreateSchema = z.object({
   customer_name: z.string().trim().min(1).max(120),

@@ -103,8 +103,10 @@ const PreviewPane = memo(function PreviewPane({
     }
   }, [values, landingId, slug, title, templateType])
 
+  // self-start: como hijo directo del grid se estiraría al alto de la fila y nunca quedaría fija.
+  // lg:top-20 la deja debajo del menú fijo del panel del owner.
   return (
-    <div className="sticky top-6 min-w-0 space-y-2">
+    <div className="sticky top-6 min-w-0 space-y-2 self-start lg:top-20">
       {preview.stale && (
         <p className="animate-pulse text-xs text-amber-300">
           Vista previa en pausa: hay un campo incompleto. Se muestra la última versión válida.

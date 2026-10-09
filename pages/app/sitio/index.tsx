@@ -155,7 +155,8 @@ function ServicesPanel() {
     void load()
   }
 
-  async function removeService(id: string) {
+  async function removeService(id: string, name: string) {
+    if (!window.confirm(`¿Eliminar el servicio «${name}»? Las citas ya agendadas se mantienen, pero quedan sin servicio.`)) return
     setNotice(null)
     const res = await suiteFetch(`${SUITE_SERVICES_API}?id=${id}`, { method: 'DELETE' })
     if (!res.ok) {
@@ -209,7 +210,7 @@ function ServicesPanel() {
             <span>
               {s.name} · {formatLempirasFromCents(s.price_cents)} · {s.duration_min} min
             </span>
-            <button type="button" className="text-red-300 underline" onClick={() => void removeService(s.id)}>
+            <button type="button" className="text-red-300 underline" onClick={() => void removeService(s.id, s.name)}>
               Eliminar
             </button>
           </li>
@@ -242,8 +243,10 @@ export default function SitioPage({ tenant }: { tenant: SuiteTenant }) {
     )
   }
 
+  const editing = tab === 'pagina' || !hasBooking
+
   return (
-    <SuiteShell tenant={tenant}>
+    <SuiteShell tenant={tenant} wide={editing}>
       <Head>
         <title>Mi sitio · {tenant.businessName}</title>
         <meta name="robots" content="noindex, nofollow" />
@@ -266,7 +269,7 @@ export default function SitioPage({ tenant }: { tenant: SuiteTenant }) {
           </button>
         </div>
       ) : null}
-      {tab === 'pagina' || !hasBooking ? (
+      {editing ? (
         <SuitePageEditor hasInventory={tenant.modules.includes('inventario')} />
       ) : (
         <ServicesPanel />

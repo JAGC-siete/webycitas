@@ -6,6 +6,7 @@ import SuiteShell from '../../../components/suite/SuiteShell'
 import { suiteFetch } from '../../../lib/auth/client-session'
 import { requireSuitePage, tenantProps, type SuiteTenant } from '../../../lib/suite/tenant'
 import { SUITE_CLIENTES_PATH, SUITE_CUSTOMERS_API } from '../../../lib/suite/paths'
+import { appointmentStatusLabel } from '../../../lib/suite/schemas'
 import { formatDateTimeForHonduras } from '../../../lib/timezone'
 
 type Customer = {
@@ -150,7 +151,7 @@ export default function ClientesPage({ tenant }: { tenant: SuiteTenant }) {
                       : visit.bookable_services
                     return (
                       <li key={visit.id}>
-                        {formatDateTimeForHonduras(visit.starts_at)} · {visit.status}
+                        {formatDateTimeForHonduras(visit.starts_at)} · {appointmentStatusLabel(visit.status)}
                         {service?.name ? ` · ${service.name}` : ''}
                       </li>
                     )
