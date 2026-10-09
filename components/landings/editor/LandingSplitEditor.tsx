@@ -264,7 +264,7 @@ export default function LandingSplitEditor({
         }
 
         if (!canUnpublish) {
-          throw new Error('No tenés permiso para despublicar')
+          throw new Error('No tienes permiso para despublicar')
         }
         const result = await onPublish('unpublish')
         setStatus(result.status)

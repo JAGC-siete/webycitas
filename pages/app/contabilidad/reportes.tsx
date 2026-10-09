@@ -263,7 +263,7 @@ export default function ContabilidadReportesPage({ tenant }: { tenant: SuiteTena
                 Total patrimonio: {formatLempirasFromCents(bs.total_equity_cents)}
               </p>
             </section>
-            <p className="text-xs text-white/45">
+            <p className="text-xs text-white/55">
               {bs.balanced ? 'Ecuación A = P + PN se cumple.' : 'Ecuación desbalanceada — revisar asientos.'}
             </p>
           </div>
@@ -287,7 +287,7 @@ function ReportTable({
   return (
     <div className="overflow-x-auto rounded-lg border border-white/10">
       <table className="min-w-full text-left text-sm">
-        <thead className="bg-slate-900/80 text-xs uppercase tracking-wide text-white/45">
+        <thead className="bg-slate-900/80 text-xs uppercase tracking-wide text-white/55">
           <tr>
             <th className="px-3 py-2">Código</th>
             <th className="px-3 py-2">Cuenta</th>
@@ -298,7 +298,7 @@ function ReportTable({
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={hideRight ? 3 : 4} className="px-3 py-4 text-center text-white/40">
+              <td colSpan={hideRight ? 3 : 4} className="px-3 py-4 text-center text-white/55">
                 Sin movimientos en el rango.
               </td>
             </tr>
