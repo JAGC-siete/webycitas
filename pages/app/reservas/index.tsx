@@ -15,7 +15,12 @@ import {
   SUITE_SERVICES_API,
   SUITE_STAFF_API,
 } from '../../../lib/suite/paths'
-import { hondurasTodayDate } from '../../../lib/suite/schemas'
+import {
+  APPOINTMENT_STATUS_COPY,
+  appointmentStatusLabel,
+  hondurasTodayDate,
+  type AppointmentStatus,
+} from '../../../lib/suite/schemas'
 import { formatDateTimeForHonduras } from '../../../lib/timezone'
 
 const STATUS_COLOR: Record<string, string> = {
@@ -57,6 +62,7 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
   const [rows, setRows] = useState<Appointment[]>([])
   const [staff, setStaff] = useState<{ id: string; name: string }[]>([])
   const [services, setServices] = useState<{ id: string; name: string; duration_min: number }[]>([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [inquiries, setInquiries] = useState<
@@ -110,6 +116,8 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
       setError(null)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error')
+    } finally {
+      setLoading(false)
     }
   }, [range.from, range.to])
 
@@ -162,6 +170,7 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
       if (!res.ok) throw new Error(body.error || 'No se pudo bloquear')
       setNotice('Horario bloqueado')
       setShowBlock(false)
+      void load()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error')
     }
@@ -182,7 +191,18 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
     void load()
   }
 
-  async function patchStatus(id: string, status: string) {
+  async function patchStatus(id: string, status: AppointmentStatus, customerName: string) {
+    if (
+      (status === 'cancelled' || status === 'no_show') &&
+      !window.confirm(
+        status === 'cancelled'
+          ? `¿Cancelar la cita de ${customerName}?`
+          : `¿Marcar que ${customerName} no vino?`
+      )
+    ) {
+      return
+    }
+    setNotice(null)
     const res = await suiteFetch(SUITE_APPOINTMENTS_API, {
       method: 'PATCH',
       body: JSON.stringify({ id, status }),
@@ -192,6 +212,7 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
       setError(body.error || 'No se pudo actualizar')
       return
     }
+    setError(null)
     void load()
   }
 
@@ -267,11 +288,15 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
         ) : null}
 
         <ul className="space-y-2">
-          {rows.length === 0 ? <li className="text-sm text-white/50">Sin citas en este rango.</li> : null}
+          {loading ? <li className="text-sm text-white/60">Cargando citas…</li> : null}
+          {!loading && rows.length === 0 ? (
+            <li className="text-sm text-white/50">Sin citas en este rango.</li>
+          ) : null}
           {rows.map((row) => {
             const customer = one(row.customers)
             const member = one(row.staff_members)
             const service = one(row.bookable_services)
+            const customerName = customer?.name || 'este cliente'
             return (
               <li
                 key={row.id}
@@ -286,7 +311,7 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
                         Web
                       </span>
                     ) : null}
-                    <span>{row.status}</span>
+                    <span>{appointmentStatusLabel(row.status)}</span>
                   </div>
                 </div>
                 <p className="text-white/70">
@@ -300,21 +325,23 @@ export default function ReservasPage({ tenant }: { tenant: SuiteTenant }) {
                     <button
                       type="button"
                       className="rounded border border-emerald-400/40 bg-emerald-500/20 px-2 py-0.5 font-medium text-emerald-100 hover:bg-emerald-500/30"
-                      onClick={() => void patchStatus(row.id, 'confirmed')}
+                      onClick={() => void patchStatus(row.id, 'confirmed', customerName)}
                     >
                       Confirmar
                     </button>
                   ) : null}
-                  {['confirmed', 'completed', 'cancelled', 'no_show'].map((status) => (
-                    <button
-                      key={status}
-                      type="button"
-                      className="underline opacity-80 hover:opacity-100"
-                      onClick={() => void patchStatus(row.id, status)}
-                    >
-                      {status}
-                    </button>
-                  ))}
+                  {(['confirmed', 'completed', 'cancelled', 'no_show'] as const)
+                    .filter((status) => status !== row.status && !(status === 'confirmed' && row.status === 'pending'))
+                    .map((status) => (
+                      <button
+                        key={status}
+                        type="button"
+                        className="rounded border border-white/20 bg-white/5 px-2 py-0.5 hover:bg-white/10"
+                        onClick={() => void patchStatus(row.id, status, customerName)}
+                      >
+                        {APPOINTMENT_STATUS_COPY[status].action}
+                      </button>
+                    ))}
                 </div>
               </li>
             )
