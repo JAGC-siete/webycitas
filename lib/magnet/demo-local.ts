@@ -94,7 +94,7 @@ export const WEBYCITAS_PRICING_PACKS = [
 ] as const
 
 export const WEBYCITAS_PRICING_NOTE =
-  'Precios en Lempiras. Maps incluido. Sin comisión por cita. Boceto gratis; activación confirmada por WhatsApp.'
+  'Maps incluido. Sin comisión por cita. El boceto es gratis y no te cobramos nada hasta que lo apruebes por WhatsApp.'
 
 const SERVICE_LABEL: Record<DemoLocalService, string> = {
   landing: 'Página web',
@@ -321,74 +321,74 @@ export function catalogForRubro(rubro: string | undefined): DemoLocalCatalog {
 
 export const DEMO_LOCAL_COPY = {
   seo: {
-    title: 'Más clientes locales: web, reservas y Google Maps | Webycitas',
+    title: 'Más clientes con tu negocio en la web | Página, Maps y reservas en Honduras | Webycitas',
     description:
       'Página, reservas y Google Maps para negocios de barrio en Honduras. Desde L. 990/mes. Boceto gratis; precios claros en Lempiras.',
     keywords:
       'más clientes negocio local Honduras, Google Maps barbería, reservas citas negocio, ferretería cerca de mí, perfil de empresa Google, landing negocio de barrio',
   },
   hero: {
-    kicker: 'Presencia local para negocios de barrio',
-    headline: 'Tu negocio visible en la zona: página web y Google Maps',
+    kicker: 'Para barberías, salones, ferreterías y negocios de barrio',
+    headline: 'Más clientes con tu negocio en la web',
     subheadlineLead: 'Te armamos',
-    subheadlineFeatures: 'página clara y perfil en Maps',
+    subheadlineFeatures: 'tu página y tu perfil en Google Maps',
     subheadlineTail:
-      'para que tus vecinos te encuentren. Sumá reservas online cuando quieras dejar de pelear con el WhatsApp.',
+      'para que la gente de tu zona te encuentre, vea tus precios y te escriba por WhatsApp. Cuando quieras, le sumas reservas en línea.',
     mapsBenefit:
-      'Tus vecinos te buscan. Si no apareces, le compran al de al lado. El perfil en Maps va incluido.',
-    ctaPrimary: 'Probar gratis',
+      'Cuando alguien busca “barbería cerca de mí”, ¿apareces tú o el de al lado? El perfil en Maps va incluido.',
+    ctaPrimary: 'Ver mi boceto gratis',
   },
   problem: {
-    title: '¿Necesitas más clientes en tu negocio?',
+    title: '¿Por qué se te van clientes?',
     items: [
       {
-        title: 'Eres un “fantasma” en tu zona',
-        body: 'Las personas buscan “salón de belleza / taller cerca de mí” en Google y tú no apareces.',
+        title: 'Te buscan y no te encuentran',
+        body: 'La gente busca en Google antes de salir de la casa. Si no apareces, le compra al que sí aparece.',
       },
       {
-        title: 'Sin sistema de reservas',
-        body: 'Te escriben para pedir turno y contestas uno por uno. Sin agenda, se te cruzan las citas o el cliente se va al que sí reserva solo.',
+        title: 'Contestas citas una por una',
+        body: 'Se te cruzan los turnos o el cliente se cansa de esperar respuesta y se va con otro.',
       },
       {
-        title: 'Sin ventas por WhatsApp',
-        body: 'Te escriben para pedir precio o el mandado y el chat se queda ahí. Sin lista, sin botón de pedido, esa venta no se cierra o se la lleva otro.',
+        title: 'Te piden precio y la venta se queda en el chat',
+        body: 'Sin lista de precios ni botón de pedido, esa venta no se cierra o se la lleva otro.',
       },
     ],
   },
   offer: {
-    title: 'Atrae nuevos clientes con nuestro servicio',
+    title: 'Tu negocio en la web, listo en días',
     cta: 'Activar',
     steps: [
       {
         title: 'Página web',
-        body: 'Un sitio claro y rápido que muestra tus servicios, precios y genera confianza inmediata en quien te visita.',
+        body: 'Tus servicios, precios, horario y un botón de WhatsApp en un solo enlace para compartir.',
       },
       {
         title: 'Perfil de Empresa en Google Maps',
-        body: 'Configuramos tu perfil para que aparezcas cuando tus vecinos te busquen en el mapa. Incluido al contratar la página web o las reservas: no se cotiza aparte.',
+        body: 'Que te encuentren cuando buscan cerca. Lo configuramos por ti y va incluido con tu página o tus reservas: no se cobra aparte.',
         badge: 'Incluido · gratis con tu página o tus reservas',
       },
       {
-        title: 'Reservas online',
-        body: 'Tus clientes piden turno según disponibilidad. La agenda queda en tu panel; vos confirmás.',
+        title: 'Reservas en línea',
+        body: 'Tus clientes eligen la hora que les queda. Tú confirmas desde tu panel.',
       },
     ],
   },
   pricing: {
-    title: 'Precios en Lempiras',
+    title: 'Precios claros, en lempiras',
     note: WEBYCITAS_PRICING_NOTE,
     cta: 'Elegir plan',
   },
   form: {
-    title: 'Solicitud de servicio',
-    submit: 'Activar',
+    title: 'Pide tu boceto gratis',
+    submit: 'Quiero mi boceto',
     submitting: 'Enviando…',
     notePlaceholder: 'Cortes, menú… ¿Algo que debamos saber del local?',
     services: {
       legend: 'Qué armamos',
       hint: 'Elige lo que necesitas. El perfil de Google Maps se incluye al contratar cualquiera.',
       hintRetail:
-        'En este rubro armamos la página. Podés sumar inventario y contabilidad. Maps incluido.',
+        'En este rubro armamos la página. Puedes sumar inventario y contabilidad. Maps incluido.',
       error: 'Elige al menos un servicio.',
       landingTitle: 'Página web',
       landingBody: 'Tu local en internet: servicios, precios y WhatsApp.',
@@ -412,7 +412,7 @@ export const DEMO_LOCAL_COPY = {
     errorConsent: 'Marca el consentimiento para enviar.',
   },
   footer: {
-    blurb: 'Más clientes para negocios de barrio. Webycitas.',
+    blurb: 'Más clientes con tu negocio en la web. Webycitas.',
   },
 } as const
 
@@ -536,7 +536,7 @@ export function buildDemoLocalOwnerEmail(
     parts.push(
       liquidParagraph(
         liveUrl
-          ? 'Tu landing ya está publicada. Podés abrirla y compartirla:'
+          ? 'Tu landing ya está publicada. Puedes abrirla y compartirla:'
           : 'Tu landing se está preparando. Mientras tanto, este es el enlace de referencia:'
       )
     )
@@ -550,7 +550,7 @@ export function buildDemoLocalOwnerEmail(
           ? 'El sistema de citas (calendario, equipo y solicitudes) se administra desde tu panel después de crear la contraseña.'
           : panelUrl
             ? 'El sistema de citas se administra desde tu panel (calendario, equipo y solicitudes).'
-            : 'El sistema de citas se administra desde tu panel cuando creés la contraseña.'
+            : 'El sistema de citas se administra desde tu panel cuando crees la contraseña.'
       )
     )
   }
@@ -558,7 +558,7 @@ export function buildDemoLocalOwnerEmail(
   if (options?.accessUrl) {
     parts.push(
       liquidParagraph(
-        'Creá tu contraseña con este enlace (un solo uso). Después entrá cuando quieras a administrar tu sitio y tus citas:'
+        'Crea tu contraseña con este enlace (un solo uso). Después entra cuando quieras a administrar tu sitio y tus citas:'
       )
     )
     parts.push(liquidCta(options.accessUrl, 'Crear contraseña y entrar al panel'))
@@ -566,7 +566,7 @@ export function buildDemoLocalOwnerEmail(
     if (hasBooking) {
       parts.push(liquidCta(panelUrl, 'Ir al panel de reservas'))
     } else {
-      parts.push(liquidParagraph('Si ya tenés contraseña, entrá directo al panel:'))
+      parts.push(liquidParagraph('Si ya tienes contraseña, entra directo al panel:'))
       parts.push(liquidCta(panelUrl, 'Iniciar sesión'))
     }
   }
@@ -584,7 +584,7 @@ export function buildDemoLocalOwnerEmail(
       subtitle: productsLabel,
       badge: 'Webycitas',
       bodyHtml: parts.join(''),
-      footerNote: 'Webycitas · panel del dueño. Podés responder este correo.',
+      footerNote: 'Webycitas · panel del dueño. Puedes responder este correo.',
     }),
   }
 }

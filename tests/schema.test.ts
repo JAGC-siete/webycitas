@@ -81,16 +81,17 @@ describe('contratos públicos', () => {
   it('publica precios en Lempiras para packs y módulos', () => {
     assert.match(WEBYCITAS_MODULE_PRICES.landing, /L\.\s*990/)
     assert.match(WEBYCITAS_PRICING_PACKS[1].priceLabel, /L\.\s*1,490/)
-    assert.equal(DEMO_LOCAL_COPY.pricing.title.includes('Lempiras'), true)
+    assert.match(DEMO_LOCAL_COPY.pricing.title, /lempiras/i)
     assert.match(DEMO_LOCAL_COPY.seo.description, /L\.\s*990/)
   })
 
-  it('hero lidera web+Maps y la marca es Webycitas', () => {
-    assert.match(DEMO_LOCAL_COPY.hero.headline, /página web y Google Maps/i)
+  it('hero lidera con más clientes en la web, nombra Maps y la marca es Webycitas', () => {
+    assert.match(DEMO_LOCAL_COPY.hero.headline, /más clientes.*en la web/i)
+    assert.match(DEMO_LOCAL_COPY.hero.subheadlineFeatures, /Google Maps/)
     assert.match(DEMO_LOCAL_COPY.seo.title, /Webycitas/)
     assert.match(DEMO_LOCAL_COPY.form.consent, /Webycitas/)
     assert.equal(DEMO_LOCAL_COPY.offer.steps[0].title, 'Página web')
     assert.equal(DEMO_LOCAL_COPY.offer.steps[1].title, 'Perfil de Empresa en Google Maps')
-    assert.equal(DEMO_LOCAL_COPY.offer.steps[2].title, 'Reservas online')
+    assert.equal(DEMO_LOCAL_COPY.offer.steps[2].title, 'Reservas en línea')
   })
 })
