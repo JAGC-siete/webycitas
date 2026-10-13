@@ -143,7 +143,7 @@ export default function DemoLocalLanding({
               <h2 className="text-2xl font-bold text-white sm:text-3xl">{copy.problem.title}</h2>
             </div>
           </ScrollReveal>
-          <ul className="grid gap-4 md:grid-cols-3">
+          <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {copy.problem.items.map((item, index) => (
               <ScrollReveal key={item.title} delay={index * 0.06}>
                 <li className="glass-modern h-full rounded-2xl p-5 sm:p-6">

@@ -353,6 +353,10 @@ export const DEMO_LOCAL_COPY = {
         title: 'Te piden precio y la venta se queda en el chat',
         body: 'Sin lista de precios ni botón de pedido, esa venta no se cierra o se la lleva otro.',
       },
+      {
+        title: 'No sabes cuánto te queda ni cuánto ganaste',
+        body: 'Te enteras de que se acabó un producto cuando el cliente ya lo está pidiendo, y las cuentas del mes viven en un cuaderno.',
+      },
     ],
   },
   offer: {
