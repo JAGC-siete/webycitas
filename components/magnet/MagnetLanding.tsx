@@ -168,11 +168,16 @@ export default function DemoLocalLanding({
               <h2 className="text-2xl font-bold text-white sm:text-3xl">{copy.offer.title}</h2>
             </div>
           </ScrollReveal>
-          <ul className="grid gap-4 md:grid-cols-3">
+          <ul className="grid gap-4 md:grid-cols-6">
             {copy.offer.steps.map((step, index) => {
               const badge = 'badge' in step ? step.badge : undefined
               return (
-                <ScrollReveal key={step.title} delay={index * 0.06}>
+                // 3 core steps on the first row, the optional modules split the second
+                <ScrollReveal
+                  key={step.title}
+                  delay={index * 0.06}
+                  className={index < 3 ? 'md:col-span-2' : 'md:col-span-3'}
+                >
                   <li className="glass-modern relative h-full rounded-2xl p-5 sm:p-6">
                     <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-400/25 bg-brand-500/15 text-sm font-semibold text-brand-200">
@@ -249,7 +254,7 @@ export default function DemoLocalLanding({
             })}
           </ul>
           <p className="mt-4 text-center text-xs text-slate-500">
-            Contabilidad aparte: {WEBYCITAS_MODULE_PRICES.accounting}
+            ¿Llevas tus cuentas? Suma contabilidad a cualquier plan: {WEBYCITAS_MODULE_PRICES.accounting}
           </p>
         </div>
       </section>

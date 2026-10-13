@@ -88,7 +88,7 @@ export const WEBYCITAS_PRICING_PACKS = [
     name: 'Negocio',
     priceLabel: 'L. 1,990',
     period: '/mes',
-    blurb: 'Reservas + inventario',
+    blurb: 'Página + citas online + inventario + Maps',
     services: ['landing', 'booking', 'inventory'] as const satisfies readonly DemoLocalService[],
   },
 ] as const
@@ -323,9 +323,9 @@ export const DEMO_LOCAL_COPY = {
   seo: {
     title: 'Más clientes con tu negocio en la web | Página, Maps y reservas en Honduras | Webycitas',
     description:
-      'Página, reservas y Google Maps para negocios de barrio en Honduras. Desde L. 990/mes. Boceto gratis; precios claros en Lempiras.',
+      'Página, reservas y Google Maps para negocios de barrio en Honduras, con inventario y contabilidad si los necesitas. Desde L. 990/mes. Boceto gratis; precios claros en Lempiras.',
     keywords:
-      'más clientes negocio local Honduras, Google Maps barbería, reservas citas negocio, ferretería cerca de mí, perfil de empresa Google, landing negocio de barrio',
+      'más clientes negocio local Honduras, Google Maps barbería, reservas citas negocio, ferretería cerca de mí, perfil de empresa Google, landing negocio de barrio, inventario negocio pequeño, contabilidad negocio pequeño Honduras',
   },
   hero: {
     kicker: 'Para barberías, salones, ferreterías y negocios de barrio',
@@ -372,6 +372,16 @@ export const DEMO_LOCAL_COPY = {
         title: 'Reservas en línea',
         body: 'Tus clientes eligen la hora que les queda. Tú confirmas desde tu panel.',
       },
+      {
+        title: 'Inventario',
+        body: 'Tus productos con foto, precio y existencias. Anotas lo que entra y lo que vendes, y tu página avisa «Agotado» sola cuando ya no queda.',
+        badge: `Opcional · ${WEBYCITAS_MODULE_PRICES.inventory}`,
+      },
+      {
+        title: 'Contabilidad',
+        body: 'Anota lo que entra y lo que sale, y saca tu estado de resultados y tu balance cuando los necesites, sin cuadernos ni hojas sueltas.',
+        badge: `Opcional · ${WEBYCITAS_MODULE_PRICES.accounting}`,
+      },
     ],
   },
   pricing: {
@@ -395,9 +405,9 @@ export const DEMO_LOCAL_COPY = {
       bookingTitle: 'Reservas / citas',
       bookingBody: 'Que agenden solos, sin hilos de chat.',
       inventoryTitle: 'Inventario',
-      inventoryBody: 'Productos, precios y saldo en tu panel.',
+      inventoryBody: 'Productos con foto, precio y existencias. Tu página avisa «Agotado» sola.',
       accountingTitle: 'Contabilidad',
-      accountingBody: 'Plan de cuentas, asientos y reportes básicos.',
+      accountingBody: 'Lo que entra y sale, con estado de resultados y balance.',
       mapsTitle: 'Perfil de Google Maps',
       mapsBody: 'Incluido al contratar cualquier módulo. No se cotiza aparte.',
       mapsBadge: 'Incluido',
