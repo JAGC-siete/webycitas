@@ -1543,7 +1543,7 @@ export function BlockAccordion({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-          {owner ? 'Secciones de tu página' : 'Bloques · arrastrá el grip para reordenar'}
+          {owner ? 'Secciones de tu página' : 'Bloques · arrastra el grip para reordenar'}
         </p>
         <div className="flex gap-1">
           <Button

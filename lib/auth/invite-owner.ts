@@ -71,14 +71,14 @@ async function sendOwnerAccessEmail(input: {
   businessName?: string | null
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const intro = input.businessName
-    ? `Creá tu contraseña para administrar <strong>${escapeHtml(input.businessName)}</strong>.`
-    : 'Creá tu contraseña para administrar tu sitio y tus citas.'
+    ? `Crea tu contraseña para administrar <strong>${escapeHtml(input.businessName)}</strong>.`
+    : 'Crea tu contraseña para administrar tu sitio y tus citas.'
   return sendBrandedAccessEmail({
     email: input.email,
     actionLink: input.actionLink,
     title: 'Acceso a tu panel Webycitas',
     introHtml: intro,
-    noteHtml: 'Este enlace es de un solo uso. Si expiró, pedí otra invitación al operador o usá “Olvidé mi contraseña”.',
+    noteHtml: 'Este enlace es de un solo uso. Si expiró, pide otra invitación al operador o usa “Olvidé mi contraseña”.',
     ctaLabel: 'Crear contraseña y entrar',
   })
 }
@@ -90,9 +90,9 @@ async function sendRecoveryAccessEmail(input: {
   return sendBrandedAccessEmail({
     email: input.email,
     actionLink: input.actionLink,
-    title: 'Restablecé tu contraseña · Webycitas',
-    introHtml: 'Elegí una contraseña nueva para entrar a tu panel.',
-    noteHtml: 'Este enlace es de un solo uso. Si expiró, volvé a pedir “Olvidé mi contraseña” en el login.',
+    title: 'Restablece tu contraseña · Webycitas',
+    introHtml: 'Elige una contraseña nueva para entrar a tu panel.',
+    noteHtml: 'Este enlace es de un solo uso. Si expiró, vuelve a pedir “Olvidé mi contraseña” en el login.',
     ctaLabel: 'Crear contraseña y entrar',
   })
 }
@@ -137,7 +137,7 @@ export async function provisionOwnerAccess(
   const origin = authRedirectOrigin()
   if (process.env.NODE_ENV === 'production' && isLocalAuthOrigin(origin)) {
     throw new Error(
-      'NEXT_PUBLIC_SITE_URL apunta a localhost en producción. Configurá https://webycitas.humanosisu.net en Railway.'
+      'NEXT_PUBLIC_SITE_URL apunta a localhost en producción. Configura https://webycitas.humanosisu.net en Railway.'
     )
   }
 
@@ -199,7 +199,7 @@ export async function sendOwnerPasswordReset(
     return {
       ok: false,
       error:
-        'NEXT_PUBLIC_SITE_URL apunta a localhost en producción. Configurá https://webycitas.humanosisu.net en Railway.',
+        'NEXT_PUBLIC_SITE_URL apunta a localhost en producción. Configura https://webycitas.humanosisu.net en Railway.',
     }
   }
 
@@ -266,7 +266,7 @@ export async function inviteOwnerAccess(
     channel: 'access_link',
     action_link: provisioned.actionLink,
     message:
-      `Usuario listo. Copiá el enlace y enviáselo a ${provisioned.email} ` +
-      `(configurá RESEND_API_KEY para enviarlo automático).`,
+      `Usuario listo. Copia el enlace y envíaselo a ${provisioned.email} ` +
+      `(configura RESEND_API_KEY para enviarlo automático).`,
   }
 }
