@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { signOutClient } from '../../lib/auth/client-session'
@@ -15,10 +15,10 @@ import { cn } from '../../lib/utils'
 
 function navClass(active: boolean) {
   return cn(
-    'rounded-md px-2.5 py-1.5 text-sm transition-colors',
+    'shrink-0 rounded-md border px-2.5 py-1.5 text-sm transition-colors',
     active
-      ? 'border border-brand-400/30 bg-brand-600/20 font-semibold text-white'
-      : 'text-white/65 hover:bg-white/5 hover:text-white'
+      ? 'border-brand-400/30 bg-brand-600/20 font-semibold text-white'
+      : 'border-transparent text-white/70 hover:bg-white/5 hover:text-white'
   )
 }
 
@@ -43,6 +43,26 @@ export default function SuiteShell({
     void router.push('/app/login')
   }
 
+  const navRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    // En celular, la sección actual puede quedar fuera de la fila: la centramos.
+    const nav = navRef.current
+    const active = nav?.querySelector<HTMLElement>('[aria-current="page"]')
+    if (!nav || !active || nav.scrollWidth <= nav.clientWidth) return
+    const left = active.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft
+    nav.scrollLeft = left - (nav.clientWidth - active.offsetWidth) / 2
+  }, [router.pathname])
+
+  const links = [
+    { href: SUITE_HOME_PATH, label: 'Panel', show: true },
+    { href: SUITE_RESERVAS_PATH, label: 'Agenda', show: hasBooking },
+    { href: SUITE_SITIO_PATH, label: 'Mi sitio', show: hasSitio },
+    { href: SUITE_INVENTARIO_PATH, label: 'Inventario', show: hasInventario },
+    { href: SUITE_CONTABILIDAD_PATH, label: 'Contabilidad', show: hasContabilidad },
+    { href: SUITE_CLIENTES_PATH, label: 'Clientes', show: hasBooking },
+  ].filter((link) => link.show)
+
   const isActive = (path: string) =>
     path === SUITE_HOME_PATH
       ? router.pathname === SUITE_HOME_PATH
@@ -57,49 +77,40 @@ export default function SuiteShell({
             wide ? 'max-w-[1600px]' : 'max-w-5xl'
           )}
         >
-          <div>
-            <p className="text-sm font-semibold tracking-tight">{tenant.businessName}</p>
-            <p className="text-xs text-white/50">{tenant.email}</p>
-          </div>
-          <nav className="flex flex-wrap items-center gap-1.5">
-            <Link href={SUITE_HOME_PATH} className={navClass(isActive(SUITE_HOME_PATH))}>
-              Panel
-            </Link>
-            {hasBooking ? (
-              <Link href={SUITE_RESERVAS_PATH} className={navClass(isActive(SUITE_RESERVAS_PATH))}>
-                Agenda
-              </Link>
-            ) : null}
-            {hasSitio ? (
-              <Link href={SUITE_SITIO_PATH} className={navClass(isActive(SUITE_SITIO_PATH))}>
-                Mi sitio
-              </Link>
-            ) : null}
-            {hasInventario ? (
-              <Link
-                href={SUITE_INVENTARIO_PATH}
-                className={navClass(isActive(SUITE_INVENTARIO_PATH))}
-              >
-                Inventario
-              </Link>
-            ) : null}
-            {hasContabilidad ? (
-              <Link
-                href={SUITE_CONTABILIDAD_PATH}
-                className={navClass(isActive(SUITE_CONTABILIDAD_PATH))}
-              >
-                Contabilidad
-              </Link>
-            ) : null}
-            {hasBooking ? (
-              <Link href={SUITE_CLIENTES_PATH} className={navClass(isActive(SUITE_CLIENTES_PATH))}>
-                Clientes
-              </Link>
-            ) : null}
+          <div className="flex w-full min-w-0 items-center justify-between gap-3 sm:block sm:w-auto">
+            <p className="truncate text-sm font-semibold tracking-tight">{tenant.businessName}</p>
+            <p className="hidden truncate text-xs text-white/50 sm:block">{tenant.email}</p>
             <button
               type="button"
               onClick={() => void logout()}
-              className="ml-1 rounded-md px-2.5 py-1.5 text-sm text-white/45 transition-colors hover:bg-white/5 hover:text-white/80"
+              className="shrink-0 rounded-md px-2.5 py-1.5 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white sm:hidden"
+            >
+              Salir
+            </button>
+          </div>
+          {/* En celular: una sola fila que se desliza de lado, en vez de dos filas de enlaces. */}
+          <nav
+            ref={navRef}
+            aria-label="Secciones del panel"
+            className="-mx-4 flex w-[calc(100%+2rem)] items-center gap-1.5 overflow-x-auto whitespace-nowrap px-4 [scrollbar-width:none] sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0"
+          >
+            {links.map((link) => {
+              const active = isActive(link.href)
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={navClass(active)}
+                >
+                  {link.label}
+                </Link>
+              )
+            })}
+            <button
+              type="button"
+              onClick={() => void logout()}
+              className="ml-1 hidden rounded-md px-2.5 py-1.5 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white sm:inline-block"
             >
               Salir
             </button>

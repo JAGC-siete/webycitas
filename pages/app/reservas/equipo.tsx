@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import Head from 'next/head'
 import type { GetServerSideProps } from 'next'
+import Notices from '../../../components/suite/Notices'
 import SuiteShell from '../../../components/suite/SuiteShell'
+import { useNotice } from '../../../components/suite/useNotice'
+import { Button } from '../../../components/ui/button'
+import { summarizeSchedules } from '../../../lib/suite/agenda'
 import { suiteFetch } from '../../../lib/auth/client-session'
 import { requireSuitePage, tenantProps, type SuiteTenant } from '../../../lib/suite/tenant'
 import { SUITE_SERVICES_API, SUITE_STAFF_API } from '../../../lib/suite/paths'
@@ -26,20 +30,19 @@ export default function EquipoPage({ tenant }: { tenant: SuiteTenant }) {
   const [rows, setRows] = useState<StaffRow[]>([])
   const [services, setServices] = useState<{ id: string; name: string }[]>([])
   const [name, setName] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  const { notice, error, succeed, fail } = useNotice()
 
   const load = useCallback(async () => {
     const [sRes, svcRes] = await Promise.all([suiteFetch(SUITE_STAFF_API), suiteFetch(SUITE_SERVICES_API)])
     const sBody = (await sRes.json()) as { staff?: StaffRow[]; error?: string }
     if (!sRes.ok) {
-      setError(sBody.error || 'No se pudo cargar el equipo')
+      fail(sBody.error || 'No se pudo cargar el equipo')
       return
     }
     setRows(sBody.staff ?? [])
     const svcBody = (await svcRes.json()) as { services?: { id: string; name: string }[] }
     setServices(svcBody.services ?? [])
-  }, [])
+  }, [fail])
 
   useEffect(() => {
     void load()
@@ -63,11 +66,11 @@ export default function EquipoPage({ tenant }: { tenant: SuiteTenant }) {
     })
     const body = (await res.json()) as { error?: string }
     if (!res.ok) {
-      setError(body.error || 'No se pudo crear')
+      fail(body.error || 'No se pudo agregar a la persona')
       return
     }
     setName('')
-    setNotice('Miembro agregado')
+    succeed(`${name.trim()} agregado al equipo, con horario de lunes a sábado.`)
     void load()
   }
 
@@ -78,9 +81,10 @@ export default function EquipoPage({ tenant }: { tenant: SuiteTenant }) {
     })
     if (!res.ok) {
       const body = (await res.json()) as { error?: string }
-      setError(body.error || 'No se pudo actualizar')
+      fail(body.error || 'No se pudo actualizar')
       return
     }
+    succeed(row.is_active ? `${row.name} ya no recibe reservas.` : `${row.name} vuelve a recibir reservas.`)
     void load()
   }
 
@@ -91,10 +95,10 @@ export default function EquipoPage({ tenant }: { tenant: SuiteTenant }) {
     })
     if (!res.ok) {
       const body = (await res.json()) as { error?: string }
-      setError(body.error || 'No se pudo vincular')
+      fail(body.error || 'No se pudieron asignar los servicios')
       return
     }
-    setNotice(`Servicios asignados a ${row.name}`)
+    succeed(`${row.name} ahora puede atender todos los servicios.`)
     void load()
   }
 
@@ -105,25 +109,34 @@ export default function EquipoPage({ tenant }: { tenant: SuiteTenant }) {
         <meta name="robots" content="noindex, nofollow" />
       </Head>
       <div className="space-y-4 px-4 py-6">
-        <h1 className="text-xl font-semibold">Equipo</h1>
-        {notice ? <p className="text-sm text-emerald-300">{notice}</p> : null}
-        {error ? <p className="text-sm text-red-400">{error}</p> : null}
-
-        <div className="flex flex-wrap gap-2">
-          <input
-            className="input-glass px-2 py-1 text-sm"
-            placeholder="Nombre (ej. Carlos)"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <button
-            type="button"
-            className="rounded-lg border border-brand-400/30 bg-brand-600/25 px-3 py-1 text-sm"
-            onClick={() => void addMember()}
-          >
-            Agregar
-          </button>
+        <div>
+          <h1 className="text-xl font-semibold">Equipo y horarios</h1>
+          <p className="text-sm text-white/60">
+            Las personas que atienden y en qué horario se puede reservar con cada una.
+          </p>
         </div>
+        <Notices notice={notice} error={error} onRetry={error ? () => void load() : undefined} />
+
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void addMember()
+          }}
+        >
+          <label className="block text-xs text-white/70">
+            Agregar a alguien del equipo
+            <input
+              className="mt-1 block input-glass px-3 py-2 text-sm"
+              placeholder="Nombre (ej. Carlos)"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </label>
+          <Button type="submit" size="sm" className="h-10" disabled={!name.trim()}>
+            Agregar
+          </Button>
+        </form>
 
         <ul className="space-y-3">
           {rows.map((row) => (
@@ -132,20 +145,22 @@ export default function EquipoPage({ tenant }: { tenant: SuiteTenant }) {
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded-full" style={{ background: row.color }} />
                   <p className="font-medium">{row.name}</p>
-                  <span className="text-xs text-white/40">{row.is_active ? 'Activo' : 'Inactivo'}</span>
+                  <span className="text-xs text-white/50">{row.is_active ? 'Recibe reservas' : 'En pausa'}</span>
                 </div>
-                <div className="flex gap-2 text-xs">
-                  <button type="button" className="underline" onClick={() => void toggleActive(row)}>
-                    {row.is_active ? 'Desactivar' : 'Activar'}
-                  </button>
-                  <button type="button" className="underline" onClick={() => void linkAllServices(row)}>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant="secondary" onClick={() => void linkAllServices(row)}>
                     Asignar todos los servicios
-                  </button>
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => void toggleActive(row)}>
+                    {row.is_active ? 'Pausar reservas' : 'Reactivar'}
+                  </Button>
                 </div>
               </div>
-              <p className="mt-1 text-xs text-white/50">
-                Horarios: {(row.staff_schedules ?? []).length} franjas · Servicios:{' '}
-                {(row.staff_services ?? []).length}
+              <p className="mt-2 text-sm text-white/70">
+                Horario: {summarizeSchedules(row.staff_schedules ?? [])}
+              </p>
+              <p className="text-xs text-white/50">
+                Atiende {(row.staff_services ?? []).length} de {services.length} servicios
               </p>
             </li>
           ))}

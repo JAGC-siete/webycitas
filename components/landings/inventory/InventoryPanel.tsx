@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { ArrowLeftRight, Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '../../ui/button'
+import { Dialog } from '../../ui/dialog'
 import { Input } from '../../ui/input'
 import ImageUploadField from '../../suite/ImageUploadField'
 import { formatInventoryPrice, type InventoryProductView } from '../../../lib/landings/inventory'
@@ -235,17 +236,14 @@ export function InventoryProductDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+    <Dialog title={mode === 'create' ? 'Nuevo producto' : 'Editar producto'} onClose={onClose}>
       <form
-        className="glass-modern w-full max-w-md space-y-4 rounded-2xl p-5"
+        className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault()
           onSubmit(draft)
         }}
       >
-        <h2 className="text-lg font-semibold text-white">
-          {mode === 'create' ? 'Nuevo producto' : 'Editar producto'}
-        </h2>
         <label className="block text-sm text-white/80">
           Nombre
           <Input
@@ -309,7 +307,7 @@ export function InventoryProductDialog({
             />
           </label>
         ) : (
-          <p className="text-xs text-white/45">
+          <p className="text-xs text-white/55">
             El saldo se mueve desde la tabla: + y − de a uno, o «Mover» para varias unidades.
           </p>
         )}
@@ -334,7 +332,7 @@ export function InventoryProductDialog({
           </div>
         </div>
       </form>
-    </div>
+    </Dialog>
   )
 }
 
@@ -365,9 +363,9 @@ export function InventoryMoveDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+    <Dialog title="Mover stock" onClose={onClose} className="max-w-sm">
       <form
-        className="glass-modern w-full max-w-sm space-y-4 rounded-2xl p-5"
+        className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault()
           if (parsed.delta === null) {
@@ -378,10 +376,7 @@ export function InventoryMoveDialog({
           onSubmit(parsed.delta)
         }}
       >
-        <div>
-          <h2 className="text-lg font-semibold text-white">Mover stock</h2>
-          <p className="text-sm text-white/60">{product.nombre}</p>
-        </div>
+        <p className="-mt-2 text-sm text-white/60">{product.nombre}</p>
         <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Tipo de movimiento">
           <button
             type="button"
@@ -415,7 +410,7 @@ export function InventoryMoveDialog({
             inputMode="numeric"
             placeholder="Ej. 24"
             disabled={saving}
-            autoFocus
+            data-autofocus
             className="input-glass mt-1 h-auto shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </label>
@@ -438,6 +433,6 @@ export function InventoryMoveDialog({
           </Button>
         </div>
       </form>
-    </div>
+    </Dialog>
   )
 }

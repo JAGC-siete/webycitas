@@ -203,7 +203,7 @@ export default function ContabilidadCuentasPage({ tenant }: { tenant: SuiteTenan
 
         <div className="overflow-x-auto rounded-lg border border-white/10">
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-slate-900/80 text-xs uppercase tracking-wide text-white/45">
+            <thead className="bg-slate-900/80 text-xs uppercase tracking-wide text-white/55">
               <tr>
                 <th className="px-3 py-2">Código</th>
                 <th className="px-3 py-2">Nombre</th>
@@ -239,7 +239,7 @@ export default function ContabilidadCuentasPage({ tenant }: { tenant: SuiteTenan
               ))}
               {!loading && accounts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-white/45">
+                  <td colSpan={6} className="px-3 py-6 text-center text-white/55">
                     Sin cuentas. Carga la plantilla para empezar.
                   </td>
                 </tr>

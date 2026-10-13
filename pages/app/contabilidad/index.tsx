@@ -23,17 +23,17 @@ const LINKS = [
   {
     href: SUITE_CONTABILIDAD_CUENTAS_PATH,
     title: 'Plan de cuentas',
-    body: 'Catálogo jerárquico. Carga la plantilla mínima o agrega cuentas.',
+    body: 'La lista de cuentas de tu negocio (caja, bancos, ventas, gastos). Empieza con la plantilla básica.',
   },
   {
     href: SUITE_CONTABILIDAD_ASIENTOS_PATH,
     title: 'Asientos',
-    body: 'Partida doble: borradores, publicación balanceada y reversos.',
+    body: 'Cada movimiento de dinero, registrado en sus cuentas. Un asiento publicado no se borra: se corrige con otro.',
   },
   {
     href: SUITE_CONTABILIDAD_REPORTES_PATH,
     title: 'Reportes',
-    body: 'Balanza de comprobación, estado de resultados y balance general.',
+    body: 'Cuánto ganaste (estado de resultados), qué tienes y qué debes (balance general) y la balanza para tu contador.',
   },
 ]
 
@@ -47,7 +47,7 @@ export default function ContabilidadHubPage({ tenant }: { tenant: SuiteTenant })
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Contabilidad</h1>
           <p className="mt-1 text-sm text-white/55">
-            Ledger por partida doble. Los asientos publicados no se editan: se reversan.
+            Lleva las cuentas de tu negocio. Usa los mismos términos que tu contador, para que pueda revisarlas.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
