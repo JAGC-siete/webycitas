@@ -2,7 +2,7 @@
 
 Target: https://webycitas.humanosisu.net/
 
-Un form, un endpoint. La separación es `user_profiles.role` + `leads.auth_user_id`.
+Un form, un endpoint. La separación es `site_user_profiles.role` + `leads.auth_user_id`.
 
 Mercado (host, HMAC, locatarios, repo `mercado-san-pablo`) queda fuera de este plan.
 
@@ -22,7 +22,7 @@ Referencia de contrato (no de tenant): login de Planilla / Humano SISU. Un form,
 | Capa | Fuente | Qué decide |
 | --- | --- | --- |
 | Autenticación | Supabase Auth de webycitas (`auth.users`) | Email + password, JWT, cookies |
-| Autorización | `public.user_profiles` | `role`, `is_active` |
+| Autorización | `public.site_user_profiles` | `role`, `is_active` |
 | Tenant cliente | `public.leads.auth_user_id` | Un lead por usuario. `current_lead_id()` ya existe |
 
 Roles que entran (`canLoginToApp`):
@@ -37,7 +37,7 @@ sequenceDiagram
   participant UI as pages_app_login
   participant API as POST_api_auth_login
   participant SB as SupabaseAuth
-  participant UP as user_profiles
+  participant UP as site_user_profiles
   participant LD as leads
   participant US as user_sessions
 
@@ -125,7 +125,7 @@ El magnet solo guarda email en `leads`.
 
 Migración nueva. No tocar Planilla.
 
-`user_profiles`:
+`site_user_profiles`:
 
 - `id` PK → `auth.users(id)` ON DELETE CASCADE
 - `role` text check (`super_admin`, `owner`)
@@ -184,7 +184,7 @@ Fuera de alcance:
 
 ## Todos de implementación
 
-- [x] Migración `user_profiles` + `user_sessions` + RPCs
+- [x] Migración `site_user_profiles` + `user_sessions` + RPCs
 - [x] `POST /api/auth/login` (rate limit, signInWithPassword, gate por role, claim de lead, user_sessions)
 - [x] `pages/app/login.tsx` + forgot-password + update-password; `/admin/login` redirige
 - [x] `requireSuperAdmin` en APIs `/admin/ops`; `requireSuitePage` para `/app`; logout + heartbeat

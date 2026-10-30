@@ -55,7 +55,7 @@ async function main() {
     if (updated.error) throw updated.error
   }
 
-  const { error: profileError } = await admin.from('user_profiles').upsert(
+  const { error: profileError } = await admin.from('site_user_profiles').upsert(
     { id: userId, role: 'super_admin', is_active: true, permissions: {} },
     { onConflict: 'id' }
   )

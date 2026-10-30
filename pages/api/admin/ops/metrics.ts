@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       db.from('sites').select('status'),
       db.from('site_inquiries').select('id', { count: 'exact', head: true }).gte('created_at', since24h),
       db.from('site_inquiries').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
-      db.from('user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'owner').eq('is_active', true),
+      db.from('site_user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'owner').eq('is_active', true),
     ])
 
     if (leadsRes.error) throw leadsRes.error

@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'GET') {
       const { data: profiles, error } = await db
-        .from('user_profiles')
+        .from('site_user_profiles')
         .select('id, role, is_active, created_at, updated_at')
         .eq('role', SUPER_ADMIN_ROLE)
         .order('created_at', { ascending: true })
@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const { data, error } = await db
-        .from('user_profiles')
+        .from('site_user_profiles')
         .update({ is_active: parsed.data.is_active })
         .eq('id', parsed.data.id)
         .eq('role', SUPER_ADMIN_ROLE)
