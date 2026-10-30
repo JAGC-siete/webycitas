@@ -103,7 +103,7 @@ async function sendRecoveryAccessEmail(input: {
  * acá con cualquier correo (incluido el de un super_admin o un owner desactivado).
  */
 export async function ensureOwnerProfile(admin: SupabaseClient, userId: string): Promise<void> {
-  const { error } = await admin.from('user_profiles').upsert(
+  const { error } = await admin.from('site_user_profiles').upsert(
     { id: userId, role: OWNER_ROLE, is_active: true, permissions: {} },
     { onConflict: 'id', ignoreDuplicates: true }
   )

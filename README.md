@@ -18,7 +18,7 @@ Lead magnet + motor de maquetas + directorio Mercado San Pablo. Repo y Supabase 
 
 No mezclar CTAs, leads ni ads entre ambos. Fichas `mercado_*` no son `sites`/`leads`. Cookies por host. Ads/pixel del magnet no apuntan a Mercado.
 
-Las cookies son del host (sin `Domain=.humanosisu.net`). No comparte Auth con Planilla. Webycitas: un form en `/app/login` (`user_profiles.role` + `leads.auth_user_id`). Mercado sigue con cookie HMAC (`MERCADO_ADMIN_*`).
+Las cookies son del host (sin `Domain=.humanosisu.net`). No comparte Auth con Planilla. Webycitas: un form en `/app/login` (`site_user_profiles.role` + `leads.auth_user_id`). Mercado sigue con cookie HMAC (`MERCADO_ADMIN_*`).
 
 ## Contrato
 
