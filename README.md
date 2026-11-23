@@ -38,16 +38,16 @@ Atribución: `/?ref=` acepta solo los valores de `WEBYCITAS_LEAD_REFS` (`lib/mag
 
 ## Login
 
-Por ahora hay dos logins, uno por producto, sobre la misma tabla `site_user_profiles` y el mismo Supabase Auth:
+Un solo login (`lib/auth/*`) para los dos hosts: misma tabla `site_user_profiles`, mismo Supabase Auth, misma sesión (`user_sessions` con token, TTL 12 h, inactividad 90 min). `createLoginHandler(product)` (`lib/auth/login-handler.ts`) atiende `POST /api/auth/login` en cada host; cada host tiene su página de login y su cookie.
 
-| Producto | Código | Roles | Notas |
+| Producto | Roles que entran (`PRODUCT_ROLES`) | Requisito | Llega a |
 | --- | --- | --- | --- |
-| Webycitas | `lib/auth/*`, `pages/api/auth/*` | `super_admin`, `owner` | `leads.auth_user_id` |
-| Directorio | `lib/sigua/auth/*`, `pages/api/sigua/auth/*` | `super_admin`, `vendor` | `mercado_vendors.auth_user_id`; claim por `contact_email` |
+| Webycitas | `super_admin`, `owner` | owner: un lead no rechazado (`leads.auth_user_id`, claim por correo) | `/admin` / `/app` |
+| Directorio | `super_admin`, `vendor` | vendor: una ficha activa (`mercado_vendors.auth_user_id`, claim por `contact_email`) | `/app/mercado` / `/app` |
 
-Pendiente: unificarlos en uno solo que redirija según el rol. El CHECK de `site_user_profiles.role` en la base solo admite `super_admin` y `owner`, así que invitar a un dueño del directorio (`vendor`) falla hasta que se agregue ese rol.
-
-`lib/sigua/` guarda las piezas del directorio que divergieron de las de Webycitas (auth, `site.ts`, `rate-limit.ts`, `resend-from.ts`, clientes de Supabase). Se van a fusionar con las de Webycitas.
+- Cada cuenta tiene un solo rol: el mismo correo no puede ser dueño en Webycitas y en el directorio a la vez. Invitar en el directorio un correo que ya es `owner` o `super_admin` responde 409 y no cambia su rol.
+- Las APIs de operador de los dos productos usan `requireSuperAdmin(req, res, action, resource)`: piden el token de sesión (`opsFetch` lo manda) y quedan en `audit_logs` con `resource` `ops` o `mercado`.
+- Páginas del directorio: `lib/mercado/page-auth.ts`. URL del sitio y remitente del directorio: `lib/mercado/site.ts` y `lib/mercado/resend-from.ts`.
 
 ## Contrato: host de Webycitas
 
@@ -118,7 +118,7 @@ RLS: `anon` lee fichas `status='active'` (GRANT por columna). El dueño autentic
 
 El Postgres que Railway añadió en ese project **no se usa**. La app habla solo con Supabase.
 
-Migraciones: las del directorio (`mercado_directorio` v2, `user_profiles_sessions_vendors_auth`, `superadmin_pareto_suite`) se aplicaron a mano desde `mercado-sigua` y todavía no están en `supabase/migrations`. Varias de las dos apps tampoco aparecen en el historial de Supabase. Ordenarlas va junto con la unificación del login, porque ambas apps definen `create_user_session` con cuerpos distintos.
+Migraciones: `supabase/migrations` reconstruye la base de los dos productos. Las del directorio (`20260930221500_user_profiles_sessions_vendors_auth`, `20261001043215_superadmin_pareto_suite`) vienen de `mercado-sigua` con su fecha original: en producción se aplicaron a mano y no figuran en el historial de Supabase (tampoco `perfumeria_template` ni `rename_user_profiles_to_site_user_profiles`). Las funciones de sesión que crea la del directorio las borra después `p0_ops_hardening`; los dos productos usan las de Webycitas, con token. `20261123190000_site_user_profiles_vendor_role` agrega el rol `vendor`.
 
 ## Arranque
 

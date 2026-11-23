@@ -104,3 +104,24 @@ describe('invitar dueño del directorio no pisa otra cuenta', () => {
     }
   })
 })
+
+describe('la base acepta los mismos roles que el código', () => {
+  it('la última regla de roles de site_user_profiles lista APP_ROLES', async () => {
+    const { readdirSync, readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const { APP_ROLES } = await import('../lib/auth/role-access')
+    const dir = join(process.cwd(), 'supabase/migrations')
+    const latest = readdirSync(dir)
+      .filter((file) => file.endsWith('.sql'))
+      .sort()
+      .map((file) => readFileSync(join(dir, file), 'utf8'))
+      .filter((sql) => /CONSTRAINT user_profiles_role_check CHECK/.test(sql))
+      .pop()
+    assert.ok(latest)
+    const allowed = /user_profiles_role_check CHECK \(role IN \(([^)]*)\)\)/.exec(latest)?.[1] ?? ''
+    assert.deepEqual(
+      allowed.split(',').map((role) => role.trim().replace(/'/g, '')).sort(),
+      [...APP_ROLES].sort()
+    )
+  })
+})
