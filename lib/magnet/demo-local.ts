@@ -16,6 +16,31 @@ export const DEMO_LOCAL_MARKETING_SOURCE = 'demo-local'
 export const LEADS_TABLE = 'leads'
 export const WEBYCITAS_LEADS_TABLE = LEADS_TABLE
 export const WEBYCITAS_LEAD_SOURCE = 'webycitas'
+
+/**
+ * Partners allowed to tag a lead with `?ref=`. Any other value is dropped, so the
+ * URL can never write arbitrary text into `leads.source`.
+ */
+export const WEBYCITAS_LEAD_REFS = ['sigua-online'] as const
+export type WebycitasLeadRef = (typeof WEBYCITAS_LEAD_REFS)[number]
+
+export const WEBYCITAS_LEAD_REF_NOTE: Record<WebycitasLeadRef, string> = {
+  'sigua-online': 'Vienes del Mercado Digital de Siguatepeque (sigua-online.com).',
+}
+
+export function parseLeadRef(value: unknown): WebycitasLeadRef | undefined {
+  if (typeof value !== 'string') return undefined
+  const normalized = value.trim().toLowerCase()
+  return (WEBYCITAS_LEAD_REFS as readonly string[]).includes(normalized)
+    ? (normalized as WebycitasLeadRef)
+    : undefined
+}
+
+/** `leads.source` keeps the partner ref when there is one; otherwise the magnet default. */
+export function leadSourceForRef(ref: WebycitasLeadRef | undefined): string {
+  return ref ?? WEBYCITAS_LEAD_SOURCE
+}
+
 export const WEBYCITAS_LEAD_STATUSES = ['received', 'reviewed', 'rejected'] as const
 export type WebycitasLeadStatus = (typeof WEBYCITAS_LEAD_STATUSES)[number]
 
@@ -484,6 +509,8 @@ export const demoLocalLeadSchema = z.object({
     message: DEMO_LOCAL_COPY.form.errorConsent,
   }),
   website: z.string().max(200).optional(),
+  // An unknown ref is ignored, never a validation error: the lead still goes through.
+  ref: z.unknown().optional().transform(parseLeadRef),
 }).transform((lead) => ({
   ...lead,
   services: normalizeServicesForRubro(lead.rubro, lead.services),

@@ -4,7 +4,7 @@ import { requireSuperAdmin } from '../../../../lib/auth/api-auth'
 import { createAdminClient } from '../../../../lib/supabase/admin'
 
 const LEAD_COLUMNS =
-  'id, owner_name, business_name, email, phone, rubro, city, services, status, preview_slug, site_id, created_at'
+  'id, owner_name, business_name, email, phone, rubro, city, services, status, source, preview_slug, site_id, created_at'
 
 const patchSchema = z.object({
   id: z.string().uuid(),
