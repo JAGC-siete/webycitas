@@ -4,6 +4,7 @@ import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { VENDOR_CATEGORIES, VENDOR_CATEGORY_LABEL, type VendorCategory } from '../../lib/mercado/categories'
 import { VENDOR_PAYMENT_METHOD_LABEL } from '../../lib/mercado/payments'
+import { opsFetch } from '../../lib/auth/client-session'
 import { MERCADO_VENDORS_UPLOAD_API_PATH } from '../../lib/mercado/paths'
 import {
   DEFAULT_VENDOR_PAYMENT_METHODS,
@@ -69,7 +70,7 @@ async function fileToBase64(file: File): Promise<string> {
 
 async function uploadImage(kind: 'logo' | 'facade' | 'product', file: File) {
   const dataBase64 = await fileToBase64(file)
-  const res = await fetch(MERCADO_VENDORS_UPLOAD_API_PATH, {
+  const res = await opsFetch(MERCADO_VENDORS_UPLOAD_API_PATH, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },

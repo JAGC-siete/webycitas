@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { mercadoAdminClearCookie } from '../../../lib/mercado/admin-auth'
 import { opsAdminClearCookie } from '../../../lib/ops/admin-auth'
 import { revokeAppSession } from '../../../lib/auth/session-manager'
 import { createAdminClient } from '../../../lib/supabase/admin'
@@ -27,6 +28,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   await supabase.auth.signOut()
+  // Both hosts use this handler; each clears its own legacy operator cookie (the other is a no-op).
   opsAdminClearCookie(res)
+  mercadoAdminClearCookie(res)
   return res.status(200).json({ ok: true })
 }

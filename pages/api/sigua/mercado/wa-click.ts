@@ -6,7 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { z } from 'zod'
 import { logger } from '../../../../lib/logger'
-import { withRateLimit } from '../../../../lib/sigua/rate-limit'
+import { withRateLimit } from '../../../../lib/rate-limit'
 import { VENDORS_TABLE } from '../../../../lib/mercado/schema'
 import { createMercadoAdminClient } from '../../../../lib/mercado/vendors-db'
 

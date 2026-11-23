@@ -4,9 +4,10 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { z } from 'zod'
-import { requireSuperAdmin } from '../../../../../lib/sigua/auth/api-auth'
-import { findAuthUserIdByEmail } from '../../../../../lib/sigua/auth/find-auth-user'
-import { normalizeLoginEmail } from '../../../../../lib/sigua/auth/role-access'
+import { requireSuperAdmin } from '../../../../../lib/auth/api-auth'
+import { ensureVendorProfile } from '../../../../../lib/auth/claim-vendor'
+import { findAuthUserIdByEmail } from '../../../../../lib/auth/find-auth-user'
+import { normalizeEmail } from '../../../../../lib/auth/credentials'
 import { logger } from '../../../../../lib/logger'
 import {
   APP_LOGIN_PATH,
@@ -14,6 +15,9 @@ import {
 } from '../../../../../lib/mercado/paths'
 import { VENDORS_TABLE } from '../../../../../lib/mercado/schema'
 import { createMercadoAdminClient } from '../../../../../lib/mercado/vendors-db'
+
+const OTHER_ACCOUNT_TYPE =
+  'Ese correo ya tiene una cuenta de Webycitas o de operador. Por ahora cada cuenta es de un solo tipo: usa otro correo para esta ficha.'
 
 const bodySchema = z.object({
   vendorId: z.string().uuid(),
@@ -33,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Método no permitido' })
   }
 
-  const operator = await requireSuperAdmin(req, res, 'mercado.invite')
+  const operator = await requireSuperAdmin(req, res, 'mercado.invite', 'mercado')
   if (!operator) return
 
   const parsed = bodySchema.safeParse(req.body)
@@ -58,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(409).json({ error: 'Esa ficha ya tiene un locatario vinculado' })
   }
 
-  const email = vendor.contact_email ? normalizeLoginEmail(vendor.contact_email) : ''
+  const email = vendor.contact_email ? normalizeEmail(vendor.contact_email) : ''
   if (!email.includes('@')) {
     return res.status(400).json({ error: 'Guardá un correo de login en la ficha antes de invitar' })
   }
@@ -78,6 +82,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       userId = invited.user.id
     } else {
+      // Checked before mailing: an existing Webycitas owner or operator must keep their role.
+      const profile = await ensureVendorProfile(admin, userId)
+      if (!profile.ok) return res.status(409).json({ error: OTHER_ACCOUNT_TYPE })
+
       const { error: resetErr } = await admin.auth.resetPasswordForEmail(email, { redirectTo })
       if (resetErr) {
         logger.error('mercado resetPasswordForEmail', { error: resetErr.message })
@@ -85,19 +93,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    const { error: profileErr } = await admin.from('site_user_profiles').upsert(
-      {
-        id: userId,
-        role: 'vendor',
-        is_active: true,
-        permissions: {},
-      },
-      { onConflict: 'id' }
-    )
-    if (profileErr) {
-      logger.error('mercado invite profile', { error: profileErr.message })
-      return res.status(500).json({ error: 'No se pudo crear el perfil del locatario' })
-    }
+    const profile = await ensureVendorProfile(admin, userId)
+    if (!profile.ok) return res.status(409).json({ error: OTHER_ACCOUNT_TYPE })
 
     return res.status(200).json({
       ok: true,

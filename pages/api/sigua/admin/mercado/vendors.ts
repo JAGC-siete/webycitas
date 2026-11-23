@@ -5,8 +5,8 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { z } from 'zod'
-import { requireSuperAdmin } from '../../../../../lib/sigua/auth/api-auth'
-import { normalizeLoginEmail } from '../../../../../lib/sigua/auth/role-access'
+import { requireSuperAdmin } from '../../../../../lib/auth/api-auth'
+import { normalizeEmail } from '../../../../../lib/auth/credentials'
 import { logger } from '../../../../../lib/logger'
 import { VENDOR_APPLICATIONS_TABLE } from '../../../../../lib/mercado/inscription-schema'
 import {
@@ -87,9 +87,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Método no permitido' })
   }
 
-  const operator = await requireSuperAdmin(req, res, `mercado.vendors.${req.method}`)
+  const operator = await requireSuperAdmin(req, res, `mercado.vendors.${req.method}`, 'mercado')
   if (!operator) return
-  const operatorEmail = operator.email || operator.userId
+  const operatorEmail = operator.email || operator.user.id
 
   const adminClient = createMercadoAdminClient()
 
@@ -170,7 +170,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (u.hoursNote !== undefined) update.hours_note = u.hoursNote
       if (u.contactEmail !== undefined) {
         update.contact_email = u.contactEmail
-          ? normalizeLoginEmail(u.contactEmail)
+          ? normalizeEmail(u.contactEmail)
           : null
       }
       if (u.products !== undefined) update.products = u.products

@@ -5,7 +5,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { z } from 'zod'
-import { requireSuperAdmin } from '../../../../../lib/sigua/auth/api-auth'
+import { requireSuperAdmin } from '../../../../../lib/auth/api-auth'
 import { logger } from '../../../../../lib/logger'
 import {
   VENDOR_APPLICATIONS_TABLE,
@@ -29,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Método no permitido' })
   }
 
-  const operator = await requireSuperAdmin(req, res, `mercado.applications.${req.method}`)
+  const operator = await requireSuperAdmin(req, res, `mercado.applications.${req.method}`, 'mercado')
   if (!operator) return
 
   const adminClient = createMercadoAdminClient()

@@ -6,7 +6,8 @@ import MercadoAdminShell from '../../../../../components/mercado/MercadoAdminShe
 import { Badge } from '../../../../../components/ui/badge'
 import { Button } from '../../../../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../../components/ui/card'
-import { requireSuperAdminPage } from '../../../../../lib/sigua/auth/page-auth'
+import { opsFetch } from '../../../../../lib/auth/client-session'
+import { requireSuperAdminPage } from '../../../../../lib/mercado/page-auth'
 import {
   VENDOR_CATEGORIES,
   VENDOR_CATEGORY_LABEL,
@@ -66,7 +67,7 @@ export default function MercadoFichasAdminPage({ operatorEmail }: { operatorEmai
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(MERCADO_VENDORS_API_PATH, { credentials: 'include' })
+      const res = await opsFetch(MERCADO_VENDORS_API_PATH, { credentials: 'include' })
       const body = (await res.json().catch(() => ({}))) as {
         vendors?: VendorRow[]
         error?: string
@@ -101,7 +102,7 @@ export default function MercadoFichasAdminPage({ operatorEmail }: { operatorEmai
     }
     setSavingId(id)
     try {
-      const res = await fetch(MERCADO_VENDORS_API_PATH, {
+      const res = await opsFetch(MERCADO_VENDORS_API_PATH, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

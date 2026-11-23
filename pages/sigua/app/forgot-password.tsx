@@ -8,7 +8,7 @@ import {
   APP_LOGIN_PATH,
   AUTH_FORGOT_PASSWORD_API_PATH,
 } from '../../../lib/mercado/paths'
-import { normalizeLoginEmail } from '../../../lib/sigua/auth/role-access'
+import { normalizeEmail } from '../../../lib/auth/credentials'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: normalizeLoginEmail(email) }),
+        body: JSON.stringify({ email: normalizeEmail(email) }),
       })
       const body = (await res.json().catch(() => ({}))) as {
         error?: string

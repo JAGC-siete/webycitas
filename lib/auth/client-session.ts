@@ -6,6 +6,8 @@ export interface StoredUser {
   email: string
   role: AppRole
   lead_id: string | null
+  /** Directory listing of a vendor; absent on Webycitas logins. */
+  vendor_id?: string | null
   session_id?: string
   session_token?: string
 }

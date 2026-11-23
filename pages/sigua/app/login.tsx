@@ -9,28 +9,19 @@ import {
   APP_FORGOT_PASSWORD_PATH,
   AUTH_LOGIN_API_PATH,
 } from '../../../lib/mercado/paths'
-import {
-  LOCAL_STORAGE_SESSION_KEY,
-  LOCAL_STORAGE_USER_KEY,
-} from '../../../lib/sigua/auth/session-manager'
-import { normalizeLoginEmail, normalizeLoginPassword } from '../../../lib/sigua/auth/role-access'
-import { createBrowserSupabaseClient } from '../../../lib/sigua/supabase/browser'
+import { persistLogin, type StoredUser } from '../../../lib/auth/client-session'
+import { normalizeEmail, normalizePassword } from '../../../lib/auth/credentials'
+import { isAppRole } from '../../../lib/auth/role-access'
+import { createBrowserSupabase } from '../../../lib/supabase/browser'
 
 type LoginResponse = {
   error?: string
   redirectTo?: string
-  user?: {
-    id: string
-    email: string
-    role: string
-    vendor_id: string | null
-  }
+  user?: StoredUser
   session?: {
     access_token: string
     refresh_token: string
-    session_id?: string | null
   }
-  userProfile?: Record<string, unknown>
 }
 
 export default function AppLoginPage() {
@@ -52,33 +43,23 @@ export default function AppLoginPage() {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: normalizeLoginEmail(email),
-          password: normalizeLoginPassword(password),
+          email: normalizeEmail(email),
+          password: normalizePassword(password),
           redirect,
         }),
       })
       const body = (await res.json().catch(() => ({}))) as LoginResponse
-      if (!res.ok || !body.user || !body.session) {
+      if (!res.ok || !body.user || !body.session || !isAppRole(body.user.role)) {
         throw new Error(body.error || 'Credenciales inválidas')
       }
 
-      const supabase = createBrowserSupabaseClient()
+      persistLogin(body.user)
+      const supabase = createBrowserSupabase()
       const { error: setErr } = await supabase.auth.setSession({
         access_token: body.session.access_token,
         refresh_token: body.session.refresh_token,
       })
       if (setErr) throw new Error(setErr.message)
-
-      localStorage.setItem(
-        LOCAL_STORAGE_USER_KEY,
-        JSON.stringify({
-          ...body.user,
-          userProfile: body.userProfile,
-        })
-      )
-      if (body.session.session_id) {
-        localStorage.setItem(LOCAL_STORAGE_SESSION_KEY, body.session.session_id)
-      }
 
       void router.replace(body.redirectTo || '/app')
     } catch (err: unknown) {

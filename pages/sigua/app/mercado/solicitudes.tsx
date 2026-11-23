@@ -6,7 +6,8 @@ import MercadoAdminShell from '../../../../components/mercado/MercadoAdminShell'
 import { Badge } from '../../../../components/ui/badge'
 import { Button } from '../../../../components/ui/button'
 import { Card, CardContent } from '../../../../components/ui/card'
-import { requireSuperAdminPage } from '../../../../lib/sigua/auth/page-auth'
+import { opsFetch } from '../../../../lib/auth/client-session'
+import { requireSuperAdminPage } from '../../../../lib/mercado/page-auth'
 import {
   mercadoPresencePlanAdminLabel,
   type MercadoPresencePlan,
@@ -70,7 +71,7 @@ export default function MercadoSolicitudesPage({ operatorEmail }: { operatorEmai
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(MERCADO_APPLICATIONS_ADMIN_API_PATH, { credentials: 'include' })
+      const res = await opsFetch(MERCADO_APPLICATIONS_ADMIN_API_PATH, { credentials: 'include' })
       const body = (await res.json().catch(() => ({}))) as {
         applications?: MercadoApplicationRow[]
         error?: string
@@ -101,7 +102,7 @@ export default function MercadoSolicitudesPage({ operatorEmail }: { operatorEmai
     }
     setSavingId(id)
     try {
-      const res = await fetch(MERCADO_APPLICATIONS_ADMIN_API_PATH, {
+      const res = await opsFetch(MERCADO_APPLICATIONS_ADMIN_API_PATH, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

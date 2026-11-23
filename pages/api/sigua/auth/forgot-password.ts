@@ -1,12 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { createMercadoServerClient } from '../../../../lib/sigua/supabase/server'
-import {
-  AUTH_LOGIN_LIMIT,
-  withAuthRateLimit,
-} from '../../../../lib/sigua/rate-limit'
-import { normalizeLoginEmail } from '../../../../lib/sigua/auth/role-access'
+import { normalizeEmail } from '../../../../lib/auth/credentials'
+import { clientIp } from '../../../../lib/auth/request'
 import { AUTH_UPDATE_PASSWORD_PATH, APP_LOGIN_PATH } from '../../../../lib/mercado/paths'
 import { logger } from '../../../../lib/logger'
+import { AUTH_FORGOT_LIMIT, consumeRateLimit } from '../../../../lib/rate-limit'
+import { createSuiteServerClient } from '../../../../lib/suite/supabase-server'
 
 function siteOrigin(req: NextApiRequest): string {
   const configured = (process.env.NEXT_PUBLIC_MERCADO_SITE_URL || '').replace(/\/$/, '')
@@ -16,15 +14,21 @@ function siteOrigin(req: NextApiRequest): string {
   return `${proto}://${host}`
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+/** Directory flavour of forgot-password: Supabase's own reset mail, landing back on this host. */
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
     return res.status(405).json({ error: 'Método no permitido' })
   }
 
-  const email = normalizeLoginEmail(
-    typeof req.body?.email === 'string' ? req.body.email : ''
-  )
+  const email = normalizeEmail(req.body?.email)
+  const ip = clientIp(req)
+  if (
+    !(await consumeRateLimit(`forgot:ip:${ip}`, AUTH_FORGOT_LIMIT)) ||
+    !(await consumeRateLimit(`forgot:email:${email}`, AUTH_FORGOT_LIMIT))
+  ) {
+    return res.status(429).json({ error: 'Demasiados envíos. Intenta en unos minutos.' })
+  }
 
   // Respuesta uniforme para no filtrar existencia de cuentas.
   const okBody = {
@@ -37,7 +41,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   try {
-    const supabase = createMercadoServerClient(req, res)
+    const supabase = createSuiteServerClient(req, res)
     const redirectTo = `${siteOrigin(req)}${AUTH_UPDATE_PASSWORD_PATH}?next=${encodeURIComponent(APP_LOGIN_PATH)}`
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
     if (error) {
@@ -51,5 +55,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(200).json(okBody)
   }
 }
-
-export default withAuthRateLimit(AUTH_LOGIN_LIMIT, handler)

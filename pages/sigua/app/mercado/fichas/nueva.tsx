@@ -6,7 +6,8 @@ import type { GetServerSideProps } from 'next'
 import MercadoAdminShell from '../../../../../components/mercado/MercadoAdminShell'
 import VendorForm, { type VendorFormValues } from '../../../../../components/mercado/VendorForm'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../../components/ui/card'
-import { requireSuperAdminPage } from '../../../../../lib/sigua/auth/page-auth'
+import { opsFetch } from '../../../../../lib/auth/client-session'
+import { requireSuperAdminPage } from '../../../../../lib/mercado/page-auth'
 import {
   MERCADO_APPLICATIONS_ADMIN_API_PATH,
   MERCADO_VENDORS_API_PATH,
@@ -33,7 +34,7 @@ export default function MercadoFichaNuevaPage({ operatorEmail }: { operatorEmail
     if (!fromId) return
     void (async () => {
       try {
-        const res = await fetch(MERCADO_APPLICATIONS_ADMIN_API_PATH, { credentials: 'include' })
+        const res = await opsFetch(MERCADO_APPLICATIONS_ADMIN_API_PATH, { credentials: 'include' })
         const body = (await res.json().catch(() => ({}))) as {
           applications?: Array<{
             id: string
@@ -97,7 +98,7 @@ export default function MercadoFichaNuevaPage({ operatorEmail }: { operatorEmail
           }
         : payload
 
-      const res = await fetch(MERCADO_VENDORS_API_PATH, {
+      const res = await opsFetch(MERCADO_VENDORS_API_PATH, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

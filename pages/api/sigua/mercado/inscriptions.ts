@@ -6,8 +6,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { logger } from '../../../../lib/logger'
 import { maskEmail } from '../../../../lib/privacy'
-import { PUBLIC_LEAD_LIMIT, withRateLimit } from '../../../../lib/sigua/rate-limit'
-import { getResendFrom } from '../../../../lib/sigua/resend-from'
+import { PUBLIC_LEAD_LIMIT, withRateLimit } from '../../../../lib/rate-limit'
+import { getResendFrom } from '../../../../lib/mercado/resend-from'
 import { createAdminClient } from '../../../../lib/supabase/admin'
 import {
   buildMercadoInscriptionNotification,

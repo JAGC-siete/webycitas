@@ -5,7 +5,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { randomUUID } from 'crypto'
-import { requireSuperAdmin } from '../../../../../lib/sigua/auth/api-auth'
+import { requireSuperAdmin } from '../../../../../lib/auth/api-auth'
 import { logger } from '../../../../../lib/logger'
 import { MERCADO_STORAGE_BUCKET } from '../../../../../lib/mercado/paths'
 import { createMercadoAdminClient } from '../../../../../lib/mercado/vendors-db'
@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Método no permitido' })
   }
 
-  const operator = await requireSuperAdmin(req, res, 'mercado.upload')
+  const operator = await requireSuperAdmin(req, res, 'mercado.upload', 'mercado')
   if (!operator) return
 
   const kind = req.body?.kind

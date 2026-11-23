@@ -3,18 +3,9 @@ import Link from 'next/link'
 import type { GetServerSideProps } from 'next'
 import { Button } from '../../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
-import { requireVendorPage } from '../../../lib/sigua/auth/page-auth'
-import {
-  APP_LOGIN_PATH,
-  AUTH_LOGOUT_API_PATH,
-  MERCADO_ADMIN_PATH,
-  mercadoHomePath,
-} from '../../../lib/mercado/paths'
-import {
-  LOCAL_STORAGE_SESSION_KEY,
-  LOCAL_STORAGE_USER_KEY,
-} from '../../../lib/sigua/auth/session-manager'
-import { createBrowserSupabaseClient } from '../../../lib/sigua/supabase/browser'
+import { signOutClient } from '../../../lib/auth/client-session'
+import { requireVendorPage } from '../../../lib/mercado/page-auth'
+import { APP_LOGIN_PATH, MERCADO_ADMIN_PATH, mercadoHomePath } from '../../../lib/mercado/paths'
 
 type Props = {
   email: string | null
@@ -24,11 +15,7 @@ type Props = {
 export default function AppHomePage({ email, role }: Props) {
   async function logout() {
     try {
-      localStorage.removeItem(LOCAL_STORAGE_USER_KEY)
-      localStorage.removeItem(LOCAL_STORAGE_SESSION_KEY)
-      const supabase = createBrowserSupabaseClient()
-      await supabase.auth.signOut()
-      await fetch(AUTH_LOGOUT_API_PATH, { method: 'POST', credentials: 'include' })
+      await signOutClient()
     } finally {
       window.location.href = APP_LOGIN_PATH
     }

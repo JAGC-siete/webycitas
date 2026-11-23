@@ -5,8 +5,8 @@ import { Button } from '../../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Input } from '../../../components/ui/input'
 import { APP_LOGIN_PATH } from '../../../lib/mercado/paths'
-import { normalizeLoginPassword } from '../../../lib/sigua/auth/role-access'
-import { createBrowserSupabaseClient } from '../../../lib/sigua/supabase/browser'
+import { normalizePassword } from '../../../lib/auth/credentials'
+import { createBrowserSupabase } from '../../../lib/supabase/browser'
 
 export default function UpdatePasswordPage() {
   const router = useRouter()
@@ -21,7 +21,7 @@ export default function UpdatePasswordPage() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    const supabase = createBrowserSupabaseClient()
+    const supabase = createBrowserSupabase()
     void supabase.auth.getSession().then(({ data }) => {
       setReady(Boolean(data.session))
     })
@@ -32,14 +32,14 @@ export default function UpdatePasswordPage() {
     setBusy(true)
     setError(null)
     try {
-      const nextPassword = normalizeLoginPassword(password)
+      const nextPassword = normalizePassword(password)
       if (nextPassword.length < 8) {
         throw new Error('La contraseña necesita al menos 8 caracteres.')
       }
-      if (nextPassword !== normalizeLoginPassword(confirm)) {
+      if (nextPassword !== normalizePassword(confirm)) {
         throw new Error('Las contraseñas no coinciden.')
       }
-      const supabase = createBrowserSupabaseClient()
+      const supabase = createBrowserSupabase()
       const { error: updateErr } = await supabase.auth.updateUser({
         password: nextPassword,
       })

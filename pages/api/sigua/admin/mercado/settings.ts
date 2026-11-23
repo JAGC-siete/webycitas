@@ -4,7 +4,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { requireSuperAdmin } from '../../../../../lib/sigua/auth/api-auth'
+import { requireSuperAdmin } from '../../../../../lib/auth/api-auth'
 import { logger } from '../../../../../lib/logger'
 import { revalidateMercadoPages } from '../../../../../lib/mercado/revalidate'
 import {
@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Método no permitido' })
   }
 
-  const operator = await requireSuperAdmin(req, res, `mercado.settings.${req.method}`)
+  const operator = await requireSuperAdmin(req, res, `mercado.settings.${req.method}`, 'mercado')
   if (!operator) return
 
   try {
@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const patch: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
-      updated_by: operator.email || operator.userId,
+      updated_by: operator.email || operator.user.id,
     }
     if (parsed.data.forceClosed !== undefined) patch.force_closed = parsed.data.forceClosed
     if (parsed.data.supportWhatsapp !== undefined) {

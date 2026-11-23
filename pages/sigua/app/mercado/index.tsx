@@ -5,7 +5,8 @@ import type { GetServerSideProps } from 'next'
 import MercadoAdminShell from '../../../../components/mercado/MercadoAdminShell'
 import { Button } from '../../../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card'
-import { requireSuperAdminPage } from '../../../../lib/sigua/auth/page-auth'
+import { opsFetch } from '../../../../lib/auth/client-session'
+import { requireSuperAdminPage } from '../../../../lib/mercado/page-auth'
 import {
   MERCADO_ADMIN_STATS_API_PATH,
   mercadoAdminListPath,
@@ -38,7 +39,7 @@ export default function MercadoAdminHomePage({ operatorEmail }: { operatorEmail:
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(MERCADO_ADMIN_STATS_API_PATH, { credentials: 'include' })
+      const res = await opsFetch(MERCADO_ADMIN_STATS_API_PATH, { credentials: 'include' })
       const body = (await res.json().catch(() => ({}))) as StatsPayload & { error?: string }
       if (!res.ok) throw new Error(body.error || 'No se pudieron cargar las métricas')
       setStats(body)

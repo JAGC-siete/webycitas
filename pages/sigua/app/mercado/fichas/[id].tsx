@@ -7,7 +7,8 @@ import MercadoAdminShell from '../../../../../components/mercado/MercadoAdminShe
 import VendorForm, { type VendorFormValues } from '../../../../../components/mercado/VendorForm'
 import { Button } from '../../../../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../../components/ui/card'
-import { requireSuperAdminPage } from '../../../../../lib/sigua/auth/page-auth'
+import { opsFetch } from '../../../../../lib/auth/client-session'
+import { requireSuperAdminPage } from '../../../../../lib/mercado/page-auth'
 import { isVendorCategory } from '../../../../../lib/mercado/categories'
 import {
   MERCADO_VENDORS_API_PATH,
@@ -68,7 +69,7 @@ export default function MercadoFichaEditPage({ operatorEmail }: { operatorEmail:
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(MERCADO_VENDORS_API_PATH, { credentials: 'include' })
+      const res = await opsFetch(MERCADO_VENDORS_API_PATH, { credentials: 'include' })
       const body = (await res.json().catch(() => ({}))) as {
         vendors?: VendorRow[]
         error?: string
@@ -95,7 +96,7 @@ export default function MercadoFichaEditPage({ operatorEmail }: { operatorEmail:
     setBusy(true)
     setError(null)
     try {
-      const res = await fetch(MERCADO_VENDORS_API_PATH, {
+      const res = await opsFetch(MERCADO_VENDORS_API_PATH, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -117,7 +118,7 @@ export default function MercadoFichaEditPage({ operatorEmail }: { operatorEmail:
     setInviteMsg(null)
     setError(null)
     try {
-      const res = await fetch(MERCADO_VENDORS_INVITE_API_PATH, {
+      const res = await opsFetch(MERCADO_VENDORS_INVITE_API_PATH, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

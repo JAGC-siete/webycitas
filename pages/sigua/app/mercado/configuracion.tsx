@@ -5,7 +5,8 @@ import MercadoAdminShell from '../../../../components/mercado/MercadoAdminShell'
 import { Button } from '../../../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card'
 import { Input } from '../../../../components/ui/input'
-import { requireSuperAdminPage } from '../../../../lib/sigua/auth/page-auth'
+import { opsFetch } from '../../../../lib/auth/client-session'
+import { requireSuperAdminPage } from '../../../../lib/mercado/page-auth'
 import { MERCADO_ADMIN_SETTINGS_API_PATH } from '../../../../lib/mercado/paths'
 import type { HoursOverride, MercadoSiteSettings } from '../../../../lib/mercado/site-settings'
 import { mergeMarketHours } from '../../../../lib/mercado/site-settings'
@@ -87,7 +88,7 @@ export default function MercadoConfiguracionPage({ operatorEmail }: { operatorEm
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(MERCADO_ADMIN_SETTINGS_API_PATH, { credentials: 'include' })
+      const res = await opsFetch(MERCADO_ADMIN_SETTINGS_API_PATH, { credentials: 'include' })
       const body = (await res.json().catch(() => ({}))) as {
         settings?: MercadoSiteSettings
         error?: string
@@ -127,7 +128,7 @@ export default function MercadoConfiguracionPage({ operatorEmail }: { operatorEm
         saturday: days.saturday,
         sunday: days.sunday,
       }
-      const res = await fetch(MERCADO_ADMIN_SETTINGS_API_PATH, {
+      const res = await opsFetch(MERCADO_ADMIN_SETTINGS_API_PATH, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

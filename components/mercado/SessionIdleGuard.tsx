@@ -5,12 +5,8 @@ import {
   APP_LOGIN_PATH,
   stripSiguaPrefix,
 } from '../../lib/mercado/paths'
-import {
-  LOCAL_STORAGE_SESSION_KEY,
-  LOCAL_STORAGE_USER_KEY,
-} from '../../lib/sigua/auth/session-manager'
-import { SESSION_IDLE_MINUTES } from '../../lib/sigua/auth/role-access'
-import { createBrowserSupabaseClient } from '../../lib/sigua/supabase/browser'
+import { readSessionToken, signOutClient } from '../../lib/auth/client-session'
+import { SESSION_IDLE_MINUTES } from '../../lib/auth/session-manager'
 
 const HEARTBEAT_MS = 2 * 60 * 1000
 const WARN_BEFORE_MS = 5 * 60 * 1000
@@ -35,22 +31,15 @@ export default function SessionIdleGuard() {
     let cancelled = false
 
     async function beat() {
-      const sessionId = localStorage.getItem(LOCAL_STORAGE_SESSION_KEY)
       const res = await fetch(AUTH_HEARTBEAT_API_PATH, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId }),
+        body: JSON.stringify({ session_token: readSessionToken() }),
       })
       if (cancelled) return
       if (res.status === 401 || res.status === 440) {
-        localStorage.removeItem(LOCAL_STORAGE_USER_KEY)
-        localStorage.removeItem(LOCAL_STORAGE_SESSION_KEY)
-        try {
-          await createBrowserSupabaseClient().auth.signOut()
-        } catch {
-          // ignore
-        }
+        await signOutClient()
         void router.replace(APP_LOGIN_PATH)
         return
       }
