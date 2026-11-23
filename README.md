@@ -2,21 +2,24 @@
 
 Lead magnet + motor de maquetas + directorio Mercado San Pablo. Repo y Supabase propios. El dueño de cada site es `leads.id` (`sites.lead_id`). No hay `company_id`, companies, planilla ni SuperAdmin de RRHH.
 
-`humanosisu.net` queda para Planilla (`/app/admin`). Este servicio no comparte esa sesión. Dos subdominios apuntan aquí, cada uno con su operador:
+`humanosisu.net` queda para Planilla (`/app/admin`). Este servicio no comparte esa sesión. Un subdominio apunta aquí:
 
 | Host | Puerta |
 | --- | --- |
 | `webycitas.humanosisu.net` | Magnet en `/`. Operador en `/admin` |
-| `mercado.humanosisu.net` | Directorio en `/` (rewrite a `/mercadosanpablosigua`). Operador en `/app/mercado/login` |
 
-### GTM: dos productos, cero funnel cruzado
+`mercado.humanosisu.net` **no** apunta aquí: lo sirve el servicio aparte del repo `mercado-sigua` (otro CNAME de Railway). La copia vieja del directorio (`/mercadosanpablosigua*`, `/app/mercado/*`) sigue en este repo y todavía responde en `webycitas.humanosisu.net`. El rewrite de `lib/hosts.ts` para ese host ya no recibe tráfico.
+
+### GTM: dos productos, un solo puente
 
 | Producto | Host | Funnel | Precio |
 | --- | --- | --- | --- |
 | **Webycitas** | `webycitas.humanosisu.net` | Magnet → lead → site `/p/[slug]` → suite owner | Packs desde L. 990/mes (copy en `DEMO_LOCAL_COPY` / `WEBYCITAS_PRICING_PACKS`) |
-| **Mercado San Pablo** | `mercado.humanosisu.net` | Directorio + inscripción locatarios | Basic gratis · VIP L. 1,500/año |
+| **Mercado Digital de Siguatepeque** (repo `mercado-sigua`) | `sigua-online.com` (hoy `mercado.humanosisu.net`) | Directorio de negocios de Siguatepeque | Inscripción básica gratis · destacada L. 1,500/año |
 
-No mezclar CTAs, leads ni ads entre ambos. Fichas `mercado_*` no son `sites`/`leads`. Cookies por host. Ads/pixel del magnet no apuntan a Mercado.
+Mercado (sigua-online.com) → Webycitas: solo un CTA para dueños con `?ref=sigua-online` y el enlace al sitio de cada negocio. Bases de datos, cookies, sesiones y ads siguen separados (`mercado_*` no son `sites`/`leads`).
+
+Atribución: `/?ref=` acepta solo los valores de `WEBYCITAS_LEAD_REFS` (`lib/magnet/demo-local.ts`); cualquier otro se ignora. El valor se guarda en `leads.source` (por defecto `webycitas`) y `/admin` muestra el origen de cada lead y cuántos vienen de sigua-online.com.
 
 Las cookies son del host (sin `Domain=.humanosisu.net`). No comparte Auth con Planilla. Webycitas: un form en `/app/login` (`site_user_profiles.role` + `leads.auth_user_id`). Mercado sigue con cookie HMAC (`MERCADO_ADMIN_*`).
 
@@ -106,12 +109,13 @@ Las de `.env.example`. Nuevas para Mercado:
 
 ## Railway
 
-Servicio `webycitas` en el project `handsome-forgiveness`. Un solo proceso Node: magnet + Mercado + los dos operadores.
+Servicio `webycitas` en el project `handsome-forgiveness`. Un solo proceso Node: magnet + operador, más la copia vieja de Mercado mientras no se retire.
 
-Custom domains en ese servicio (CNAME al host de Railway):
+Custom domain en ese servicio (CNAME al host de Railway):
 
 - `webycitas.humanosisu.net`
-- `mercado.humanosisu.net`
+
+`mercado.humanosisu.net` tiene otro CNAME y lo atiende el servicio de `mercado-sigua`.
 
 `humanosisu.net` no se mueve. Sigue en el servicio de Planilla.
 
