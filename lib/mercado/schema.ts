@@ -60,6 +60,13 @@ export const vendorWhatsappSchema = z
     message: 'Incluye un número real de teléfono o WhatsApp.',
   })
 
+export const vendorContactEmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email('Incluí un correo válido para el login del locatario.')
+  .max(160, 'El correo no puede pasar de 160 caracteres.')
+
 /** https absoluta o ruta interna. Bloquea javascript:, data:, http. */
 export const vendorLogoUrlSchema = z
   .string()
@@ -131,6 +138,7 @@ const createVendorFields = {
   category: vendorCategorySchema,
   description: vendorDescriptionSchema,
   whatsapp: vendorWhatsappSchema,
+  contactEmail: optionalFilled(vendorContactEmailSchema),
   logoUrl: optionalFilled(vendorLogoUrlSchema),
   stallLocation: optionalFilled(vendorStallLocationSchema),
   hoursNote: optionalFilled(vendorHoursNoteSchema),
@@ -142,6 +150,12 @@ const createVendorFields = {
   gallery: z.preprocess((value) => (value === undefined || value === null ? [] : value), vendorGallerySchema.default([])),
   status: vendorStatusSchema.default('active'),
   featured: z.boolean().default(false),
+  vipExpiresAt: z
+    .string()
+    .datetime({ offset: true })
+    .nullable()
+    .optional(),
+  vipNotes: optionalFilled(z.string().trim().max(500)),
 }
 
 export const createVendorSchema = z.object(createVendorFields)
@@ -156,6 +170,7 @@ export const updateVendorSchema = z
     category: vendorCategorySchema.optional(),
     description: vendorDescriptionSchema.optional(),
     whatsapp: vendorWhatsappSchema.optional(),
+    contactEmail: vendorContactEmailSchema.nullable().optional(),
     logoUrl: vendorLogoUrlSchema.nullable().optional(),
     stallLocation: vendorStallLocationSchema.nullable().optional(),
     hoursNote: vendorHoursNoteSchema.nullable().optional(),
@@ -164,6 +179,8 @@ export const updateVendorSchema = z
     gallery: vendorGallerySchema.optional(),
     status: vendorStatusSchema.optional(),
     featured: z.boolean().optional(),
+    vipExpiresAt: z.string().datetime({ offset: true }).nullable().optional(),
+    vipNotes: z.string().trim().max(500).nullable().optional(),
   })
   .refine(
     (payload) =>
@@ -172,6 +189,7 @@ export const updateVendorSchema = z
       payload.category !== undefined ||
       payload.description !== undefined ||
       payload.whatsapp !== undefined ||
+      payload.contactEmail !== undefined ||
       payload.logoUrl !== undefined ||
       payload.stallLocation !== undefined ||
       payload.hoursNote !== undefined ||
@@ -179,7 +197,9 @@ export const updateVendorSchema = z
       payload.paymentMethods !== undefined ||
       payload.gallery !== undefined ||
       payload.status !== undefined ||
-      payload.featured !== undefined,
+      payload.featured !== undefined ||
+      payload.vipExpiresAt !== undefined ||
+      payload.vipNotes !== undefined,
     { message: 'No hay cambios que guardar.' }
   )
 
@@ -207,6 +227,7 @@ export function parseUpdateVendor(body: unknown) {
 }
 
 export const publicVendorCardSchema = z.object({
+  id: z.string().uuid().optional(),
   slug: vendorSlugSchema,
   name: vendorNameSchema,
   category: vendorCategorySchema,
