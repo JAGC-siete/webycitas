@@ -1,3 +1,4 @@
+import { customDomainForSlug } from '../custom-domains'
 import { siteAbsoluteUrl } from '../site'
 
 export const SITE_PUBLIC_PREFIX = '/p'
@@ -22,8 +23,16 @@ export function landingPublicPath(slug: string): string {
   return `${SITE_PUBLIC_PREFIX}/${slug}`
 }
 
+/** Link for the owner's panel: the client's own domain, or the relative /p/<slug>. */
+export function landingPublicHref(slug: string): string {
+  const domain = customDomainForSlug(slug)
+  return domain ? `https://${domain}/` : landingPublicPath(slug)
+}
+
+/** Absolute public URL: the client's own domain when it has one. */
 export function landingPublicUrl(slug: string): string {
-  return siteAbsoluteUrl(landingPublicPath(slug))
+  const domain = customDomainForSlug(slug)
+  return domain ? `https://${domain}/` : siteAbsoluteUrl(landingPublicPath(slug))
 }
 
 export function landingAdminEditPath(id: string): string {

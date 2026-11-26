@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { landingPublicPath } from '../../../lib/landings/paths'
+import { landingPublicHref } from '../../../lib/landings/paths'
 import { requireSuiteApi } from '../../../lib/suite/tenant'
 import { hondurasTodayDate } from '../../../lib/suite/schemas'
 
@@ -122,7 +122,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         status: site.status,
         publishedAt: site.publishedAt,
         updatedAt: site.updatedAt,
-        publicPath: landingPublicPath(site.slug),
+        publicPath: landingPublicHref(site.slug),
       },
       landing: {
         inquiries_24h: inquiries24h ?? 0,
