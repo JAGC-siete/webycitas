@@ -19,10 +19,10 @@ needs pass through, and everything else is a 404.
 ## Deploy
 
 ```bash
-npx esbuild workers/custom-domain-proxy/index.ts --bundle --format=esm --platform=neutral --target=es2022 --outfile=dist/worker.js
+npx esbuild workers/custom-domain-proxy/index.ts --bundle --format=esm --platform=neutral --target=es2022 --outfile="$TMPDIR/worker.js"
 ```
 
-Upload `dist/worker.js` as an ES module Worker with the vars in `wrangler.jsonc`, set the
+Upload `$TMPDIR/worker.js` as an ES module Worker with the vars in `wrangler.jsonc`, set the
 `PROXY_SECRET` secret to the same value as `TRUSTED_PROXY_SECRET`, and attach `villesessence.com`
 and `www.villesessence.com` as Worker Custom Domains (Cloudflare creates the DNS records and the
 certificate).
