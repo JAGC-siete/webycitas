@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { readStoredUser } from '../../lib/auth/client-session'
-import { isSuperAdmin, loginPath } from '../../lib/auth/role-access'
+import { isStoredSuperAdmin, readStoredUser } from '../../lib/auth/client-session'
+import { loginPath } from '../../lib/auth/role-access'
 
 export default function SuperAdminGuard({
   children,
@@ -20,7 +20,7 @@ export default function SuperAdminGuard({
       void router.replace(loginPath(router.asPath.split('?')[0]))
       return
     }
-    if (!isSuperAdmin(stored)) {
+    if (!isStoredSuperAdmin(stored)) {
       void router.replace(redirectPath)
     }
   }, [router, redirectPath])
