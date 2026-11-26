@@ -11,7 +11,8 @@ Reglas propias de este repo. Las generales están en `~/.claude/CLAUDE.md`; el c
 
 ## Límites
 
-- Webycitas y Mercado San Pablo no comparten CTAs, leads, cookies, ads ni tablas (`mercado_*` no son `sites`/`leads`).
+- Una app, dos productos por host (`lib/hosts.ts`). El directorio vive en `pages/sigua`, `pages/api/sigua`, `lib/mercado` y `components/mercado`; el login es uno solo (`lib/auth`); Webycitas en el resto. Nunca enlaces `/sigua/...` en una URL pública.
+- Mercado (sigua-online.com) → Webycitas: solo un CTA para dueños con `?ref=sigua-online` y el enlace al sitio de cada negocio. Comparten app y base de datos, pero no tablas de negocio (`mercado_*` no son `sites`/`leads`), ni cookies (cada host tiene las suyas), ni ads.
 - Planilla (`humanosisu.net`) no se toca. Nada de `company_id`, `companies` ni su sesión.
 - Supabase solo el proyecto `webycitas` (`cthzofskbfpcgapdauac`). El Postgres de Railway no se usa.
 

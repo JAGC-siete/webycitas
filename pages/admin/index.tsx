@@ -26,12 +26,19 @@ interface LeadRow {
   city: string
   services: string[]
   status: LeadStatus
+  source: string
   preview_slug: string | null
   created_at: string
 }
 
 interface MetricsPayload {
-  leads: { received: number; reviewed: number; rejected: number; total: number }
+  leads: {
+    received: number
+    reviewed: number
+    rejected: number
+    total: number
+    by_source?: Record<string, number>
+  }
   sites: { total: number }
   inquiries: { last_7d: number }
   owners_active: number
@@ -43,6 +50,17 @@ const STATUS_LABEL: Record<LeadStatus, string> = {
   received: 'Recibido',
   reviewed: 'Revisado',
   rejected: 'Descartado',
+}
+
+const SIGUA_ONLINE_SOURCE = 'sigua-online'
+
+const SOURCE_LABEL: Record<string, string> = {
+  webycitas: 'Magnet',
+  [SIGUA_ONLINE_SOURCE]: 'sigua-online.com',
+}
+
+function sourceLabel(source: string): string {
+  return SOURCE_LABEL[source] ?? source
 }
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
@@ -154,10 +172,14 @@ export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string 
       <div className="space-y-4 px-4 py-6">
         <h1 className="text-xl font-semibold">Leads</h1>
         {metrics ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <MetricCard label="Recibidos" value={metrics.leads.received} />
             <MetricCard label="Revisados" value={metrics.leads.reviewed} />
             <MetricCard label="Descartados" value={metrics.leads.rejected} />
+            <MetricCard
+              label="Desde sigua-online.com"
+              value={metrics.leads.by_source?.[SIGUA_ONLINE_SOURCE] ?? 0}
+            />
             <MetricCard label="Sites" value={metrics.sites.total} />
             <MetricCard label="Consultas 7d" value={metrics.inquiries.last_7d} />
           </div>
@@ -173,7 +195,12 @@ export default function OpsLeadsPage({ operatorEmail }: { operatorEmail: string 
                 <CardContent className="space-y-2 py-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-medium">{row.business_name}</p>
-                    <Badge variant="secondary">{STATUS_LABEL[row.status]}</Badge>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant={row.source === SIGUA_ONLINE_SOURCE ? 'default' : 'outline'}>
+                        {sourceLabel(row.source)}
+                      </Badge>
+                      <Badge variant="secondary">{STATUS_LABEL[row.status]}</Badge>
+                    </div>
                   </div>
                   <p className="text-sm text-white/70">
                     {row.owner_name} · {row.city} · {row.rubro}

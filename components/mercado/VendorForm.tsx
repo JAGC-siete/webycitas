@@ -4,6 +4,7 @@ import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { VENDOR_CATEGORIES, VENDOR_CATEGORY_LABEL, type VendorCategory } from '../../lib/mercado/categories'
 import { VENDOR_PAYMENT_METHOD_LABEL } from '../../lib/mercado/payments'
+import { opsFetch } from '../../lib/auth/client-session'
 import { MERCADO_VENDORS_UPLOAD_API_PATH } from '../../lib/mercado/paths'
 import {
   DEFAULT_VENDOR_PAYMENT_METHODS,
@@ -13,6 +14,11 @@ import {
   type VendorStatus,
 } from '../../lib/mercado/schema'
 import { slugifyVendorName } from '../../lib/mercado/slug'
+import {
+  dateInputToIsoEndOfDay,
+  defaultVipExpiresAt,
+  toDateInputValue,
+} from '../../lib/mercado/vip'
 
 const fieldClass = 'bg-white/10 text-white placeholder:text-gray-400'
 
@@ -22,6 +28,7 @@ export interface VendorFormValues {
   category: VendorCategory | ''
   description: string
   whatsapp: string
+  contactEmail: string
   logoUrl: string
   facadeUrl: string
   stallLocation: string
@@ -30,6 +37,8 @@ export interface VendorFormValues {
   paymentMethods: VendorPaymentMethod[]
   status: VendorStatus
   featured: boolean
+  vipExpiresAt: string
+  vipNotes: string
 }
 
 const EMPTY_VALUES: VendorFormValues = {
@@ -38,6 +47,7 @@ const EMPTY_VALUES: VendorFormValues = {
   category: '',
   description: '',
   whatsapp: '',
+  contactEmail: '',
   logoUrl: '',
   facadeUrl: '',
   stallLocation: '',
@@ -46,6 +56,8 @@ const EMPTY_VALUES: VendorFormValues = {
   paymentMethods: [...DEFAULT_VENDOR_PAYMENT_METHODS],
   status: 'active',
   featured: false,
+  vipExpiresAt: '',
+  vipNotes: '',
 }
 
 async function fileToBase64(file: File): Promise<string> {
@@ -58,7 +70,7 @@ async function fileToBase64(file: File): Promise<string> {
 
 async function uploadImage(kind: 'logo' | 'facade' | 'product', file: File) {
   const dataBase64 = await fileToBase64(file)
-  const res = await fetch(MERCADO_VENDORS_UPLOAD_API_PATH, {
+  const res = await opsFetch(MERCADO_VENDORS_UPLOAD_API_PATH, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -101,12 +113,16 @@ export default function VendorForm({
     const gallery = values.facadeUrl
       ? [{ src: values.facadeUrl, alt: `Fachada de ${values.name || 'el puesto'}` }]
       : []
+    const vipExpiresIso = values.featured
+      ? dateInputToIsoEndOfDay(values.vipExpiresAt) || defaultVipExpiresAt()
+      : null
     const parsed = parseCreateVendor({
       name: values.name,
       slug: effectiveSlug,
       category: values.category,
       description: values.description,
       whatsapp: values.whatsapp,
+      contactEmail: values.contactEmail,
       logoUrl: values.logoUrl,
       stallLocation: values.stallLocation,
       hoursNote: values.hoursNote,
@@ -115,6 +131,8 @@ export default function VendorForm({
       gallery,
       status: values.status,
       featured: values.featured,
+      vipExpiresAt: vipExpiresIso,
+      vipNotes: values.vipNotes || undefined,
     })
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? 'Datos inválidos')
@@ -244,6 +262,26 @@ export default function VendorForm({
         />
       </div>
 
+      <div>
+        <label htmlFor="vendor-contact-email" className="mb-1 block text-sm font-medium text-gray-200">
+          Correo de login del locatario
+        </label>
+        <Input
+          id="vendor-contact-email"
+          type="email"
+          value={values.contactEmail}
+          onChange={(event) =>
+            setValues((current) => ({ ...current, contactEmail: event.target.value }))
+          }
+          placeholder="locatario@ejemplo.com"
+          autoComplete="email"
+          className={fieldClass}
+        />
+        <p className="mt-1 text-xs text-white/50">
+          Con este correo invita al locatario a crear su contraseña.
+        </p>
+      </div>
+
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-gray-200">Métodos de pago</legend>
         <div className="grid gap-2 sm:grid-cols-2">
@@ -359,13 +397,56 @@ export default function VendorForm({
           <input
             type="checkbox"
             checked={values.featured}
-            onChange={(event) =>
-              setValues((current) => ({ ...current, featured: event.target.checked }))
-            }
+            onChange={(event) => {
+              const featured = event.target.checked
+              setValues((current) => ({
+                ...current,
+                featured,
+                vipExpiresAt:
+                  featured && !current.vipExpiresAt
+                    ? toDateInputValue(defaultVipExpiresAt())
+                    : featured
+                      ? current.vipExpiresAt
+                      : '',
+              }))
+            }}
           />
-          Destacado (aportación anual al día)
+          VIP / aportación anual (destacado en directorio)
         </label>
       </div>
+
+      {values.featured ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="vendor-vip-expires" className="mb-1 block text-sm font-medium text-gray-200">
+              Vencimiento VIP
+            </label>
+            <Input
+              id="vendor-vip-expires"
+              type="date"
+              value={values.vipExpiresAt}
+              onChange={(event) =>
+                setValues((current) => ({ ...current, vipExpiresAt: event.target.value }))
+              }
+              className={fieldClass}
+            />
+          </div>
+          <div>
+            <label htmlFor="vendor-vip-notes" className="mb-1 block text-sm font-medium text-gray-200">
+              Notas de aportación
+            </label>
+            <Input
+              id="vendor-vip-notes"
+              value={values.vipNotes}
+              onChange={(event) =>
+                setValues((current) => ({ ...current, vipNotes: event.target.value }))
+              }
+              placeholder="Pagó 2026 · sticker entregado"
+              className={fieldClass}
+            />
+          </div>
+        </div>
+      ) : null}
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 

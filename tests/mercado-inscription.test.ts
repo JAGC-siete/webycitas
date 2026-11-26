@@ -84,7 +84,7 @@ describe('mercado: solicitud de registro de local', () => {
     const denied = parseMercadoInscription({ ...valid, authorized: false })
     assert.equal(denied.success, false)
     if (!denied.success) {
-      assert.match(mercadoInscriptionFieldErrors(denied.error).authorized ?? '', /Autorizá/)
+      assert.match(mercadoInscriptionFieldErrors(denied.error).authorized ?? '', /Autoriza la publicación/)
     }
   })
 
@@ -92,7 +92,7 @@ describe('mercado: solicitud de registro de local', () => {
     const parsed = parseMercadoInscription({ ...valid, presencePlan: 'vip' })
     assert.equal(parsed.success, false)
     if (!parsed.success) {
-      assert.match(mercadoInscriptionFieldErrors(parsed.error).presencePlan ?? '', /presencia/)
+      assert.match(mercadoInscriptionFieldErrors(parsed.error).presencePlan ?? '', /Elige un plan/)
     }
   })
 
@@ -142,7 +142,7 @@ describe('mercado: solicitud de registro de local', () => {
       receivedAt: new Date('2026-09-17T20:00:00.000Z'),
     })
 
-    assert.match(mail.subject, /Solicitud de registro de local/)
+    assert.match(mail.subject, /Solicitud de registro de negocio/)
     assert.match(mail.subject, /Comedor El Patio/)
     assert.match(mail.subject, /Pasillo 1, local 8/)
     assert.ok(mail.html.includes('Carmen López'))
@@ -168,8 +168,11 @@ describe('mercado: solicitud de registro de local', () => {
 
   it('acota el texto de autorización y no arrastra el typo del papel', () => {
     assert.equal(MERCADO_PRESENCE_PLAN_COPY.basic.title, 'Registro básico')
-    assert.equal(MERCADO_PRESENCE_PLAN_COPY.featured_vip.title, 'Perfil destacado')
-    assert.equal(MERCADO_PRESENCE_PLAN_COPY.featured_vip.price, 'Aportación L. 1,500 / año')
+    assert.equal(MERCADO_PRESENCE_PLAN_COPY.basic.price, 'Gratis')
+    assert.equal(MERCADO_PRESENCE_PLAN_COPY.featured_vip.title, 'Inscripción destacada')
+    assert.equal(MERCADO_PRESENCE_PLAN_COPY.featured_vip.price, 'L. 1,500 al año')
+    assert.match(MERCADO_INSCRIPTION_AUTHORIZATION_TEXT, /sigua-online\.com/)
+    assert.equal(/oficial|Municipal/i.test(MERCADO_INSCRIPTION_AUTHORIZATION_TEXT), false)
     assert.ok(MERCADO_INSCRIPTION_AUTHORIZATION_TEXT.length >= 20)
     assert.ok(MERCADO_INSCRIPTION_AUTHORIZATION_TEXT.length <= 500)
     const schemaSource = readFileSync(join(process.cwd(), 'lib/mercado/inscription-schema.ts'), 'utf8')
@@ -177,7 +180,7 @@ describe('mercado: solicitud de registro de local', () => {
   })
 
   it('reserva inscripcion para el formulario y deja el API en rutas públicas', () => {
-    assert.equal(mercadoInscriptionPath(), '/mercadosanpablosigua/inscripcion')
+    assert.equal(mercadoInscriptionPath(), '/inscripcion')
     assert.equal(isReservedVendorSlug('inscripcion'), true)
     assert.equal(isReservedVendorSlug('solicitud'), true)
     assert.equal(
@@ -196,7 +199,7 @@ describe('mercado: solicitud de registro de local', () => {
   })
 
   it('el POST público no enrolla planilla ni crea vendor y persiste WhatsApp, plan y autorización', () => {
-    const handler = readFileSync(join(process.cwd(), 'pages/api/mercado/inscriptions.ts'), 'utf8')
+    const handler = readFileSync(join(process.cwd(), 'pages/api/sigua/mercado/inscriptions.ts'), 'utf8')
     assert.equal(handler.includes('marketing_leads'), false)
     assert.equal(handler.includes('enrollPublicToolLead'), false)
     assert.equal(handler.includes("from('vendors')"), false)
@@ -211,7 +214,7 @@ describe('mercado: solicitud de registro de local', () => {
 
   it('la bandeja admin lista WhatsApp, plan y autorización; crear ficha sugiere VIP', () => {
     const applications = readFileSync(
-      join(process.cwd(), 'pages/api/admin/mercado/applications.ts'),
+      join(process.cwd(), 'pages/api/sigua/admin/mercado/applications.ts'),
       'utf8'
     )
     assert.match(applications, /whatsapp/)
@@ -219,13 +222,14 @@ describe('mercado: solicitud de registro de local', () => {
     assert.match(applications, /authorized_at/)
     assert.match(applications, /Aprobá creando la ficha/)
 
-    const inbox = readFileSync(join(process.cwd(), 'pages/app/mercado/solicitudes.tsx'), 'utf8')
+    const inbox = readFileSync(join(process.cwd(), 'pages/sigua/app/mercado/solicitudes.tsx'), 'utf8')
     assert.match(inbox, /WhatsApp/)
     assert.match(inbox, /presence_plan/)
 
-    const nueva = readFileSync(join(process.cwd(), 'pages/app/mercado/fichas/nueva.tsx'), 'utf8')
+    const nueva = readFileSync(join(process.cwd(), 'pages/sigua/app/mercado/fichas/nueva.tsx'), 'utf8')
     assert.match(nueva, /whatsapp: app\.whatsapp/)
-    assert.match(nueva, /featured: app\.presence_plan === 'featured_vip'/)
+    assert.match(nueva, /presence_plan === 'featured_vip'/)
+    assert.match(nueva, /featured: isVip/)
   })
 
   it('el formulario público usa el mismo Zod, honeypot y radio de plan', () => {

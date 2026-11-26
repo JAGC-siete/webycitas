@@ -16,6 +16,7 @@ import {
   DEMO_LOCAL_COPY,
   DEMO_LOCAL_MARKETING_SOURCE,
   DEMO_LOCAL_PUBLIC_PATH,
+  WEBYCITAS_LEAD_REF_NOTE,
   WEBYCITAS_MODULE_PRICES,
   WEBYCITAS_PRICING_PACKS,
   WEBYCITAS_RETAIL_RUBROS,
@@ -26,6 +27,7 @@ import {
   parseDemoLocalLead,
   type DemoLocalService,
   type WebycitasFormRubro,
+  type WebycitasLeadRef,
 } from '../../lib/magnet/demo-local'
 import { buildWebycitasPreviewPage } from '../../lib/magnet/preview'
 import {
@@ -47,8 +49,10 @@ function scrollToId(id: string, cta: string, location: string) {
 
 export default function DemoLocalLanding({
   initialRubro = 'barberia',
+  leadRef,
 }: {
   initialRubro?: WebycitasFormRubro
+  leadRef?: WebycitasLeadRef
 }) {
   const [rubro, setRubro] = useState<WebycitasFormRubro>(initialRubro)
   const [draft, setDraft] = useState({ businessName: '', phone: '', city: '' })
@@ -93,6 +97,11 @@ export default function DemoLocalLanding({
               <span className="inline-flex max-w-full items-center rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-3 py-1.5 text-xs font-medium leading-snug text-cyan-200">
                 {copy.hero.kicker}
               </span>
+              {leadRef ? (
+                <span className="inline-flex max-w-full items-center rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium leading-snug text-slate-200">
+                  {WEBYCITAS_LEAD_REF_NOTE[leadRef]}
+                </span>
+              ) : null}
             </div>
             <h1 className="landing-hero-gradient text-2xl font-bold leading-tight sm:text-4xl lg:text-5xl">
               {copy.hero.headline}
@@ -268,6 +277,7 @@ export default function DemoLocalLanding({
               onRubroChange={setRubro}
               draft={draft}
               onDraftChange={setDraft}
+              leadRef={leadRef}
             />
             <LivePreview page={previewPage} />
           </div>
@@ -296,11 +306,13 @@ function DemoLocalLeadForm({
   onRubroChange,
   draft,
   onDraftChange,
+  leadRef,
 }: {
   selectedRubro: WebycitasFormRubro
   onRubroChange: (rubro: WebycitasFormRubro) => void
   draft: { businessName: string; phone: string; city: string }
   onDraftChange: (draft: { businessName: string; phone: string; city: string }) => void
+  leadRef?: WebycitasLeadRef
 }) {
   const retail = isRetailRubro(selectedRubro)
   const [isLoading, setIsLoading] = useState(false)
@@ -348,8 +360,9 @@ function DemoLocalLeadForm({
           ] as DemoLocalService[])
         : form.services,
       note: form.note.trim() || undefined,
+      ref: leadRef,
     }),
-    [form, draft, selectedRubro, retail]
+    [form, draft, selectedRubro, retail, leadRef]
   )
 
   function toggleService(id: DemoLocalService) {
