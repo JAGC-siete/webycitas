@@ -44,6 +44,43 @@ describe('clientIp detrás de Railway', () => {
   })
 })
 
+describe('clientIp detrás del Worker de dominios propios', () => {
+  const secret = 'x'.repeat(40)
+  const viaWorker = (given: string, ip = '198.51.100.7') => ({
+    headers: {
+      'x-forwarded-for': '104.28.0.1',
+      'x-webycitas-proxy-secret': given,
+      'x-webycitas-client-ip': ip,
+    },
+  })
+
+  it('usa la IP que manda el Worker solo con la clave correcta', () => {
+    const previous = process.env.TRUSTED_PROXY_SECRET
+    process.env.TRUSTED_PROXY_SECRET = secret
+    try {
+      assert.equal(clientIp(viaWorker(secret)), '198.51.100.7')
+      assert.equal(clientIp(viaWorker('y'.repeat(40))), '104.28.0.1')
+      assert.equal(clientIp(viaWorker(secret, 'no-es-ip; drop')), '104.28.0.1')
+    } finally {
+      if (previous === undefined) delete process.env.TRUSTED_PROXY_SECRET
+      else process.env.TRUSTED_PROXY_SECRET = previous
+    }
+  })
+
+  it('sin clave configurada (o corta) ignora esos headers', () => {
+    const previous = process.env.TRUSTED_PROXY_SECRET
+    try {
+      delete process.env.TRUSTED_PROXY_SECRET
+      assert.equal(clientIp(viaWorker('')), '104.28.0.1')
+      process.env.TRUSTED_PROXY_SECRET = 'corta'
+      assert.equal(clientIp(viaWorker('corta')), '104.28.0.1')
+    } finally {
+      if (previous === undefined) delete process.env.TRUSTED_PROXY_SECRET
+      else process.env.TRUSTED_PROXY_SECRET = previous
+    }
+  })
+})
+
 describe('ensureOwnerProfile', () => {
   it('no pisa role ni is_active de un perfil existente', async () => {
     let options: Record<string, unknown> | undefined

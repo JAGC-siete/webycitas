@@ -1,0 +1,18 @@
+// Reference config. The live Worker was uploaded through the Cloudflare API with the
+// same settings; keep both in sync if either changes.
+{
+  "name": "villesessence-proxy",
+  "main": "index.ts",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "villesessence.com", "custom_domain": true },
+    { "pattern": "www.villesessence.com", "custom_domain": true }
+  ],
+  "vars": {
+    "ORIGIN": "https://webycitas.humanosisu.net",
+    "DOMAIN": "villesessence.com",
+    "SLUG": "ville-s-essence-ddbc"
+  }
+  // PROXY_SECRET is a secret: `wrangler secret put PROXY_SECRET`. Never in this file.
+}
