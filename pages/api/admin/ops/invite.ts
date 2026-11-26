@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { z } from 'zod'
 import { requireSuperAdmin } from '../../../../lib/auth/api-auth'
 import { normalizeEmail } from '../../../../lib/auth/credentials'
-import { inviteOwnerAccess } from '../../../../lib/auth/invite-owner'
+import { inviteOwnerAccess, OwnerInviteConflictError } from '../../../../lib/auth/invite-owner'
 import { logger } from '../../../../lib/logger'
 import { createAdminClient } from '../../../../lib/supabase/admin'
 
@@ -54,6 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       action_link: result.action_link ?? null,
     })
   } catch (err: unknown) {
+    if (err instanceof OwnerInviteConflictError) return res.status(409).json({ error: err.message })
     const message = err instanceof Error ? err.message : 'No se pudo invitar'
     logger.error('invite_owner falló', { email, error: message })
     return res.status(500).json({ error: message })

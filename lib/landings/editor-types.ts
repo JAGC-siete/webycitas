@@ -16,6 +16,8 @@ export interface LandingEditRecord {
   published_at: string | null
   /** Publicado con un borrador distinto al que ve el público. */
   has_unpublished_changes?: boolean
+  /** Where the public page lives: the client's own domain or /p/<slug>. */
+  public_url?: string
   created_at?: string
   updated_at?: string
 }

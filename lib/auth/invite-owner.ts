@@ -29,6 +29,21 @@ export interface InviteOwnerResult {
   message: string
 }
 
+/** The email belongs to an operator (or another non-owner role): it cannot own a business. */
+export class OwnerInviteConflictError extends Error {
+  constructor() {
+    super('Ese correo es de un operador de Webycitas. Usa otro correo para el dueño de este negocio.')
+    this.name = 'OwnerInviteConflictError'
+  }
+}
+
+/** Throws OwnerInviteConflictError when the account already has a non-owner profile. */
+export async function assertCanBeOwner(admin: SupabaseClient, userId: string): Promise<void> {
+  const { data, error } = await admin.from('site_user_profiles').select('role').eq('id', userId).maybeSingle()
+  if (error) throw new Error(error.message)
+  if (data && data.role !== OWNER_ROLE) throw new OwnerInviteConflictError()
+}
+
 function ownerRedirectTo(): string {
   return `${authRedirectOrigin()}${ownerUpdatePasswordRedirectPath()}`
 }
@@ -180,6 +195,8 @@ export async function provisionOwnerAccess(
   }
 
   const userId = generated.data.user.id
+  // Before touching the profile or the lead: an operator must never end up owning a business.
+  await assertCanBeOwner(admin, userId)
   await ensureOwnerProfile(admin, userId)
   if (input.leadId) await claimLead(admin, input.leadId, userId)
 

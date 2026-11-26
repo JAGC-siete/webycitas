@@ -131,4 +131,17 @@ describe('publish state', () => {
     assert.equal('published_content_json' in row, false)
     assert.equal(row.has_unpublished_changes, true)
   })
+
+  it('withPublishState dice dónde vive la página: su dominio o /p/<slug>', () => {
+    const previous = process.env.CUSTOM_DOMAIN_SITES
+    process.env.CUSTOM_DOMAIN_SITES = 'tienda.com=mi-tienda'
+    try {
+      const base = { status: 'published', content_json: draft, published_content_json: draft }
+      assert.equal(withPublishState({ ...base, slug: 'mi-tienda' }).public_url, 'https://tienda.com/')
+      assert.equal(withPublishState({ ...base, slug: 'otra' }).public_url, '/p/otra')
+    } finally {
+      if (previous === undefined) delete process.env.CUSTOM_DOMAIN_SITES
+      else process.env.CUSTOM_DOMAIN_SITES = previous
+    }
+  })
 })

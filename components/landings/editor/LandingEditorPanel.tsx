@@ -241,14 +241,17 @@ function FormImageField({
   siteId,
   kind,
   label = 'Imagen',
+  preview,
 }: {
   control: Control<EditorFormValues>
   name: FieldPath<EditorFormValues>
   siteId: string
   kind: SiteMediaKind
   label?: string
+  preview?: 'photo' | 'logo'
 }) {
   const { field } = useController({ control, name })
+  const { mode } = useEditorMode()
   return (
     <ImageUploadField
       value={typeof field.value === 'string' ? field.value : ''}
@@ -257,6 +260,8 @@ function FormImageField({
       kind={kind}
       label={label}
       inputClassName={fieldClass}
+      preview={preview}
+      showUrl={mode !== 'owner'}
     />
   )
 }
@@ -1350,7 +1355,7 @@ export function GlobalFields({
           <Input {...register('business.name')} className={fieldClass} />
         </Field>
         <Field label="Logo (fondo transparente)" error={fieldErrorMessage(errors, 'business.logoUrl')}>
-          <FormImageField control={control} name="business.logoUrl" siteId={siteId} kind="hero" label="logo" />
+          <FormImageField control={control} name="business.logoUrl" siteId={siteId} kind="hero" label="logo" preview="logo" />
         </Field>
         <Field label="Frase corta" error={fieldErrorMessage(errors, 'business.tagline')}>
           <Input {...register('business.tagline')} className={fieldClass} />

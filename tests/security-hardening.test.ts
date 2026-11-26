@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { clientIp } from '../lib/auth/request'
-import { ensureOwnerProfile } from '../lib/auth/invite-owner'
+import { assertCanBeOwner, ensureOwnerProfile, OwnerInviteConflictError } from '../lib/auth/invite-owner'
 import { serializeJsonLd } from '../lib/seo/schema'
 import { landingLocalBusinessJsonLd } from '../lib/landings/jsonld'
 import mercadoLogin from '../pages/api/sigua/mercado/admin/login'
@@ -94,6 +94,29 @@ describe('ensureOwnerProfile', () => {
     } as unknown as SupabaseClient
     await ensureOwnerProfile(admin, 'user-1')
     assert.equal(options?.ignoreDuplicates, true)
+  })
+})
+
+describe('invitar a un dueño', () => {
+  const adminWithProfile = (role: string | null) =>
+    ({
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: () => Promise.resolve({ data: role ? { role } : null, error: null }),
+          }),
+        }),
+      }),
+    }) as unknown as SupabaseClient
+
+  it('rechaza el correo de un operador antes de vincular el negocio', async () => {
+    await assert.rejects(assertCanBeOwner(adminWithProfile('super_admin'), 'user-1'), OwnerInviteConflictError)
+    await assert.rejects(assertCanBeOwner(adminWithProfile('vendor'), 'user-1'), OwnerInviteConflictError)
+  })
+
+  it('acepta a un dueño existente o a una cuenta nueva sin perfil', async () => {
+    await assertCanBeOwner(adminWithProfile('owner'), 'user-1')
+    await assertCanBeOwner(adminWithProfile(null), 'user-1')
   })
 })
 

@@ -53,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (error) {
         if (error.code === UNIQUE_VIOLATION) {
-          return res.status(409).json({ error: 'Ese SKU ya existe en tu inventario.' })
+          return res.status(409).json({ error: 'Ya tienes otro producto con ese código. Usa uno distinto.' })
         }
         logger.error('Error creando producto', { siteId, error: error.message })
         return res.status(500).json({ error: 'No se pudo crear el producto' })

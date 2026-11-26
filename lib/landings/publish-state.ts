@@ -5,6 +5,8 @@
  * Las APIs del editor devuelven `has_unpublished_changes` en lugar de la copia publicada.
  */
 
+import { landingPublicHref } from './paths'
+
 function canonical(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonical)
   if (value && typeof value === 'object') {
@@ -31,9 +33,14 @@ export function hasUnpublishedChanges(row: {
   return !sameLandingContent(row.content_json, row.published_content_json)
 }
 
-export function withPublishState<T extends { status: string; content_json: unknown; published_content_json: unknown }>(
-  row: T
-): Omit<T, 'published_content_json'> & { has_unpublished_changes: boolean } {
+export function withPublishState<
+  T extends { status: string; content_json: unknown; published_content_json: unknown; slug?: string },
+>(row: T): Omit<T, 'published_content_json'> & { has_unpublished_changes: boolean; public_url?: string } {
   const { published_content_json: _published, ...rest } = row
-  return { ...rest, has_unpublished_changes: hasUnpublishedChanges(row) }
+  return {
+    ...rest,
+    has_unpublished_changes: hasUnpublishedChanges(row),
+    // The client cannot read CUSTOM_DOMAIN_SITES, so the server says where the page lives.
+    ...(row.slug ? { public_url: landingPublicHref(row.slug) } : {}),
+  }
 }

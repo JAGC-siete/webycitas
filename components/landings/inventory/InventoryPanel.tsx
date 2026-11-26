@@ -91,7 +91,7 @@ export function InventoryTable({
           <thead>
             <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-gray-400">
               <th className="px-3 py-2 font-medium">Foto</th>
-              <th className="px-3 py-2 font-medium">SKU</th>
+              <th className="px-3 py-2 font-medium">Código</th>
               <th className="px-3 py-2 font-medium">Nombre</th>
               <th className="px-3 py-2 font-medium">Precio</th>
               <th className="px-3 py-2 font-medium">Stock</th>
@@ -254,7 +254,8 @@ export function InventoryProductDialog({
           />
         </label>
         <label className="block text-sm text-white/80">
-          SKU
+          Código
+          <span className="block text-xs text-white/55">Una clave corta para reconocerlo, por ejemplo YSL-LIBRE-5ML.</span>
           <Input
             value={draft.sku}
             onChange={(event) => setField('sku', event.target.value)}
@@ -269,7 +270,8 @@ export function InventoryProductDialog({
             onChange={(next) => setField('imageUrl', next)}
             siteId={siteId}
             kind="product"
-            label="producto"
+            label="foto"
+            showUrl={false}
             inputClassName="input-glass h-auto shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
@@ -285,14 +287,18 @@ export function InventoryProductDialog({
             />
           </label>
           <label className="block text-sm text-white/80">
-            Mínimo
+            Avisarme si quedan
             <Input
               value={draft.stockMinimo}
               onChange={(event) => setField('stockMinimo', event.target.value)}
               inputMode="numeric"
+              aria-describedby="stock-minimo-hint"
               className="input-glass mt-1 h-auto shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               required
             />
+            <span id="stock-minimo-hint" className="mt-1 block text-xs text-white/55">
+              unidades o menos
+            </span>
           </label>
         </div>
         {mode === 'create' ? (
