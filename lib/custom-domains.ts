@@ -5,11 +5,10 @@
  * middleware never queries Supabase. Edge-safe: no Node or Supabase imports.
  */
 
+import { routeOnCustomDomain, type CustomDomainRoute } from './custom-domain-routing'
 import { hostnameOf } from './hosts'
 
-/** Paths a custom domain may serve besides its own page. Everything else is a 404 there. */
-const PASSTHROUGH_PREFIXES = ['/_next/', '/api/inquiries', '/api/public/', '/landings/', '/fonts/']
-const PASSTHROUGH_EXACT = new Set(['/favicon.ico'])
+export type { CustomDomainRoute } from './custom-domain-routing'
 
 function bareHost(hostname: string): string {
   return hostname.startsWith('www.') ? hostname.slice(4) : hostname
@@ -38,27 +37,6 @@ export function customDomainRedirectEnabled(): boolean {
   return process.env.CUSTOM_DOMAIN_REDIRECT === '1'
 }
 
-export type CustomDomainRoute =
-  | { type: 'rewrite'; pathname: string }
-  | { type: 'redirect'; url: string }
-  | { type: 'robots'; body: string }
-  | { type: 'sitemap'; body: string }
-  | { type: 'not-found' }
-  | { type: 'pass' }
-
-export function customDomainRobots(domain: string): string {
-  return `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: https://${domain}/sitemap.xml\n`
-}
-
-export function customDomainSitemap(domain: string): string {
-  return (
-    '<?xml version="1.0" encoding="UTF-8"?>\n' +
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-    `  <url><loc>https://${domain}/</loc></url>\n` +
-    '</urlset>\n'
-  )
-}
-
 /**
  * Routing for a request. Returns null when the host is not a custom domain and
  * no old-URL redirect applies, so the caller falls through to the other gates.
@@ -76,13 +54,5 @@ export function customDomainRoute(hostHeader: string, pathname: string): CustomD
     return null
   }
 
-  if (hostname !== domain) return { type: 'redirect', url: `https://${domain}${pathname}` }
-  if (pathname === '/') return { type: 'rewrite', pathname: `/p/${slug}` }
-  if (pathname === `/p/${slug}` || pathname === `/p/${slug}/`) return { type: 'redirect', url: `https://${domain}/` }
-  if (pathname === '/robots.txt') return { type: 'robots', body: customDomainRobots(domain) }
-  if (pathname === '/sitemap.xml') return { type: 'sitemap', body: customDomainSitemap(domain) }
-  if (PASSTHROUGH_EXACT.has(pathname) || PASSTHROUGH_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
-    return { type: 'pass' }
-  }
-  return { type: 'not-found' }
+  return routeOnCustomDomain({ hostname, domain, slug, pathname })
 }
