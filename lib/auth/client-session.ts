@@ -1,5 +1,5 @@
 import { LOCAL_SESSION_TOKEN_KEY, LOCAL_USER_KEY, SESSION_HEADER } from './session-manager'
-import type { AppRole } from './role-access'
+import { SUPER_ADMIN_ROLE, type AppRole } from './role-access'
 
 export interface StoredUser {
   id: string
@@ -29,6 +29,15 @@ export function readStoredUser(): StoredUser | null {
   } catch {
     return null
   }
+}
+
+/**
+ * Client-side check for operator-only screens. The stored login has no is_active
+ * (isSuperAdmin needs it), so this only looks at the role; the server guard
+ * (requireSuperAdminPage / requireSuperAdmin) is what enforces an active profile.
+ */
+export function isStoredSuperAdmin(stored: Pick<StoredUser, 'role'> | null | undefined): boolean {
+  return stored?.role === SUPER_ADMIN_ROLE
 }
 
 export function readSessionToken(): string | null {
