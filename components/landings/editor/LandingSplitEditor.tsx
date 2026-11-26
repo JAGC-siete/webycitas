@@ -163,6 +163,9 @@ export default function LandingSplitEditor({
 
   const currentTitle = watch('_title') ?? ''
   const currentSlug = watch('_slug') ?? record.slug
+  // A renamed slug (ops) only has a server URL after saving, so fall back to the path.
+  const publicHref = currentSlug === record.slug && record.public_url ? record.public_url : landingPublicPath(currentSlug)
+  const publicLabel = publicHref.replace(/^https?:\/\//, '').replace(/\/$/, '')
 
   useEffect(() => {
     const parsed = readLandingPageContent(initial.content_json)
@@ -315,7 +318,7 @@ export default function LandingSplitEditor({
           ) : null}
           <div>
             <h1 className="text-xl font-bold text-white">{currentTitle || 'Sin título'}</h1>
-            <p className="font-mono text-xs text-gray-400">{landingPublicPath(currentSlug)}</p>
+            <p className="font-mono text-xs text-gray-400">{publicLabel}</p>
           </div>
           <Badge
             className={
@@ -363,7 +366,7 @@ export default function LandingSplitEditor({
                 {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Globe className="mr-2 h-4 w-4" />}
                 {publishing ? 'Publicando…' : 'Publicar cambios'}
               </Button>
-              <a href={landingPublicPath(currentSlug)} target="_blank" rel="noopener noreferrer">
+              <a href={publicHref} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm">
                   <ExternalLink className="mr-2 h-4 w-4" />
                   Abrir
@@ -423,7 +426,7 @@ export default function LandingSplitEditor({
               {owner ? (
                 <p className="text-xs text-gray-400">
                   Tu página:{' '}
-                  <span className="font-mono text-gray-200">{landingPublicPath(currentSlug)}</span>
+                  <span className="font-mono text-gray-200">{publicLabel}</span>
                 </p>
               ) : (
                 <>

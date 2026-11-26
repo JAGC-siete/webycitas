@@ -27,6 +27,8 @@ export default function ImageUploadField({
   label = 'Imagen',
   className,
   inputClassName,
+  preview = 'photo',
+  showUrl = true,
 }: {
   value?: string
   onChange: (next: string) => void
@@ -35,6 +37,10 @@ export default function ImageUploadField({
   label?: string
   className?: string
   inputClassName?: string
+  /** 'logo' shows the whole image on white: logos are often dark and transparent. */
+  preview?: 'photo' | 'logo'
+  /** The raw URL field is for operators; owners only upload. */
+  showUrl?: boolean
 }) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -98,16 +104,21 @@ export default function ImageUploadField({
         <img
           src={value}
           alt=""
-          className="h-24 w-full max-w-xs rounded-lg border border-white/10 object-cover"
+          className={cn(
+            'h-24 w-full max-w-xs rounded-lg border border-white/10',
+            preview === 'logo' ? 'bg-white object-contain p-2' : 'object-cover'
+          )}
         />
       ) : null}
-      <Input
-        value={value ?? ''}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder="https://… o /img/…"
-        className={cn('bg-white/10 text-white placeholder:text-gray-500', inputClassName)}
-        disabled={uploading}
-      />
+      {showUrl ? (
+        <Input
+          value={value ?? ''}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="https://… o /img/…"
+          className={cn('bg-white/10 text-white placeholder:text-gray-500', inputClassName)}
+          disabled={uploading}
+        />
+      ) : null}
       {error ? <p className="text-xs text-red-300">{error}</p> : null}
     </div>
   )

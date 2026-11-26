@@ -15,11 +15,11 @@ const nombre = z
 const sku = z
   .string()
   .trim()
-  .min(1, 'El SKU es obligatorio.')
-  .max(40, 'El SKU no puede pasar de 40 caracteres.')
+  .min(1, 'Falta el código del producto.')
+  .max(40, 'El código no puede pasar de 40 caracteres.')
   .regex(
     /^[A-Za-z0-9][A-Za-z0-9._-]*$/,
-    'El SKU solo admite letras, números, punto, guion y guion bajo.'
+    'El código solo admite letras, números, punto, guion y guion bajo.'
   )
 
 const precio = z.number().finite().min(0, 'El precio no puede ser negativo.').max(99_999_999)
