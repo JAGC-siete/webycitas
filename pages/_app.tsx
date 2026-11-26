@@ -1,4 +1,5 @@
 import type { AppProps } from 'next/app'
+import Head from 'next/head'
 import localFont from 'next/font/local'
 import AuthHashRedirect from '../components/auth/AuthHashRedirect'
 import IdleSessionWarning from '../components/auth/IdleSessionWarning'
@@ -22,6 +23,10 @@ export default function App({ Component, pageProps, router }: AppProps) {
 
   return (
     <div className={cn(montserrat.variable, 'min-h-screen font-sans')}>
+      <Head>
+        {/* Keyed so a client site with its own icon (meta.iconUrl) replaces it instead of adding a second one. */}
+        <link rel="icon" href="/favicon.ico" sizes="any" key="icon" />
+      </Head>
       {directory ? (
         <SessionIdleGuard />
       ) : (

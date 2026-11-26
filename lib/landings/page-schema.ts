@@ -379,6 +379,8 @@ export const landingMetaSchema = z.object({
   seoDescription: shortText(180),
   keywords: z.string().trim().max(240).optional(),
   ogImageUrl: landingUrlSchema.optional(),
+  /** Square icon for the browser tab (favicon) and home screen. */
+  iconUrl: landingUrlSchema.optional(),
   noindex: z.boolean().default(false),
 })
 
@@ -393,6 +395,8 @@ export const landingThemeSchema = z.object({
 
 export const landingBusinessSchema = z.object({
   name: shortText(120),
+  /** Logo with transparent background; templates that support it show it instead of the name. */
+  logoUrl: landingUrlSchema.optional(),
   tagline: z.string().trim().max(160).optional(),
   whatsapp: landingPhoneSchema.optional(),
   phone: landingPhoneSchema.optional(),

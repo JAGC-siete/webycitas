@@ -126,6 +126,7 @@ const FIELD_NAMES: Record<string, string> = {
   address: 'Dirección',
   city: 'Ciudad',
   tagline: 'Frase corta',
+  logoUrl: 'Logo',
 }
 
 /** `items.6.name` → `#7 · Nombre`. Las listas cuentan desde 1, como en pantalla. */

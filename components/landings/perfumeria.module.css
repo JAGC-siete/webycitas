@@ -76,6 +76,18 @@
   white-space: nowrap;
 }
 
+/* The logo keeps its proportions even when the nav is crowded. */
+.brandWithLogo {
+  flex-shrink: 0;
+}
+
+.brandLogo {
+  display: block;
+  width: auto;
+  max-width: none;
+  height: 2.75rem;
+}
+
 .nav {
   display: none;
   margin: 0 auto;
@@ -396,6 +408,11 @@
   aspect-ratio: 5 / 6;
   overflow: hidden;
   background: color-mix(in srgb, var(--lp-primary) 70%, var(--lp-surface));
+}
+
+/* In light tone primary is a mid silver: a soft tint keeps cards without a photo light. */
+.shellLight .cardMedia {
+  background: color-mix(in srgb, var(--lp-primary) 16%, var(--lp-surface));
 }
 
 .cardMedia img {
@@ -819,6 +836,12 @@
   font-size: 1.1rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+}
+
+.footerLogo {
+  display: block;
+  width: auto;
+  height: 6rem;
 }
 
 .footerTagline,

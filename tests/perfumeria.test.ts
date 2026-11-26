@@ -8,6 +8,7 @@ import {
   perfumeriaOccasions,
   perfumeriaOrderMessage,
 } from '../lib/landings/perfumeria'
+import { landingPageContentSchema } from '../lib/landings/page-schema'
 import { templateContentFor } from '../lib/landings/templates'
 import { landingThemeCssVars, onAccentColor } from '../lib/landings/theme-css'
 import { normalizeServicesForRubro } from '../lib/magnet/demo-local'
@@ -93,5 +94,26 @@ describe('texto sobre el color de acento', () => {
   it('la hoja de perfumería no fija colores de tinta sobre el acento', () => {
     const css = readFileSync(join(process.cwd(), 'components/landings/perfumeria.module.css'), 'utf8')
     assert.doesNotMatch(css, /#14110c|#3a2a17/i)
+  })
+})
+
+describe('logo e ícono del negocio', () => {
+  it('son opcionales y aceptan una URL de imagen', () => {
+    const content = templateContentFor('perfumeria')
+    assert.equal(landingPageContentSchema.safeParse(content).success, true)
+    const withLogo = {
+      ...content,
+      business: { ...content.business, logoUrl: 'https://cdn.example.com/logo.png' },
+      meta: { ...content.meta, iconUrl: 'https://cdn.example.com/icon.png' },
+    }
+    const parsed = landingPageContentSchema.parse(withLogo)
+    assert.equal(parsed.business.logoUrl, 'https://cdn.example.com/logo.png')
+    assert.equal(parsed.meta.iconUrl, 'https://cdn.example.com/icon.png')
+  })
+
+  it('rechaza enlaces que no son de imagen segura', () => {
+    const content = templateContentFor('perfumeria')
+    const bad = { ...content, business: { ...content.business, logoUrl: 'javascript:alert(1)' } }
+    assert.equal(landingPageContentSchema.safeParse(bad).success, false)
   })
 })

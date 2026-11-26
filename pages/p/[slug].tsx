@@ -40,6 +40,8 @@ export default function PublicLandingPageView({ page, stockByProductId }: Public
           <meta name="robots" content="index, follow" />
         )}
         <link rel="canonical" href={canonical} />
+        {meta.iconUrl ? <link rel="icon" href={meta.iconUrl} key="icon" /> : null}
+        {meta.iconUrl ? <link rel="apple-touch-icon" href={meta.iconUrl} key="apple-touch-icon" /> : null}
         <meta property="og:type" content="website" />
         <meta property="og:title" content={meta.seoTitle} />
         <meta property="og:description" content={meta.seoDescription} />
