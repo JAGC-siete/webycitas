@@ -65,8 +65,12 @@ export default function PerfumeriaRenderer({ page, stockByProductId }: Perfumeri
 
       <div className={styles.chrome}>
         <header className={styles.header}>
-          <a href="#hero" className={styles.brand}>
-            {business.name}
+          <a href="#hero" className={cn(styles.brand, business.logoUrl && styles.brandWithLogo)}>
+            {business.logoUrl ? (
+              <img src={business.logoUrl} alt={business.name} className={styles.brandLogo} />
+            ) : (
+              business.name
+            )}
           </a>
           <nav className={styles.nav} aria-label="Colecciones">
             {lines.map((line) => (
@@ -135,7 +139,11 @@ export default function PerfumeriaRenderer({ page, stockByProductId }: Perfumeri
       </main>
 
       <footer className={styles.footer}>
-        <p className={styles.footerBrand}>{business.name}</p>
+        {business.logoUrl ? (
+          <img src={business.logoUrl} alt={business.name} className={styles.footerLogo} loading="lazy" />
+        ) : (
+          <p className={styles.footerBrand}>{business.name}</p>
+        )}
         {business.tagline ? <p className={styles.footerTagline}>{business.tagline}</p> : null}
         <div className={styles.footerLinks}>
           {business.socials.instagram ? (

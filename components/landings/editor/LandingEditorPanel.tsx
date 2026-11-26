@@ -1306,10 +1306,13 @@ function BlockFields({
 
 export function GlobalFields({
   register,
+  control,
+  siteId,
   errors,
 }: {
   register: UseFormRegister<EditorFormValues>
   control: Control<EditorFormValues>
+  siteId: string
   errors?: FieldErrors<EditorFormValues>
 }) {
   const { mode } = useEditorMode()
@@ -1345,6 +1348,9 @@ export function GlobalFields({
         <ErrorList errors={errors} path="business" />
         <Field label="Nombre del negocio" error={fieldErrorMessage(errors, 'business.name')}>
           <Input {...register('business.name')} className={fieldClass} />
+        </Field>
+        <Field label="Logo (fondo transparente)" error={fieldErrorMessage(errors, 'business.logoUrl')}>
+          <FormImageField control={control} name="business.logoUrl" siteId={siteId} kind="hero" label="logo" />
         </Field>
         <Field label="Frase corta" error={fieldErrorMessage(errors, 'business.tagline')}>
           <Input {...register('business.tagline')} className={fieldClass} />

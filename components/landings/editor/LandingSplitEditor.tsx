@@ -482,7 +482,7 @@ export default function LandingSplitEditor({
             </CardContent>
           </Card>
 
-          <GlobalFields register={controls.register} control={controls.control} errors={errors} />
+          <GlobalFields register={controls.register} control={controls.control} siteId={landingId} errors={errors} />
           <BlockAccordion
             control={controls.control}
             register={controls.register}
