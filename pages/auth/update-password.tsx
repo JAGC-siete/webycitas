@@ -5,6 +5,7 @@ import { useRouter } from 'next/router'
 import type { EmailOtpType } from '@supabase/supabase-js'
 import { persistLogin } from '../../lib/auth/client-session'
 import { normalizePassword } from '../../lib/auth/credentials'
+import { passwordUpdateErrorMessage } from '../../lib/auth/password-errors'
 import { isAppRole, isSafeAppRedirect, postLoginPath, type AppRole } from '../../lib/auth/role-access'
 import { createBrowserSupabase } from '../../lib/supabase/browser'
 import { Button } from '../../components/ui/button'
@@ -51,6 +52,9 @@ export default function UpdatePasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [gate, setGate] = useState<Gate>('loading')
+  // The emailed token works once. If verifying succeeds but saving the password fails
+  // (e.g. same as the old one), a retry must reuse that session instead of the spent token.
+  const [linkVerified, setLinkVerified] = useState(false)
 
   useEffect(() => {
     if (!router.isReady) return
@@ -121,7 +125,7 @@ export default function UpdatePasswordPage() {
     try {
       const supabase = createBrowserSupabase()
 
-      if (tokenHash) {
+      if (tokenHash && !linkVerified) {
         const { error: verifyError } = await supabase.auth.verifyOtp({
           token_hash: tokenHash,
           type: otpType,
@@ -129,17 +133,18 @@ export default function UpdatePasswordPage() {
         if (verifyError) {
           setGate('expired')
           throw new Error(
-            'El enlace expiró o ya se usó. Pedí otro enlace o usá “Olvidé mi contraseña”.'
+            'El enlace expiró o ya se usó. Pide otro con “Olvidé mi contraseña”.'
           )
         }
+        setLinkVerified(true)
       }
 
       const { data: sessionData } = await supabase.auth.getSession()
       const email = sessionData.session?.user?.email
-      if (!email) throw new Error('Sesión de invitación no encontrada. Pedí otro enlace.')
+      if (!email) throw new Error('No encontramos tu acceso. Pide otro enlace con “Olvidé mi contraseña”.')
 
       const { error: updateError } = await supabase.auth.updateUser({ password: nextPassword })
-      if (updateError) throw updateError
+      if (updateError) throw new Error(passwordUpdateErrorMessage(updateError))
 
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -151,7 +156,7 @@ export default function UpdatePasswordPage() {
       if (!res.ok || !body.user || !body.session || !isAppRole(body.user.role)) {
         setError(
           body.error ||
-            'Contraseña guardada. Entrá con tu correo en el login (el acceso automático falló).'
+            'Contraseña guardada. Entra con tu correo y tu contraseña nueva.'
         )
         window.setTimeout(() => {
           void router.replace(loginFallback)
@@ -196,8 +201,8 @@ export default function UpdatePasswordPage() {
           {gate === 'expired' ? (
             <div className="space-y-4">
               <p className="text-sm text-white/70">
-                El enlace expiró o ya se usó. Pedí otro enlace al operador o restablecé la contraseña
-                desde el login.
+                El enlace expiró o ya se usó. Pide uno nuevo con “Olvidé mi contraseña” o entra con tu
+                contraseña actual.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Link href="/app/forgot-password">
