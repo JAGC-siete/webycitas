@@ -139,15 +139,21 @@
   background-size: cover;
 }
 
-/* Light heroes use product photos with the bottles on the right: on narrow screens, show them below the copy instead of cropping them out. */
-@container (max-width: 640px) {
+/*
+ * Light heroes use product photos with the bottles on the right. Until the copy and the
+ * bottles fit side by side (~960px), show the photo below the copy instead of under it.
+ * The photo is capped at 1100px wide so tablets do not get a giant one; the padding
+ * reserves the photo's lower 40%, where the bottles are.
+ */
+@container (max-width: 960px) {
   .shellLight .hero {
+    --hero-photo-w: min(190cqw, 1100px);
     min-height: 0;
-    padding-bottom: calc(76cqw + 1rem);
+    padding-bottom: calc(var(--hero-photo-w) * 0.4 + 1rem);
     background-image: var(--hero-image, radial-gradient(circle at 70% 40%, color-mix(in srgb, var(--lp-accent) 22%, var(--lp-surface)), var(--lp-surface) 70%));
     background-position: right bottom;
     background-repeat: no-repeat;
-    background-size: 190% auto;
+    background-size: var(--hero-photo-w) auto;
   }
 }
 
