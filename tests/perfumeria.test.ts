@@ -1,5 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   isPerfumeriaContent,
   perfumeriaItemsForOccasion,
@@ -7,6 +9,7 @@ import {
   perfumeriaOrderMessage,
 } from '../lib/landings/perfumeria'
 import { templateContentFor } from '../lib/landings/templates'
+import { landingThemeCssVars, onAccentColor } from '../lib/landings/theme-css'
 import { normalizeServicesForRubro } from '../lib/magnet/demo-local'
 import { buildWebycitasPreviewContent, templateKeyForRubro } from '../lib/magnet/preview'
 
@@ -67,5 +70,28 @@ describe('plantilla perfumería', () => {
     assert.equal(isPerfumeriaContent(content), true)
     assert.equal(content.business.name, 'Perfumería Esencia')
     assert.equal(content.meta.noindex, true)
+  })
+})
+
+describe('texto sobre el color de acento', () => {
+  it('usa tinta oscura sobre dorado y blanco sobre azul', () => {
+    assert.equal(onAccentColor('#c9a24a'), '#14110c')
+    assert.equal(onAccentColor('#2563eb'), '#ffffff')
+    assert.equal(onAccentColor('#1f5eff'), '#ffffff')
+    assert.equal(onAccentColor('#fff'), '#14110c')
+  })
+
+  it('cae en blanco si el color no es un hex válido', () => {
+    assert.equal(onAccentColor('blue'), '#ffffff')
+  })
+
+  it('expone --lp-on-accent con el acento del tema', () => {
+    const vars = landingThemeCssVars(templateContentFor('perfumeria').theme)
+    assert.equal(vars['--lp-on-accent'], onAccentColor(vars['--lp-accent']))
+  })
+
+  it('la hoja de perfumería no fija colores de tinta sobre el acento', () => {
+    const css = readFileSync(join(process.cwd(), 'components/landings/perfumeria.module.css'), 'utf8')
+    assert.doesNotMatch(css, /#14110c|#3a2a17/i)
   })
 })
