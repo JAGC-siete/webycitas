@@ -58,9 +58,18 @@ export async function resolveAuthActor(
   }
 }
 
+/** Which operator panel is calling: Webycitas ops or the directory. Lands in audit_logs.resource. */
+export type OperatorResource = 'ops' | 'mercado'
+
+const SIGN_IN_MESSAGE: Record<OperatorResource, string> = {
+  ops: 'Inicia sesión para operar Webycitas',
+  mercado: 'Inicia sesión para operar el directorio',
+}
+
 async function writeAuditLog(input: {
   actorId: string
   action: string
+  resource: OperatorResource
   ip: string
   ua: string
 }): Promise<void> {
@@ -69,7 +78,7 @@ async function writeAuditLog(input: {
     const { error } = await admin.from('audit_logs').insert({
       actor_id: input.actorId,
       action: input.action,
-      resource: 'ops',
+      resource: input.resource,
       ip_hash: hashSecret(input.ip),
       ua_hash: hashSecret(input.ua),
       metadata: {},
@@ -86,11 +95,12 @@ async function writeAuditLog(input: {
 export async function requireSuperAdmin(
   req: NextApiRequest,
   res: NextApiResponse,
-  action: string
+  action: string,
+  resource: OperatorResource = 'ops'
 ): Promise<AuthActor | null> {
   const actor = await resolveAuthActor(req, res)
   if (!actor) {
-    res.status(401).json({ error: 'Inicia sesión para operar Webycitas' })
+    res.status(401).json({ error: SIGN_IN_MESSAGE[resource] })
     return null
   }
   if (!isSuperAdmin(actor.profile)) {
@@ -120,11 +130,12 @@ export async function requireSuperAdmin(
   const ua = clientUserAgent(req)
   logger.info('ops_audit', {
     action,
+    resource,
     userId: actor.user.id,
     ip,
     ua,
   })
-  void writeAuditLog({ actorId: actor.user.id, action, ip, ua })
+  void writeAuditLog({ actorId: actor.user.id, action, resource, ip, ua })
   return actor
 }
 

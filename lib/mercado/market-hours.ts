@@ -81,23 +81,38 @@ export type MarketOpenStatus = {
   day: MarketDayKey
 }
 
-export function marketOpenStatus(now = new Date()): MarketOpenStatus {
+export type MarketOpenOptions = {
+  forceClosed?: boolean
+  hours?: Record<MarketDayKey, MarketDayHours>
+}
+
+export function marketOpenStatus(now = new Date(), options?: MarketOpenOptions): MarketOpenStatus {
   const clock = hondurasClock(now)
   const day = dayKey(clock.weekdayIndex)
-  const hours = MERCADO_MARKET_HOURS[day]
+  const schedule = options?.hours ?? MERCADO_MARKET_HOURS
+  const hours = schedule[day]
+
+  if (options?.forceClosed) {
+    return {
+      open: false,
+      label: 'Mercado San Pablo cerrado ahora',
+      day,
+    }
+  }
+
   const open = clock.minutes >= hours.openMin && clock.minutes < hours.closeMin
 
   if (open) {
     return {
       open: true,
-      label: `Mercado abierto · Cierra a las ${formatCloseHint(hours.closeMin)}`,
+      label: `Mercado San Pablo abierto · Cierra a las ${formatCloseHint(hours.closeMin)}`,
       day,
     }
   }
 
   return {
     open: false,
-    label: 'Mercado cerrado ahora',
+    label: 'Mercado San Pablo cerrado ahora',
     day,
   }
 }

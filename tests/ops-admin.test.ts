@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { MERCADO_ADMIN_COOKIE } from '../lib/mercado/admin-auth'
-import { rewritePathForHost } from '../lib/hosts'
+import { routeForHost } from '../lib/hosts'
 import { OPS_ADMIN_COOKIE } from '../lib/ops/admin-auth'
 import {
   OPS_ADMIN_INQUIRIES_PATH,
@@ -30,17 +30,21 @@ describe('operador de Webycitas', () => {
     assert.equal(isOpsAdminPath('/app/mercado/fichas'), false)
   })
 
-  it('mercado.humanosisu.net abre el directorio en /', () => {
-    assert.equal(rewritePathForHost('mercado.humanosisu.net', '/'), '/mercadosanpablosigua')
-    assert.equal(rewritePathForHost('mercado.humanosisu.net:443', '/admin'), null)
-    assert.equal(rewritePathForHost('webycitas.humanosisu.net', '/'), null)
-    assert.equal(rewritePathForHost('humanosisu.net', '/'), null)
+  it('el panel de Webycitas no existe en el host del directorio', () => {
+    assert.deepEqual(routeForHost('mercado.humanosisu.net', '/', undefined), { kind: 'rewrite', pathname: '/sigua' })
+    assert.deepEqual(routeForHost('mercado.humanosisu.net:443', '/admin', undefined), {
+      kind: 'rewrite',
+      pathname: '/sigua/admin',
+    })
+    assert.deepEqual(routeForHost('webycitas.humanosisu.net', '/admin', undefined), { kind: 'next' })
+    assert.deepEqual(routeForHost('humanosisu.net', '/', undefined), { kind: 'next' })
   })
 
   it('aísla superficies de producto Webycitas vs Mercado', () => {
     assert.equal(PRODUCT_SURFACES.webycitas.brand, 'Webycitas')
-    assert.equal(PRODUCT_SURFACES.mercado.brand, 'Mercado San Pablo')
-    assert.equal(isMercadoPublicPath('/mercadosanpablosigua'), true)
+    assert.equal(PRODUCT_SURFACES.mercado.brand, 'Mercado Digital de Siguatepeque')
+    assert.equal(isMercadoPublicPath('/sigua/negocios/[slug]'), true)
     assert.equal(isMercadoPublicPath('/'), false)
+    assert.equal(isMercadoPublicPath('/siguatepeque'), false)
   })
 })

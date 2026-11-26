@@ -13,9 +13,10 @@
 }
 
 .shellLight {
-  --pf-ink: #1c1712;
-  --pf-muted: rgba(28, 23, 18, 0.7);
-  --pf-line: rgba(28, 23, 18, 0.14);
+  /* Light neutrals lean toward the accent (navy for blue, brown for gold); lines take theme.primary. */
+  --pf-ink: color-mix(in srgb, var(--lp-accent) 16%, #0a0c12);
+  --pf-muted: color-mix(in srgb, var(--pf-ink) 74%, transparent);
+  --pf-line: color-mix(in srgb, var(--lp-primary) 75%, var(--lp-surface));
   --pf-card: #ffffff;
 }
 
@@ -31,7 +32,7 @@
   margin: 0;
   padding: 0.55rem 1rem;
   background: var(--pf-gold);
-  color: #14110c;
+  color: var(--lp-on-accent);
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 0.75rem;
   font-weight: 600;
@@ -133,9 +134,21 @@
   padding: 4rem 1.25rem;
   background-image:
     linear-gradient(90deg, var(--lp-surface) 8%, color-mix(in srgb, var(--lp-surface) 55%, transparent) 55%, transparent),
-    var(--hero-image, radial-gradient(circle at 70% 40%, #3a2a17, var(--lp-surface) 70%));
+    var(--hero-image, radial-gradient(circle at 70% 40%, color-mix(in srgb, var(--lp-accent) 22%, var(--lp-surface)), var(--lp-surface) 70%));
   background-position: center;
   background-size: cover;
+}
+
+/* Light heroes use product photos with the bottles on the right: on narrow screens, show them below the copy instead of cropping them out. */
+@container (max-width: 640px) {
+  .shellLight .hero {
+    min-height: 0;
+    padding-bottom: calc(76cqw + 1rem);
+    background-image: var(--hero-image, radial-gradient(circle at 70% 40%, color-mix(in srgb, var(--lp-accent) 22%, var(--lp-surface)), var(--lp-surface) 70%));
+    background-position: right bottom;
+    background-repeat: no-repeat;
+    background-size: 190% auto;
+  }
 }
 
 .heroInner {
@@ -188,7 +201,7 @@
 
 .ctaSolid {
   background: var(--pf-gold);
-  color: #14110c;
+  color: var(--lp-on-accent);
 }
 
 .ctaSolid:hover {
@@ -328,7 +341,7 @@
 .chips button[aria-pressed='true'] {
   border-color: var(--pf-gold);
   background: var(--pf-gold);
-  color: #14110c;
+  color: var(--lp-on-accent);
   font-weight: 600;
 }
 
@@ -414,7 +427,7 @@
 }
 
 .cardTag {
-  background: rgba(10, 9, 8, 0.7);
+  background: color-mix(in srgb, var(--lp-surface) 72%, transparent);
   color: var(--pf-gold);
 }
 
@@ -482,7 +495,7 @@
 
 .cardCta:hover {
   background: var(--pf-gold);
-  color: #14110c;
+  color: var(--lp-on-accent);
 }
 
 /* ------------------------------ carrusel ------------------------------ */
@@ -777,9 +790,9 @@
   text-align: left;
 }
 
-/* El botón del form usa --lp-primary con texto blanco; sobre dorado va tinta oscura. */
+/* The form button paints --lp-primary (set to the accent); its text follows the accent's contrast. */
 .formCard button[type='submit'] {
-  color: #14110c;
+  color: var(--lp-on-accent);
   font-weight: 600;
 }
 
@@ -847,7 +860,7 @@
   justify-content: center;
   border-radius: var(--lp-radius);
   background: var(--pf-gold);
-  color: #14110c;
+  color: var(--lp-on-accent);
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 0.85rem;
   font-weight: 700;

@@ -2,6 +2,8 @@ import type { AppProps } from 'next/app'
 import localFont from 'next/font/local'
 import AuthHashRedirect from '../components/auth/AuthHashRedirect'
 import IdleSessionWarning from '../components/auth/IdleSessionWarning'
+import SessionIdleGuard from '../components/mercado/SessionIdleGuard'
+import { isMercadoPublicPath } from '../lib/product-surfaces'
 import { cn } from '../lib/utils'
 import '../styles/globals.css'
 import '../styles/landing-liquid.css'
@@ -14,11 +16,20 @@ const montserrat = localFont({
   variable: '--font-montserrat',
 })
 
-export default function App({ Component, pageProps }: AppProps) {
+export default function App({ Component, pageProps, router }: AppProps) {
+  // router.pathname is the page file route, so directory pages keep their internal prefix here.
+  const directory = isMercadoPublicPath(router.pathname)
+
   return (
     <div className={cn(montserrat.variable, 'min-h-screen font-sans')}>
-      <AuthHashRedirect />
-      <IdleSessionWarning />
+      {directory ? (
+        <SessionIdleGuard />
+      ) : (
+        <>
+          <AuthHashRedirect />
+          <IdleSessionWarning />
+        </>
+      )}
       <Component {...pageProps} />
     </div>
   )

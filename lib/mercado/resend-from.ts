@@ -1,0 +1,8 @@
+export function getResendFrom(): string {
+  return process.env.MERCADO_RESEND_FROM || 'Mercado Digital de Siguatepeque <noreply@localhost>'
+}
+
+export function getNotifyEmail(): string | null {
+  const raw = (process.env.NOTIFY_EMAIL || '').trim()
+  return raw.includes('@') ? raw : null
+}

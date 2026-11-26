@@ -1,4 +1,4 @@
-import { siteAbsoluteUrl, siteOrigin } from '../site'
+import { siteAbsoluteUrl, siteOrigin } from './site'
 
 export function mercadoPublicOrigin() {
   return siteOrigin()

@@ -1,7 +1,7 @@
 /**
- * Login mínimo del operador del directorio municipal.
- * No usa SuperAdmin de RRHH ni el tenant leads.id de la suite.
- * Cookie HMAC + email/password de env. Escrituras van por service role.
+ * Residuo del corte HMAC (`mercado_op`).
+ * Auth viva: JWT + `requireSuperAdmin` / `requireSuperAdminPage` en `lib/auth/*`.
+ * Se conserva clear cookie para logout de transición.
  */
 
 import { createHmac, timingSafeEqual } from 'crypto'
@@ -9,9 +9,10 @@ import type { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from 
 import {
   MERCADO_ADMIN_LOGIN_PATH,
   mercadoAdminLoginPath,
+  stripSiguaPrefix,
 } from './paths'
 
-export const MERCADO_ADMIN_COOKIE = 'webycitas_mercado_op'
+export const MERCADO_ADMIN_COOKIE = 'mercado_op'
 const TTL_MS = 12 * 60 * 60 * 1000
 
 export type MercadoOperator = { email: string }
@@ -108,10 +109,14 @@ export function mercadoAdminSetCookie(res: NextApiResponse, operator: MercadoOpe
 
 export function mercadoAdminClearCookie(res: NextApiResponse) {
   const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
-  res.setHeader(
-    'Set-Cookie',
-    `${MERCADO_ADMIN_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`
-  )
+  const cleared = `${MERCADO_ADMIN_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`
+  const existing = res.getHeader('Set-Cookie')
+  const prev = Array.isArray(existing)
+    ? existing.map(String)
+    : existing
+      ? [String(existing)]
+      : []
+  res.setHeader('Set-Cookie', [...prev, cleared])
 }
 
 export function requireMercadoAdminApi(
@@ -132,9 +137,8 @@ export async function requireMercadoAdminPage(ctx: GetServerSidePropsContext): P
 > {
   const operator = mercadoOperatorFromReq(ctx.req)
   if (!operator) {
-    const next = ctx.resolvedUrl && ctx.resolvedUrl !== MERCADO_ADMIN_LOGIN_PATH
-      ? ctx.resolvedUrl
-      : undefined
+    const current = ctx.resolvedUrl ? stripSiguaPrefix(ctx.resolvedUrl) : undefined
+    const next = current && current !== MERCADO_ADMIN_LOGIN_PATH ? current : undefined
     return { ok: false, redirect: { destination: mercadoAdminLoginPath(next), permanent: false } }
   }
   return { ok: true, operator }

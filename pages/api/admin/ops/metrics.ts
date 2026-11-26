@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
     const [leadsRes, sitesRes, inquiries24h, inquiries7d, ownersRes] = await Promise.all([
-      db.from('leads').select('status'),
+      db.from('leads').select('status, source'),
       db.from('sites').select('status'),
       db.from('site_inquiries').select('id', { count: 'exact', head: true }).gte('created_at', since24h),
       db.from('site_inquiries').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
@@ -30,9 +30,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (ownersRes.error) throw ownersRes.error
 
     const leadsByStatus = { received: 0, reviewed: 0, rejected: 0 }
+    const leadsBySource: Record<string, number> = {}
     for (const row of leadsRes.data ?? []) {
       const status = row.status as keyof typeof leadsByStatus
       if (status in leadsByStatus) leadsByStatus[status] += 1
+      const source = String(row.source)
+      leadsBySource[source] = (leadsBySource[source] ?? 0) + 1
     }
 
     const sitesByStatus: Record<string, number> = {}
@@ -44,6 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({
       leads: {
         ...leadsByStatus,
+        by_source: leadsBySource,
         total: (leadsRes.data ?? []).length,
       },
       sites: {

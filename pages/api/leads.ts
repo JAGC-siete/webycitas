@@ -12,11 +12,11 @@ import {
   buildDemoLocalOwnerEmail,
   demoLocalFieldErrors,
   formatDemoLocalServices,
+  leadSourceForRef,
   looksLikeDemoLocalBot,
   parseDemoLocalLead,
   rubroLabel,
   LEADS_TABLE,
-  WEBYCITAS_LEAD_SOURCE,
 } from '../../lib/magnet/demo-local'
 import { publishLeadSite } from '../../lib/magnet/publish'
 
@@ -130,7 +130,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         note: lead.note ?? null,
         services: [...lead.services],
         status: 'received',
-        source: WEBYCITAS_LEAD_SOURCE,
+        source: leadSourceForRef(lead.ref),
         consented_at: receivedAt.toISOString(),
       })
       .select('id')
@@ -248,6 +248,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     email: maskEmail(lead.email),
     rubro: rubroLabel(lead.rubro),
     services: formatDemoLocalServices(lead.services),
+    source: leadSourceForRef(lead.ref),
     publicPath: publicPath ?? null,
     receivedAtHn: formatDateTimeForHonduras(receivedAt),
     duration: Date.now() - started,
