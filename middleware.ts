@@ -1,9 +1,37 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { customDomainRoute, type CustomDomainRoute } from './lib/custom-domains'
 import { routeForHost } from './lib/hosts'
+
+function customDomainResponse(req: NextRequest, route: CustomDomainRoute): NextResponse {
+  switch (route.type) {
+    case 'pass':
+      return NextResponse.next()
+    case 'redirect':
+      return NextResponse.redirect(route.url, 301)
+    case 'rewrite': {
+      const url = req.nextUrl.clone()
+      url.pathname = route.pathname
+      return NextResponse.rewrite(url)
+    }
+    case 'robots':
+      return new NextResponse(route.body, { headers: { 'content-type': 'text/plain; charset=utf-8' } })
+    case 'sitemap':
+      return new NextResponse(route.body, { headers: { 'content-type': 'application/xml; charset=utf-8' } })
+    case 'not-found':
+      return new NextResponse('Página no encontrada', {
+        status: 404,
+        headers: { 'content-type': 'text/plain; charset=utf-8' },
+      })
+  }
+}
 
 export function middleware(req: NextRequest) {
   const host = req.headers.get('host') || ''
+  // Client domains first: on them nothing from Webycitas or the directory may answer.
+  const custom = customDomainRoute(host, req.nextUrl.pathname)
+  if (custom) return customDomainResponse(req, custom)
+
   const route = routeForHost(host, req.nextUrl.pathname)
 
   if (route.kind === 'next') return NextResponse.next()
